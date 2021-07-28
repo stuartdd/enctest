@@ -10,8 +10,11 @@ import (
 )
 
 var (
-	content1 = []byte("This is one of those times")
-	content2 = []byte("This is not one of those times")
+	content1 = []byte("{\"text\":\"This is one of those times\"}")
+	content2 = []byte("{\"text\":\"This is NOT one of those times\"}")
+	content3 = []byte("\n  {}")
+	content4 = []byte("[]")
+	content5 = []byte("\n  F9")
 	password = []byte("mysecretpassword")
 	salt     = []byte("012345678901234567890123456789XX")
 
@@ -27,6 +30,63 @@ func TestMain(m *testing.M) {
 		Run the tests
 	*/
 	os.Exit(m.Run())
+}
+
+func TestEnc(t *testing.T) {
+	resetTestFile(testFile, content1)
+	fd1, err1 := lib.NewFileData(testFile)
+	if err1 != nil {
+		t.Error("err should be nil for file found")
+	}
+	if !fd1.IsRawJson() {
+		t.Error("Json file should be recognised")
+	}
+	if string(fd1.GetContent()) != string(content1) {
+		t.Error("File content is incorrect")
+	}
+
+	err1 = fd1.StoreEncContent(password, salt)
+	if err1 != nil {
+		t.Errorf("Store Enc failed. %s", err1)
+	}
+
+	fd2, err2 := lib.NewFileDataEnc(testFile, password, salt)
+	if err2 != nil {
+		t.Error("err should be nil for file found")
+	}
+	if !fd2.IsRawJson() {
+		t.Error("Should be decrypted!")
+	}
+	if string(fd2.GetContent()) != string(content1) {
+		t.Error("Did not decrypt correctly!")
+	}
+}
+
+func TestJsonRec(t *testing.T) {
+	resetTestFile(testFile, content3)
+	fd3, err3 := lib.NewFileData(testFile)
+	if err3 != nil {
+		t.Error("err should be nil for file found")
+	}
+	if !fd3.IsRawJson() {
+		t.Error("Json file should be recognised")
+	}
+	resetTestFile(testFile, content4)
+	fd4, err4 := lib.NewFileData(testFile)
+	if err4 != nil {
+		t.Error("err should be nil for file found")
+	}
+	if !fd4.IsRawJson() {
+		t.Error("Json file should be recognised")
+	}
+	resetTestFile(testFile, content5)
+	fd5, err5 := lib.NewFileData(testFile)
+	if err5 != nil {
+		t.Error("err should be nil for file found")
+	}
+	if fd5.IsRawJson() {
+		t.Error("Json file should NOT be recognised")
+	}
 }
 
 func TestConstructErrors(t *testing.T) {
@@ -49,14 +109,11 @@ func TestConstruct(t *testing.T) {
 	if fd.GetFileName() != testFile {
 		t.Errorf("File name is incorrect")
 	}
-	if string(fd.GetSalt()) != "" {
-		t.Errorf("Salt should be empty")
-	}
 	if string(fd.GetContent()) != string(content1) {
 		t.Errorf("Content is incorrect")
 	}
-	if fd.IsEncrypted() {
-		t.Errorf("File was NOT encrypted")
+	if !fd.IsRawJson() {
+		t.Errorf("Json file should be recognised")
 	}
 }
 
@@ -86,11 +143,8 @@ func TestStoreContent(t *testing.T) {
 	if fd2.GetFileName() != testFile {
 		t.Error("Stored File name is incorrect")
 	}
-	if string(fd2.GetSalt()) != "" {
-		t.Error("Stored file Salt should be empty")
-	}
-	if fd2.IsEncrypted() {
-		t.Error("Stored file was NOT encrypted")
+	if !fd2.IsRawJson() {
+		t.Error("Json file should be recognised")
 	}
 }
 
