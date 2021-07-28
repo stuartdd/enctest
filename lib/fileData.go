@@ -27,26 +27,67 @@ func NewFileDataEnc(fName string, encKey, encSalt []byte) (*FileData, error) {
 	return &fd, fd.loadEnc(encKey, encSalt)
 }
 
-func (r *FileData) StoreEncContent(encKey, encSalt []byte) error {
+func (r *FileData) StoreContent() error {
+	if r.HasEncData() {
+		return r.StoreContentWithKey(r.key, r.salt)
+	} else {
+		return r.storeData(r.content)
+	}
+}
+
+func (r *FileData) StoreContentWithKey(encKey, encSalt []byte) error {
 	cont, err := encrypt(encKey, encSalt, r.content)
 	if err != nil {
 		return err
 	}
 	err = r.storeData(cont)
+	r.key = encKey
+	r.salt = encSalt
 	return err
 }
 
-func (r *FileData) Store() error {
-	return r.storeData(r.content)
+func (r *FileData) IsRawJson() bool {
+	p := 0
+	for p = 0; p < (len(r.content) - 1); p++ {
+		if r.content[p] > 32 {
+			break
+		}
+	}
+	return (r.content[p] == '{') || (r.content[p] == '[')
+}
+
+func (r *FileData) HasEncData() bool {
+	if len(r.key) == 0 {
+		return false
+	}
+	if len(r.salt) == 0 {
+		return false
+	}
+	return true
+}
+
+func (r *FileData) GetFileName() string {
+	return r.fileName
+}
+
+func (r *FileData) GetContent() []byte {
+	return r.content
+}
+
+func (r *FileData) SetContent(data []byte) {
+	r.content = data
 }
 
 func (r *FileData) loadEnc(key, salt []byte) error {
-	err := r.load()
-	if err != nil {
+	if r.HasEncData() {
+		err := r.load()
+		if err != nil {
+			return err
+		}
+		r.content, err = decrypt(key, salt, r.content)
 		return err
 	}
-	r.content, err = decrypt(key, salt, r.content)
-	return err
+	return errors.New("salt or key are not defined")
 }
 
 func (r *FileData) storeData(data []byte) error {
@@ -61,28 +102,6 @@ func (r *FileData) load() error {
 	}
 	r.content = dat
 	return nil
-}
-
-func (r *FileData) IsRawJson() bool {
-	p := 0
-	for p = 0; p < (len(r.content) - 1); p++ {
-		if r.content[p] > 32 {
-			break
-		}
-	}
-	return (r.content[p] == '{') || (r.content[p] == '[')
-}
-
-func (r *FileData) GetFileName() string {
-	return r.fileName
-}
-
-func (r *FileData) GetContent() []byte {
-	return r.content
-}
-
-func (r *FileData) SetContent(data []byte) {
-	r.content = data
 }
 
 func decrypt(key, salt, data []byte) ([]byte, error) {
