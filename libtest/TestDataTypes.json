@@ -26,17 +26,20 @@
 					"userId": "another@gmail.com",
 					"pre": "abc",
 					"post": "123",
-					"notes": "a note to User B"
+					"notes": "a note to User B",
+					"positional": "1234567890"
 				},
 				"Principality": {
 					"userId": "Buser",
 					"pre": "efg",
 					"post": "456",
-					"notes": "https://www.principality.co.uk/en/your-account"
+					"link": "https://www.principality.co.uk/en/your-account",
+					"notes": "Principality note"
 				}
 			},
 			"notes": {
-				"Note": {}
+				"link": "https://www.principality.co.uk/en/your-account",
+				"note": "An amazing note"
 			}
 		}
 	}

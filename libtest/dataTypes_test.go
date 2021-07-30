@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"reflect"
 	"testing"
 
 	"stuartdd.com/lib"
@@ -13,6 +14,7 @@ var (
 	mapData      map[string]interface{}
 	prettyData   string
 	dataFileName = "TestDataTypes.json"
+	tabdata      = "                                     "
 )
 
 /*
@@ -20,7 +22,29 @@ go test -v -run TestParseJson
 */
 func TestParseJson(t *testing.T) {
 	loadDataMap(dataFileName)
-	fmt.Println(string(prettyData))
+	ind := 0
+	for k, v := range mapData {
+		if (k != "timeStamp") && (k != "groups") {
+			log.Fatalf("Expected keys of timeStamp or groups")
+		}
+		if reflect.ValueOf(v).Kind() != reflect.String {
+			fmt.Printf("%d:%s: %s \n", ind, tabdata[:ind*2], k)
+			printMap(v.(map[string]interface{}), 1)
+		} else {
+			fmt.Printf("%d:%s %s = %s\n", ind, tabdata[:ind*2], k, v)
+		}
+	}
+}
+
+func printMap(m map[string]interface{}, ind int) {
+	for k, v := range m {
+		if reflect.ValueOf(v).Kind() != reflect.String {
+			fmt.Printf("%d:%s: %s \n", ind, tabdata[:ind*2], k)
+			printMap(v.(map[string]interface{}), ind+1)
+		} else {
+			fmt.Printf("%d:%s %s = %s\n", ind, tabdata[:ind*2], k, v)
+		}
+	}
 }
 
 func loadDataMap(fileName string) {
@@ -35,8 +59,6 @@ func loadDataMap(fileName string) {
 			log.Fatalf("error prety print file:%s %v\n", fileName, err)
 		}
 		prettyData = pd
-		fmt.Println(string(prettyData))
-
 	}
 }
 
