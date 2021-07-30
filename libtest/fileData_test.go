@@ -1,6 +1,7 @@
 package libtest
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,15 +11,16 @@ import (
 )
 
 var (
-	content1 = []byte("{\"text\":\"This is one of those times\"}")
-	content2 = []byte("{\"text\":\"This is NOT one of those times\"}")
-	content3 = []byte("\n  {}")
-	content4 = []byte("[]")
-	content5 = []byte("\n  F9")
-	password = []byte("mysecretpassword")
-	salt     = []byte("012345678901234567890123456789XX")
-
+	content1     = []byte("{\"text\":\"This is one of those times\"}")
+	content2     = []byte("{\"text\":\"This is NOT one of those times\"}")
+	content3     = []byte("\n  {}")
+	content4     = []byte("[]")
+	content5     = []byte("\n  F9")
+	password     = []byte("mysecretpassword")
+	salt         = []byte("012345678901234567890123456789XX")
+	encCon       = []byte{213, 253, 183, 173, 50, 97, 227, 225, 26, 110, 238, 149, 114, 30, 96, 193, 75, 219, 42, 32, 221, 0, 104, 228, 190, 188, 117, 129}
 	testFileName = "TestData.txt"
+	iterations   = 8 // 2,4,8,16...
 )
 
 func TestMain(m *testing.M) {
@@ -32,6 +34,34 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func TestEncReload(t *testing.T) {
+	resetTestFile(testFileName, encCon)
+	fd, err := lib.NewFileDataEnc(testFileName, password, salt, iterations)
+	if err != nil {
+		fd.StoreContent()
+		echoTestFile(testFileName)
+		t.Errorf("err should be nil for file found. %s", err)
+	}
+	fd.SetContent(content2)
+	if string(fd.GetContent()) != string(content2) {
+		t.Errorf("Content setter is incorrect:'%s' != '%s'", string(fd.GetContent()), string(content2))
+	}
+	fd.StoreContent()
+	fd2, err2 := lib.NewFileDataEnc(testFileName, password, salt, iterations)
+	if err2 != nil {
+		t.Error("err should be nil for file found")
+	}
+	if string(fd2.GetContent()) != string(content2) {
+		t.Errorf("File content is incorrect %s != %s", string(fd2.GetContent()), string(content2))
+	}
+	if !fd2.IsRawJson() {
+		t.Error("Should be decrypted!")
+	}
+	if !fd2.HasEncData() {
+		t.Error("file should have key and salt")
+	}
+
+}
 func TestEnc(t *testing.T) {
 	resetTestFile(testFileName, content1)
 	fd1, err1 := lib.NewFileData(testFileName)
@@ -48,7 +78,7 @@ func TestEnc(t *testing.T) {
 		t.Error("file should not have key and salt")
 	}
 
-	err1 = fd1.StoreContentWithKey(password, salt)
+	err1 = fd1.StoreContentEncrypted(password, salt, iterations)
 	if err1 != nil {
 		t.Errorf("Store Enc failed. %s", err1)
 	}
@@ -61,8 +91,7 @@ func TestEnc(t *testing.T) {
 	if !fd1.HasEncData() {
 		t.Error("file should have key and salt")
 	}
-
-	fd2, err2 := lib.NewFileDataEnc(testFileName, password, salt)
+	fd2, err2 := lib.NewFileDataEnc(testFileName, password, salt, iterations)
 	if err2 != nil {
 		t.Error("err should be nil for file found")
 	}
@@ -118,7 +147,7 @@ func TestConstructNotFound(t *testing.T) {
 	if err == nil {
 		t.Error("err should not be nil for file not found")
 	}
-	_, err = lib.NewFileDataEnc("NotFoundEnc.txt", password, salt)
+	_, err = lib.NewFileDataEnc("NotFoundEnc.txt", password, salt, iterations)
 	if err == nil {
 		t.Error("err should be nil for enc file found")
 	}
@@ -189,4 +218,16 @@ func resetTestFile(fileName string, content []byte) {
 	if err != nil {
 		log.Fatalf("Failed to reset test file: %s. %s\n", fileName, err)
 	}
+}
+
+func echoTestFile(fileName string) {
+	dat, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		log.Fatalf("Read file failed '%s': %s", fileName, err)
+	}
+	fmt.Print("Static data for encrypted test file. Copy and paste, replacing var encCon. \n{")
+	for _, v := range dat {
+		fmt.Printf("%d,", v)
+	}
+	fmt.Println("}")
 }

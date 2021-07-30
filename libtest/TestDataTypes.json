@@ -1,0 +1,43 @@
+{
+	"timeStamp": "Fri Jul 30 21:25:10 BST 2021",
+	"groups": {
+		"UserA": {
+			"pwHints": {
+				"GMail": {
+					"userId": "fakeuser@gmail.com",
+					"pre": "abc",
+					"post": "123",
+					"notes": "a note to User A"
+				},
+				"Principality": {
+					"userId": "Puser",
+					"pre": "efg",
+					"post": "456",
+					"notes": "https://www.principality.co.uk/en/your-account"
+				}
+			},
+			"notes": {
+				"Note": {}
+			}
+		},
+		"UserB": {
+			"pwHints": {
+				"GMail": {
+					"userId": "another@gmail.com",
+					"pre": "abc",
+					"post": "123",
+					"notes": "a note to User B"
+				},
+				"Principality": {
+					"userId": "Buser",
+					"pre": "efg",
+					"post": "456",
+					"notes": "https://www.principality.co.uk/en/your-account"
+				}
+			},
+			"notes": {
+				"Note": {}
+			}
+		}
+	}
+}
