@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"reflect"
+	"strings"
 	"testing"
 
 	"stuartdd.com/lib"
 )
 
 var (
-	mapData      map[string]interface{}
+	mapData      *lib.DataRoot
 	prettyData   string
+	structData   string
 	dataFileName = "TestDataTypes.json"
-	tabdata      = "                                     "
 )
 
 /*
@@ -22,29 +22,14 @@ go test -v -run TestParseJson
 */
 func TestParseJson(t *testing.T) {
 	loadDataMap(dataFileName)
-	ind := 0
-	for k, v := range mapData {
-		if (k != "timeStamp") && (k != "groups") {
-			log.Fatalf("Expected keys of timeStamp or groups")
-		}
-		if reflect.ValueOf(v).Kind() != reflect.String {
-			fmt.Printf("%d:%s: %s \n", ind, tabdata[:ind*2], k)
-			printMap(v.(map[string]interface{}), 1)
-		} else {
-			fmt.Printf("%d:%s %s = %s\n", ind, tabdata[:ind*2], k, v)
-		}
-	}
-}
-
-func printMap(m map[string]interface{}, ind int) {
-	for k, v := range m {
-		if reflect.ValueOf(v).Kind() != reflect.String {
-			fmt.Printf("%d:%s: %s \n", ind, tabdata[:ind*2], k)
-			printMap(v.(map[string]interface{}), ind+1)
-		} else {
-			fmt.Printf("%d:%s %s = %s\n", ind, tabdata[:ind*2], k, v)
-		}
-	}
+	testStructContains("1:  :groups")
+	testStructContains("2:    :UserA")
+	testStructContains("2:    :UserB")
+	testStructContains("3:      :pwHints")
+	testStructContains("4:        :GMail")
+	testStructContains("4:        -note = An")
+	testStructContains("5:          -notes = https:")
+	fmt.Println(structData)
 }
 
 func loadDataMap(fileName string) {
@@ -53,12 +38,22 @@ func loadDataMap(fileName string) {
 		if err != nil {
 			log.Fatalf("error parsing file:%s %v\n", fileName, err)
 		}
-		mapData = md
-		pd, err := lib.PrettyJson(mapData)
+		mapData, err = lib.NewDataRoot(md)
 		if err != nil {
-			log.Fatalf("error prety print file:%s %v\n", fileName, err)
+			log.Fatalf("error creating DataRoot file:%s %v\n", fileName, err)
 		}
+		pd, err := mapData.ToJson()
+		if err != nil {
+			log.Fatalf("error pretty print file:%s %v\n", fileName, err)
+		}
+		structData = mapData.ToStruct()
 		prettyData = pd
+	}
+}
+
+func testStructContains(s string) {
+	if !strings.Contains(structData, s) {
+		log.Fatalf("error missing data: '%s'. file:%s\n", s, dataFileName)
 	}
 }
 

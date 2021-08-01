@@ -6,7 +6,7 @@
         {
             "label": "test go",
             "type": "shell",
-            "command": "cd libtest ; go test -v -run TestParseJson",
+            "command": "clear; cd libtest ; go test -v -run TestParseJson",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
