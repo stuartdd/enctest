@@ -6,21 +6,29 @@ import (
 	"log"
 	"strings"
 	"testing"
+	"time"
 
 	"stuartdd.com/lib"
 )
 
 var (
 	mapData      *lib.DataRoot
-	prettyData   string
 	structData   string
 	dataFileName = "TestDataTypes.json"
 )
 
 /*
+go test -v -run TestTreeMapping
+*/
+func TestTreeMapping(t *testing.T) {
+	loadDataMap(dataFileName)
+	fmt.Println(mapData.ToMap())
+}
+
+/*
 go test -v -run TestParseJson
 */
-func TestParseJson(t *testing.T) {
+func TestLoadAndParseJson(t *testing.T) {
 	loadDataMap(dataFileName)
 	testStructContains("1:  :groups")
 	testStructContains("2:    :UserA")
@@ -29,7 +37,9 @@ func TestParseJson(t *testing.T) {
 	testStructContains("4:        :GMail")
 	testStructContains("4:        -note = An")
 	testStructContains("5:          -notes = https:")
-	fmt.Println(structData)
+	if mapData.GetTimeStamp().Format(time.UnixDate) != "Fri Jul 30 21:25:10 BST 2021" {
+		log.Fatalf("Timestamp dis not parse to UnixDate correctly. file:%s\n", dataFileName)
+	}
 }
 
 func loadDataMap(fileName string) {
@@ -40,14 +50,13 @@ func loadDataMap(fileName string) {
 		}
 		mapData, err = lib.NewDataRoot(md)
 		if err != nil {
-			log.Fatalf("error creating DataRoot file:%s %v\n", fileName, err)
+			log.Fatalf("error creating new DataRoot file:%s %v\n", fileName, err)
 		}
-		pd, err := mapData.ToJson()
+		_, err = mapData.ToJson()
 		if err != nil {
-			log.Fatalf("error pretty print file:%s %v\n", fileName, err)
+			log.Fatalf("error in ToJson file:%s %v\n", fileName, err)
 		}
 		structData = mapData.ToStruct()
-		prettyData = pd
 	}
 }
 

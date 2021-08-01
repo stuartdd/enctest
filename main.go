@@ -7,7 +7,8 @@ import (
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
-	"fyne.io/fyne/cmd/fyne_demo/tutorials"
+	"stuartdd.com/lib"
+
 	"fyne.io/fyne/container"
 	"fyne.io/fyne/layout"
 	"fyne.io/fyne/theme"
@@ -17,6 +18,7 @@ import (
 const preferenceCurrentTutorial = "currentTutorial"
 
 func main() {
+
 	a := app.NewWithID("io.fyne.demo")
 	a.SetIcon(theme.FyneLogo())
 	w := a.NewWindow("Fyne Demo")
@@ -59,7 +61,7 @@ func main() {
 	title := widget.NewLabel("Component name")
 	intro := widget.NewLabel("An introduction would probably go\nhere, as well as a")
 	intro.Wrapping = fyne.TextWrapWord
-	setTutorial := func(t tutorials.Tutorial) {
+	setTutorial := func(t lib.DetailPage) {
 		title.SetText(t.Title)
 		intro.SetText(t.Intro)
 
@@ -78,23 +80,23 @@ func main() {
 	w.ShowAndRun()
 }
 
-func makeNav(setTutorial func(tutorial tutorials.Tutorial)) fyne.CanvasObject {
+func makeNav(setTutorial func(tutorial lib.DetailPage)) fyne.CanvasObject {
 	a := fyne.CurrentApp()
 
 	tree := &widget.Tree{
 		ChildUIDs: func(uid string) []string {
-			return tutorials.TutorialIndex[uid]
+			id := lib.NavIndex[uid]
+			return id
 		},
 		IsBranch: func(uid string) bool {
-			children, ok := tutorials.TutorialIndex[uid]
-
+			children, ok := lib.NavIndex[uid]
 			return ok && len(children) > 0
 		},
 		CreateNode: func(branch bool) fyne.CanvasObject {
-			return widget.NewLabel("Collection Widgets")
+			return widget.NewLabel("?")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			t, ok := tutorials.Tutorials[uid]
+			t, ok := lib.DetailPages[uid]
 			if !ok {
 				fyne.LogError("Missing tutorial panel: "+uid, nil)
 				return
@@ -102,7 +104,7 @@ func makeNav(setTutorial func(tutorial tutorials.Tutorial)) fyne.CanvasObject {
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
-			if t, ok := tutorials.Tutorials[uid]; ok {
+			if t, ok := lib.DetailPages[uid]; ok {
 				a.Preferences().SetString(preferenceCurrentTutorial, uid)
 				setTutorial(t)
 			}

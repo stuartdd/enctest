@@ -3,13 +3,13 @@
 	"groups": {
 		"UserA": {
 			"pwHints": {
-				"GMail": {
+				"GMailA": {
 					"userId": "fakeuser@gmail.com",
 					"pre": "abc",
 					"post": "123",
 					"notes": "a note to User A"
 				},
-				"Principality": {
+				"PrincipalityA": {
 					"userId": "Puser",
 					"pre": "efg",
 					"post": "456",
@@ -17,19 +17,19 @@
 				}
 			},
 			"notes": {
-				"Note": {}
+				"note": "An amazing A note"
 			}
 		},
 		"UserB": {
 			"pwHints": {
-				"GMail": {
+				"GMailB": {
 					"userId": "another@gmail.com",
 					"pre": "abc",
 					"post": "123",
 					"notes": "a note to User B",
 					"positional": "1234567890"
 				},
-				"Principality": {
+				"PrincipalityB": {
 					"userId": "Buser",
 					"pre": "efg",
 					"post": "456",
@@ -39,7 +39,7 @@
 			},
 			"notes": {
 				"link": "https://www.principality.co.uk/en/your-account",
-				"note": "An amazing note"
+				"note": "An amazing B note"
 			}
 		}
 	}
