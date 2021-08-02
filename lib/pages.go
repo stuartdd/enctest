@@ -2,6 +2,7 @@ package lib
 
 import (
 	"net/url"
+	"strings"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/canvas"
@@ -15,29 +16,29 @@ type DetailPage struct {
 	View         func(w fyne.Window) fyne.CanvasObject
 }
 
-/*
-map[:[UserA UserB]
-UserA:[UserApwHints UserAnotes]
-UserAnotes:[]
-UserApwHints:[UserApwHintsGMailA UserApwHintsPrincipalityA]
-UserB:[UserBpwHints UserBnotes]
-UserBnotes:[]
-UserBpwHints:[UserBpwHintsGMailB UserBpwHintsPrincipalityB]]
-*/
-// TutorialIndex  defines how our tutorials should be laid out in the index tree
-var NavIndex = map[string][]string{
-	"":      {"userA", "userB"},
-	"userA": {"UserApwHints", "UserAnotes"},
-	"userB": {"UserBpwHints", "UserBnotes"},
-}
-
-var DetailPages = map[string]DetailPage{
-	"userA":        {"User A", "View User A Details.", welcomeScreen},
-	"userB":        {"User B", "View User B Details.", welcomeScreen},
-	"UserApwHints": {"PW Hints", "Hints for user", welcomeScreen},
-	"UserAnotes":   {"Notes", "Notes for user.", welcomeScreen},
-	"UserBpwHints": {"PW Hints", "Hints for user", welcomeScreen},
-	"UserBnotes":   {"Notes", "Notes for user.", welcomeScreen},
+func GetDetailPages(id string) DetailPage {
+	nodes := strings.Split(id, ".")
+	switch len(nodes) {
+	case 1:
+		return DetailPage{id, "User page.", welcomeScreen}
+	case 2:
+		if nodes[1] == "pwHints" {
+			return DetailPage{"PW Hints", "Hints overview.", welcomeScreen}
+		}
+		if nodes[1] == "notes" {
+			return DetailPage{"Notes", "Notes overview.", welcomeScreen}
+		}
+		return DetailPage{"Unknown", "Not PW Hints Not Notes page.", welcomeScreen}
+	case 3:
+		if nodes[1] == "pwHints" {
+			return DetailPage{nodes[2], "Hints page.", welcomeScreen}
+		}
+		if nodes[1] == "notes" {
+			return DetailPage{nodes[2], "Notes page.", welcomeScreen}
+		}
+		return DetailPage{"Unknown", "Not PW Hints Not Notes page.", welcomeScreen}
+	}
+	return DetailPage{id, "Root page.", welcomeScreen}
 }
 
 func welcomeScreen(_ fyne.Window) fyne.CanvasObject {

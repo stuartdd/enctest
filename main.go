@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"os"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
@@ -15,12 +16,25 @@ import (
 	"fyne.io/fyne/widget"
 )
 
-const preferenceCurrentTutorial = "currentTutorial"
+// var fileData *lib.FileData
+var dataRoot *lib.DataRoot
 
 func main() {
 
 	a := app.NewWithID("io.fyne.demo")
 	a.SetIcon(theme.FyneLogo())
+	fd, err := lib.NewFileData("libtest/TestDataTypes.json")
+	if err != nil {
+		fmt.Printf("ERROR: Cannot load data. %s", err)
+		os.Exit(1)
+	}
+	dr, err := lib.NewDataRoot(fd.GetContent())
+	if err != nil {
+		fmt.Printf("ERROR: Cannot process data. %s", err)
+		os.Exit(1)
+	}
+	dataRoot = dr
+
 	w := a.NewWindow("Fyne Demo")
 
 	newItem := fyne.NewMenuItem("New", nil)
@@ -85,29 +99,23 @@ func makeNav(setTutorial func(tutorial lib.DetailPage)) fyne.CanvasObject {
 
 	tree := &widget.Tree{
 		ChildUIDs: func(uid string) []string {
-			id := lib.NavIndex[uid]
+			id := dataRoot.GetNavIndex(uid)
 			return id
 		},
 		IsBranch: func(uid string) bool {
-			children, ok := lib.NavIndex[uid]
-			return ok && len(children) > 0
+			children := dataRoot.GetNavIndex(uid)
+			return len(children) > 0
 		},
 		CreateNode: func(branch bool) fyne.CanvasObject {
 			return widget.NewLabel("?")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			t, ok := lib.DetailPages[uid]
-			if !ok {
-				fyne.LogError("Missing tutorial panel: "+uid, nil)
-				return
-			}
+			t := lib.GetDetailPages(uid)
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
-			if t, ok := lib.DetailPages[uid]; ok {
-				a.Preferences().SetString(preferenceCurrentTutorial, uid)
-				setTutorial(t)
-			}
+			t := lib.GetDetailPages(uid)
+			setTutorial(t)
 		},
 	}
 

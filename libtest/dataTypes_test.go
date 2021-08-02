@@ -19,10 +19,31 @@ var (
 
 /*
 go test -v -run TestTreeMapping
+map[:[UserA UserB]
+
+UserA:[UserA.pwHints UserA.notes]
+UserA.notes:[UserA.notes.note]
+UserA.pwHints:[UserA.pwHints.GMailA UserA.pwHints.PrincipalityA]
+
+UserB:[UserB.pwHints UserB.notes]
+UserB.notes:[UserB.notes.link UserB.notes.note]
+UserB.pwHints:[UserB.pwHints.GMail B UserB.pwHints.Principality B]]
 */
 func TestTreeMapping(t *testing.T) {
 	loadDataMap(dataFileName)
-	fmt.Println(mapData.ToMap())
+	assertMapData("", "[UserA UserB]")
+	assertMapData("UserA", "[UserA.notes UserA.pwHints]")
+	assertMapData("UserA.notes", "[UserA.notes.note]")
+	assertMapData("UserA.pwHints", "[UserA.pwHints.GMailA UserA.pwHints.PrincipalityA]")
+	assertMapData("UserB", "[UserB.notes UserB.pwHints]")
+	assertMapData("UserB.notes", "[UserB.notes.link UserB.notes.note]")
+	assertMapData("UserB.pwHints", "[UserB.pwHints.GMail B UserB.pwHints.Principality B]")
+}
+
+func assertMapData(id, val string) {
+	if fmt.Sprintf("%s", mapData.GetNavIndex(id)) != val {
+		log.Fatalf("Nav Map id:%s != %s. It is %s. file:%s\n", id, val, mapData.GetNavIndex(id), dataFileName)
+	}
 }
 
 /*
@@ -44,18 +65,16 @@ func TestLoadAndParseJson(t *testing.T) {
 
 func loadDataMap(fileName string) {
 	if mapData == nil {
-		md, err := lib.Parse(loadTestData(fileName))
-		if err != nil {
-			log.Fatalf("error parsing file:%s %v\n", fileName, err)
-		}
-		mapData, err = lib.NewDataRoot(md)
+		fd := loadTestData(fileName)
+		md, err := lib.NewDataRoot(fd)
 		if err != nil {
 			log.Fatalf("error creating new DataRoot file:%s %v\n", fileName, err)
 		}
-		_, err = mapData.ToJson()
+		_, err = md.ToJson()
 		if err != nil {
 			log.Fatalf("error in ToJson file:%s %v\n", fileName, err)
 		}
+		mapData = md
 		structData = mapData.ToStruct()
 	}
 }

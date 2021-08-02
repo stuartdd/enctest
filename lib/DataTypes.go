@@ -5,30 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 )
-
-// type DataNotes struct {
-// 	title string
-// 	link  string
-// 	note  string
-// }
-
-// type DataHints struct {
-// 	userId     string
-// 	pre        string
-// 	post       string
-// 	link       string
-// 	positional string
-// 	notes      string
-// }
-
-// type DataGroup struct {
-// 	owner string
-// 	notes []DataNotes
-// 	hints []DataHints
-// }
 
 var (
 	tabdata = "                                     "
@@ -36,10 +16,15 @@ var (
 
 type DataRoot struct {
 	timeStamp time.Time
-	data      map[string]interface{}
+	dataMap   map[string]interface{}
+	navIndex  map[string][]string
 }
 
-func NewDataRoot(m map[string]interface{}) (*DataRoot, error) {
+func NewDataRoot(j []byte) (*DataRoot, error) {
+	m, err := parseJson(j)
+	if err != nil {
+		return nil, err
+	}
 	ts, ok := m["timeStamp"]
 	if !ok {
 		return nil, errors.New("'timeStamp' does not exist in data root")
@@ -55,24 +40,21 @@ func NewDataRoot(m map[string]interface{}) (*DataRoot, error) {
 	if !ok {
 		return nil, errors.New("'groups' does not exist in data root")
 	}
-	return &DataRoot{timeStamp: tim, data: m}, nil
-}
 
-func Parse(j []byte) (map[string]interface{}, error) {
-	var m map[string]interface{}
-	err := json.Unmarshal([]byte(j), &m)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
+	dr := &DataRoot{timeStamp: tim, dataMap: m, navIndex: createNavIndex(m)}
+	return dr, nil
 }
 
 func (r *DataRoot) GetTimeStamp() time.Time {
 	return r.timeStamp
 }
 
+func (r *DataRoot) GetNavIndex(id string) []string {
+	return r.navIndex[id]
+}
+
 func (r *DataRoot) ToJson() (string, error) {
-	output, err := json.MarshalIndent(r.data, "", "    ")
+	output, err := json.MarshalIndent(r.dataMap, "", "    ")
 	if err != nil {
 		return "", err
 	}
@@ -81,14 +63,8 @@ func (r *DataRoot) ToJson() (string, error) {
 
 func (r *DataRoot) ToStruct() string {
 	var sb strings.Builder
-	appendMapStruct(&sb, r.data, 1)
+	appendMapStruct(&sb, r.dataMap, 1)
 	return sb.String()
-}
-
-func (r *DataRoot) ToMap() map[string][]string {
-	var uids = make(map[string][]string)
-	mapRootStruct("", uids, r.data)
-	return uids
 }
 
 func appendMapStruct(sb *strings.Builder, m map[string]interface{}, ind int) {
@@ -102,7 +78,13 @@ func appendMapStruct(sb *strings.Builder, m map[string]interface{}, ind int) {
 	}
 }
 
-func mapRootStruct(id string, uids map[string][]string, m map[string]interface{}) {
+func createNavIndex(m map[string]interface{}) map[string][]string {
+	var uids = make(map[string][]string)
+	createNavIndexDetail("", uids, m)
+	return uids
+}
+
+func createNavIndexDetail(id string, uids map[string][]string, m map[string]interface{}) {
 	for _, v := range m {
 		if reflect.ValueOf(v).Kind() != reflect.String {
 			l, ll := keysToList(id, v.(map[string]interface{}))
@@ -120,7 +102,8 @@ func mapRootStruct(id string, uids map[string][]string, m map[string]interface{}
 									_, ll3 := keysToList(ll2[ii3], m3.(map[string]interface{}))
 									uids[ll2[ii3]] = ll3
 								} else {
-									uids[ll2[ii3]] = make([]string, 0)
+									_, ll4 := keysToList(ll2[ii3], m3.(map[string]interface{}))
+									uids[ll2[ii3]] = ll4
 								}
 							}
 						}
@@ -136,8 +119,15 @@ func keysToList(id string, m map[string]interface{}) ([]string, []string) {
 	ll := make([]string, 0)
 	for k, _ := range m {
 		l = append(l, k)
-		ll = append(ll, fmt.Sprintf("%s%s", id, k))
+		if id == "" {
+			ll = append(ll, fmt.Sprintf("%s", k))
+		} else {
+			ll = append(ll, fmt.Sprintf("%s.%s", id, k))
+		}
+
 	}
+	sort.Strings(l)
+	sort.Strings(ll)
 	return l, ll
 }
 
@@ -147,4 +137,13 @@ func parseTime(st string) (time.Time, error) {
 		return time.Now(), err
 	}
 	return t, nil
+}
+
+func parseJson(j []byte) (map[string]interface{}, error) {
+	var m map[string]interface{}
+	err := json.Unmarshal([]byte(j), &m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }

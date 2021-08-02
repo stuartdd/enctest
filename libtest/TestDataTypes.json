@@ -22,14 +22,14 @@
 		},
 		"UserB": {
 			"pwHints": {
-				"GMailB": {
+				"GMail B": {
 					"userId": "another@gmail.com",
 					"pre": "abc",
 					"post": "123",
 					"notes": "a note to User B",
 					"positional": "1234567890"
 				},
-				"PrincipalityB": {
+				"Principality B": {
 					"userId": "Buser",
 					"pre": "efg",
 					"post": "456",
