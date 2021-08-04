@@ -16,26 +16,33 @@ import (
 	"fyne.io/fyne/widget"
 )
 
-// var fileData *lib.FileData
+var fileData *lib.FileData
 var dataRoot *lib.DataRoot
 
 func main() {
+	if len(os.Args) == 1 {
+		fmt.Println("ERROR: File name not provided")
+		os.Exit(1)
+	}
 
 	a := app.NewWithID("io.fyne.demo")
 	a.SetIcon(theme.FyneLogo())
-	fd, err := lib.NewFileData("libtest/TestDataTypes.json")
+
+	fd, err := lib.NewFileData(os.Args[1])
 	if err != nil {
 		fmt.Printf("ERROR: Cannot load data. %s", err)
 		os.Exit(1)
 	}
-	dr, err := lib.NewDataRoot(fd.GetContent())
+	fileData = fd
+
+	dr, err := lib.NewDataRoot(fileData.GetContent())
 	if err != nil {
 		fmt.Printf("ERROR: Cannot process data. %s", err)
 		os.Exit(1)
 	}
 	dataRoot = dr
 
-	w := a.NewWindow("Fyne Demo")
+	w := a.NewWindow(fmt.Sprintf("Data File: %s", fileData.GetFileName()))
 
 	newItem := fyne.NewMenuItem("New", nil)
 	otherItem := fyne.NewMenuItem("Other", nil)
@@ -43,6 +50,7 @@ func main() {
 		fyne.NewMenuItem("Project", func() { fmt.Println("Menu New->Other->Project") }),
 		fyne.NewMenuItem("Mail", func() { fmt.Println("Menu New->Other->Mail") }),
 	)
+
 	newItem.ChildMenu = fyne.NewMenu("",
 		fyne.NewMenuItem("File", func() { fmt.Println("Menu New->File") }),
 		fyne.NewMenuItem("Directory", func() { fmt.Println("Menu New->Directory") }),
@@ -63,6 +71,7 @@ func main() {
 			u, _ := url.Parse("https://github.com/sponsors/fyne-io")
 			_ = a.OpenURL(u)
 		}))
+
 	mainMenu := fyne.NewMainMenu(
 		// a quit item will be appended to our first menu
 		fyne.NewMenu("File", newItem, fyne.NewMenuItemSeparator()),
@@ -70,23 +79,26 @@ func main() {
 	)
 	w.SetMainMenu(mainMenu)
 	w.SetMaster()
-
+	welcomePage := lib.GetWelcomePage()
 	content := container.NewMax()
-	title := widget.NewLabel("Component name")
-	intro := widget.NewLabel("An introduction would probably go\nhere, as well as a")
+	content.Objects = []fyne.CanvasObject{welcomePage.View(w, welcomePage.Data)}
+	title := widget.NewLabel(welcomePage.Title)
+	intro := widget.NewLabel(welcomePage.Intro)
 	intro.Wrapping = fyne.TextWrapWord
-	setTutorial := func(t lib.DetailPage) {
+
+	setPage := func(t lib.DetailPage) {
+
 		title.SetText(t.Title)
 		intro.SetText(t.Intro)
 
-		content.Objects = []fyne.CanvasObject{t.View(w)}
+		content.Objects = []fyne.CanvasObject{t.View(w, t.Data)}
 		content.Refresh()
 	}
 
-	tutorial := container.NewBorder(
+	rhsPage := container.NewBorder(
 		container.NewVBox(title, widget.NewSeparator(), intro), nil, nil, nil, content)
 
-	split := container.NewHSplit(makeNav(setTutorial), tutorial)
+	split := container.NewHSplit(makeNav(setPage), rhsPage)
 	split.Offset = 0.2
 	w.SetContent(split)
 
@@ -94,7 +106,7 @@ func main() {
 	w.ShowAndRun()
 }
 
-func makeNav(setTutorial func(tutorial lib.DetailPage)) fyne.CanvasObject {
+func makeNav(setPage func(detailPage lib.DetailPage)) fyne.CanvasObject {
 	a := fyne.CurrentApp()
 
 	tree := &widget.Tree{
@@ -110,12 +122,14 @@ func makeNav(setTutorial func(tutorial lib.DetailPage)) fyne.CanvasObject {
 			return widget.NewLabel("?")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			t := lib.GetDetailPages(uid)
+			m := dataRoot.GetMapForPath(uid)
+			t := lib.GetDetailPage(uid, m)
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
-			t := lib.GetDetailPages(uid)
-			setTutorial(t)
+			m := dataRoot.GetMapForPath(uid)
+			t := lib.GetDetailPage(uid, m)
+			setPage(t)
 		},
 	}
 
