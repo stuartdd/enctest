@@ -3,7 +3,6 @@ package lib
 import (
 	"fmt"
 	"net/url"
-	"reflect"
 	"strings"
 
 	"fyne.io/fyne"
@@ -21,59 +20,56 @@ var (
 )
 
 type DetailPage struct {
-	Title, Intro string
-	View         func(w fyne.Window, dataMap *map[string]interface{}) fyne.CanvasObject
-	Data         *map[string]interface{}
+	Uid, Title, Intro string
+	View              func(w fyne.Window, details DetailPage) fyne.CanvasObject
+	DataRootMap       *map[string]interface{}
 }
 
-func NewDetailPage(title, intro string, view func(w fyne.Window, dataMap *map[string]interface{}) fyne.CanvasObject, dataMap *map[string]interface{}) *DetailPage {
-	return &DetailPage{Title: title, Intro: intro, View: view, Data: dataMap}
+func NewDetailPage(uid string, title, intro string, view func(w fyne.Window, details DetailPage) fyne.CanvasObject, dataRootMap *map[string]interface{}) *DetailPage {
+	return &DetailPage{Uid: uid, Title: title, Intro: intro, View: view, DataRootMap: dataRootMap}
 }
 
-func (p *DetailPage) DataAsString() string {
-	if p.Data == nil {
-		return "nil"
+func (p *DetailPage) GetMapForUid() *map[string]interface{} {
+	nodes := strings.Split(p.Uid, ".")
+	m := *p.DataRootMap
+	n := m["groups"]
+	for _, v := range nodes {
+		n = n.(map[string]interface{})[v]
 	}
-	if reflect.ValueOf(*p.Data).Kind() == reflect.String {
-		return fmt.Sprintf("%v", *p.Data)
-	}
-	var sb strings.Builder
-	for k, v := range *p.Data {
-		sb.WriteString(fmt.Sprintf("key %s = %s\n", k, v))
-	}
-	return sb.String()
+	o := n.(map[string]interface{})
+	return &o
 }
 
 func GetWelcomePage() DetailPage {
-	return DetailPage{welcomeTitle, welcomeIntro, welcomeScreen, nil}
+	return DetailPage{"id", welcomeTitle, welcomeIntro, welcomeScreen, nil}
 }
 
-func GetDetailPage(id string, dataMap *map[string]interface{}) DetailPage {
+func GetDetailPage(id string, dataRootMap *map[string]interface{}) DetailPage {
 	nodes := strings.Split(id, ".")
 	switch len(nodes) {
 	case 1:
-		return DetailPage{id, "User details", welcomeScreen, dataMap}
+		return DetailPage{id, id, "User details", welcomeScreen, dataRootMap}
 	case 2:
 		if nodes[1] == idPwDetails {
-			return DetailPage{"PW Hints", "Password Hints overview.", welcomeScreen, dataMap}
+			return DetailPage{id, "PW Hints", "Password Hints overview.", welcomeScreen, dataRootMap}
 		}
 		if nodes[1] == idNotes {
-			return DetailPage{"Notes", "Notes overview.", notesScreen, dataMap}
+			return DetailPage{id, "Notes", "Notes overview.", notesScreen, dataRootMap}
 		}
-		return DetailPage{"Unknown", "Not PW Hints or Notes page.", welcomeScreen, dataMap}
+		return DetailPage{id, "Unknown", "Not PW Hints or Notes page.", welcomeScreen, dataRootMap}
 	case 3:
 		if nodes[1] == idPwDetails {
-			return DetailPage{nodes[2], "Hints page.", hintsScreen, dataMap}
+			return DetailPage{id, nodes[2], "Hints page.", hintsScreen, dataRootMap}
 		}
 		if nodes[1] == idNotes {
-			return DetailPage{nodes[2], "Notes page.", notesScreen, dataMap}
+			return DetailPage{id, nodes[2], "Notes page.", notesScreen, dataRootMap}
 		}
-		return DetailPage{"Unknown", "Not PW Hints or Notes page.", welcomeScreen, dataMap}
+		return DetailPage{id, "Unknown", "Not PW Hints or Notes page.", welcomeScreen, dataRootMap}
 	}
-	return DetailPage{id, "Root page.", welcomeScreen, dataMap}
+	return DetailPage{id, id, "Root page.", welcomeScreen, dataRootMap}
 }
 
-func welcomeScreen(_ fyne.Window, dataMap *map[string]interface{}) fyne.CanvasObject {
+func welcomeScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 	logo := canvas.NewImageFromFile("background.png")
 	logo.FillMode = canvas.ImageFillContain
 	logo.SetMinSize(fyne.NewSize(228, 167))
@@ -92,23 +88,23 @@ func welcomeScreen(_ fyne.Window, dataMap *map[string]interface{}) fyne.CanvasOb
 	))
 }
 
-func notesScreen(_ fyne.Window, dataMap *map[string]interface{}) fyne.CanvasObject {
+func notesScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 	return container.NewCenter(container.NewVBox(
 		// widget.NewLabelWithStyle("Display NOTES", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		container.NewCenter(
 			container.NewHBox(
-				widget.NewLabel("NOTES"),
+				widget.NewLabel(fmt.Sprintf("%s", details.GetMapForUid())),
 			),
 		),
 	))
 }
 
-func hintsScreen(_ fyne.Window, dataMap *map[string]interface{}) fyne.CanvasObject {
+func hintsScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 	return container.NewCenter(container.NewVBox(
 		// widget.NewLabelWithStyle("Display Password Hints", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		container.NewCenter(
 			container.NewHBox(
-				widget.NewLabel("HINTS"),
+				widget.NewLabel(fmt.Sprintf("%s", details.GetMapForUid())),
 			),
 		),
 	))

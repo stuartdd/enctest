@@ -81,7 +81,7 @@ func main() {
 	w.SetMaster()
 	welcomePage := lib.GetWelcomePage()
 	content := container.NewMax()
-	content.Objects = []fyne.CanvasObject{welcomePage.View(w, welcomePage.Data)}
+	content.Objects = []fyne.CanvasObject{welcomePage.View(w, welcomePage)}
 	title := widget.NewLabel(welcomePage.Title)
 	intro := widget.NewLabel(welcomePage.Intro)
 	intro.Wrapping = fyne.TextWrapWord
@@ -91,7 +91,7 @@ func main() {
 		title.SetText(t.Title)
 		intro.SetText(t.Intro)
 
-		content.Objects = []fyne.CanvasObject{t.View(w, t.Data)}
+		content.Objects = []fyne.CanvasObject{t.View(w, t)}
 		content.Refresh()
 	}
 
@@ -122,13 +122,11 @@ func makeNav(setPage func(detailPage lib.DetailPage)) fyne.CanvasObject {
 			return widget.NewLabel("?")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			m := dataRoot.GetMapForPath(uid)
-			t := lib.GetDetailPage(uid, m)
+			t := lib.GetDetailPage(uid, dataRoot.GetDataRootMap())
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
-			m := dataRoot.GetMapForPath(uid)
-			t := lib.GetDetailPage(uid, m)
+			t := lib.GetDetailPage(uid, dataRoot.GetDataRootMap())
 			setPage(t)
 		},
 	}

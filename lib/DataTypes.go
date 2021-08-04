@@ -45,14 +45,8 @@ func NewDataRoot(j []byte) (*DataRoot, error) {
 	return dr, nil
 }
 
-func (r *DataRoot) GetMapForPath(path string) *map[string]interface{} {
-	nodes := strings.Split(path, ".")
-	m := r.dataMap["groups"]
-	for _, v := range nodes {
-		m = m.(map[string]interface{})[v]
-	}
-	n := m.(map[string]interface{})
-	return &n
+func (r *DataRoot) GetDataRootMap() *map[string]interface{} {
+	return &r.dataMap
 }
 
 func (r *DataRoot) GetTimeStamp() time.Time {
@@ -111,7 +105,7 @@ func createNavIndexDetail(id string, uids map[string][]string, m map[string]inte
 								if reflect.ValueOf(v3).Kind() != reflect.String {
 									_, ll3 := keysToList(ll2[ii3], m3.(map[string]interface{}))
 									uids[ll2[ii3]] = ll3
-								} 
+								}
 								// else {
 								// 	_, ll4 := keysToList(ll2[ii3], m3.(map[string]interface{}))
 								// 	uids[ll2[ii3]] = ll4
