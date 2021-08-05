@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"time"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
@@ -18,6 +19,24 @@ import (
 
 var fileData *lib.FileData
 var dataRoot *lib.DataRoot
+var window fyne.Window
+
+func shouldClose() {
+	count := 0
+	for _, v := range lib.EditEntryList {
+		if v.IsChanged() {
+			fmt.Println(v)
+			count++
+		}
+	}
+	if count > 0 {
+		fmt.Println("Nope!")
+	} else {
+		fmt.Println("That's all folks")
+		window.Close()
+		os.Exit(0)
+	}
+}
 
 func main() {
 	if len(os.Args) == 1 {
@@ -42,7 +61,17 @@ func main() {
 	}
 	dataRoot = dr
 
-	w := a.NewWindow(fmt.Sprintf("Data File: %s", fileData.GetFileName()))
+	window = a.NewWindow(fmt.Sprintf("Data File: %s", fileData.GetFileName()))
+	window.SetCloseIntercept(shouldClose)
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		for _, item := range window.MainMenu().Items[0].Items {
+			if item.Label == "Quit" {
+				item.Action = shouldClose
+			}
+		}
+	}()
 
 	newItem := fyne.NewMenuItem("New", nil)
 	otherItem := fyne.NewMenuItem("Other", nil)
@@ -77,33 +106,29 @@ func main() {
 		fyne.NewMenu("File", newItem, fyne.NewMenuItemSeparator()),
 		helpMenu,
 	)
-	w.SetMainMenu(mainMenu)
-	w.SetMaster()
+
+	window.SetMainMenu(mainMenu)
+	window.SetMaster()
+
 	welcomePage := lib.GetWelcomePage()
 	content := container.NewMax()
-	content.Objects = []fyne.CanvasObject{welcomePage.View(w, welcomePage)}
+	content.Objects = []fyne.CanvasObject{welcomePage.View(window, welcomePage)}
 	title := widget.NewLabel(welcomePage.Title)
-	intro := widget.NewLabel(welcomePage.Intro)
-	intro.Wrapping = fyne.TextWrapWord
-
 	setPage := func(t lib.DetailPage) {
-
 		title.SetText(t.Title)
-		intro.SetText(t.Intro)
-
-		content.Objects = []fyne.CanvasObject{t.View(w, t)}
+		content.Objects = []fyne.CanvasObject{t.View(window, t)}
 		content.Refresh()
 	}
-
 	rhsPage := container.NewBorder(
-		container.NewVBox(title, widget.NewSeparator(), intro), nil, nil, nil, content)
+		container.NewVBox(title, widget.NewSeparator(), widget.NewSeparator()), nil, nil, nil, content)
 
 	split := container.NewHSplit(makeNav(setPage), rhsPage)
 	split.Offset = 0.2
-	w.SetContent(split)
+	window.SetContent(split)
 
-	w.Resize(fyne.NewSize(640, 460))
-	w.ShowAndRun()
+	window.Resize(fyne.NewSize(640, 460))
+
+	window.ShowAndRun()
 }
 
 func makeNav(setPage func(detailPage lib.DetailPage)) fyne.CanvasObject {
