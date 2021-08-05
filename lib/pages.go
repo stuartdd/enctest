@@ -70,9 +70,9 @@ func (p *EditEntry) IsChanged() bool {
 
 func (p *EditEntry) String() string {
 	if p.IsChanged() {
-		return fmt.Sprintf("Path:%s Is updated from '%s' to '%s'", p.Path, p.Old, p.New)
+		return fmt.Sprintf("Item:'%s' Is updated from '%s' to '%s'", p.Path, p.Old, p.New)
 	} else {
-		return fmt.Sprintf("Path:%s Is unchanged", p.Path)
+		return fmt.Sprintf("Item:'%s' Is unchanged", p.Path)
 	}
 }
 
