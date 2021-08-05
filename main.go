@@ -9,6 +9,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"stuartdd.com/gui"
 	"stuartdd.com/lib"
 
 	"fyne.io/fyne/v2/container"
@@ -23,7 +24,7 @@ var window fyne.Window
 
 func shouldClose() {
 	count := 0
-	for _, v := range lib.EditEntryList {
+	for _, v := range gui.EditEntryList {
 		if v.IsChanged() {
 			fmt.Println(v)
 			count++
@@ -110,11 +111,11 @@ func main() {
 	window.SetMainMenu(mainMenu)
 	window.SetMaster()
 
-	welcomePage := lib.GetWelcomePage()
+	welcomePage := gui.GetWelcomePage()
 	content := container.NewMax()
 	content.Objects = []fyne.CanvasObject{welcomePage.View(window, welcomePage)}
 	title := widget.NewLabel(welcomePage.Title)
-	setPage := func(t lib.DetailPage) {
+	setPage := func(t gui.DetailPage) {
 		title.SetText(t.Title)
 		content.Objects = []fyne.CanvasObject{t.View(window, t)}
 		content.Refresh()
@@ -131,7 +132,7 @@ func main() {
 	window.ShowAndRun()
 }
 
-func makeNav(setPage func(detailPage lib.DetailPage)) fyne.CanvasObject {
+func makeNav(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	a := fyne.CurrentApp()
 
 	tree := &widget.Tree{
@@ -147,11 +148,11 @@ func makeNav(setPage func(detailPage lib.DetailPage)) fyne.CanvasObject {
 			return widget.NewLabel("?")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			t := lib.GetDetailPage(uid, dataRoot.GetDataRootMap())
+			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap())
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
-			t := lib.GetDetailPage(uid, dataRoot.GetDataRootMap())
+			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap())
 			setPage(t)
 		},
 	}

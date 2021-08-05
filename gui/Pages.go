@@ -1,4 +1,4 @@
-package lib
+package gui
 
 import (
 	"fmt"

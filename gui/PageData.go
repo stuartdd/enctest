@@ -1,4 +1,4 @@
-package lib
+package gui
 
 import (
 	"fmt"
@@ -21,6 +21,12 @@ type EditEntry struct {
 	UnDo         *widget.Button
 	OnChangeFunc func(input string, path string)
 	UnDoFunc     func(path string)
+}
+
+type DetailPage struct {
+	Uid, Title, Intro string
+	View              func(w fyne.Window, details DetailPage) fyne.CanvasObject
+	DataRootMap       *map[string]interface{}
 }
 
 func NewDetailEdit(path string, title string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string)) *EditEntry {
@@ -63,12 +69,6 @@ func (p *EditEntry) String() string {
 	} else {
 		return fmt.Sprintf("Item:'%s' Is unchanged", p.Path)
 	}
-}
-
-type DetailPage struct {
-	Uid, Title, Intro string
-	View              func(w fyne.Window, details DetailPage) fyne.CanvasObject
-	DataRootMap       *map[string]interface{}
 }
 
 func NewDetailPage(uid string, title, intro string, view func(w fyne.Window, details DetailPage) fyne.CanvasObject, dataRootMap *map[string]interface{}) *DetailPage {

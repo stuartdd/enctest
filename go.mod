@@ -4,6 +4,8 @@ go 1.16
 
 replace stuartdd.com/lib => ./lib
 
+replace stuartdd.com/gui => ./gui
+
 require (
 	fyne.io/fyne/v2 v2.0.3
 	github.com/go-gl/gl v0.0.0-20210501111010-69f74958bac0 // indirect
@@ -16,4 +18,5 @@ require (
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	stuartdd.com/lib v0.0.0-00010101000000-000000000000
+	stuartdd.com/gui v0.0.0-00010101000000-000000000000
 )
