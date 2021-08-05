@@ -74,27 +74,15 @@ func notesScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 		idd := details.Uid + "." + k
 		e, ok := EditEntryList[idd]
 		if !ok {
-			e = NewDetailEdit(idd, k, fmt.Sprintf("%s", v), noteChangedFunction, unDoFunction)
+			e = NewDetailEdit(idd, k, fmt.Sprintf("%s", v), noteChangedFunction, unDoFunction, goToLinkFunction)
 			EditEntryList[idd] = e
 		}
-		cObj = append(cObj, container.NewHBox(widget.NewLabel(" "), e.UnDo, e.Lab))
+		e.ParseForLink()
+		cObj = append(cObj, container.NewHBox(e.Link, e.UnDo, e.Lab))
 		cObj = append(cObj, widget.NewSeparator())
 		cObj = append(cObj, e.Wid)
 	}
 	return container.NewVBox(cObj...)
-}
-
-func noteChangedFunction(s string, path string) {
-	ee := EditEntryList[path]
-	if ee != nil {
-		ee.SetNew(s)
-	}
-}
-func unDoFunction(path string) {
-	ee := EditEntryList[path]
-	if ee != nil {
-		ee.RevertEdit()
-	}
 }
 
 func hintsScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
@@ -106,6 +94,30 @@ func hintsScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 			),
 		),
 	))
+}
+
+func noteChangedFunction(s string, path string) {
+	ee := EditEntryList[path]
+	if ee != nil {
+		ee.SetNew(s)
+	}
+}
+
+func unDoFunction(path string) {
+	ee := EditEntryList[path]
+	if ee != nil {
+		ee.RevertEdit()
+	}
+}
+
+func goToLinkFunction(path string) {
+	ee := EditEntryList[path]
+	if ee != nil {
+		link, ok := ee.ParseForLink()
+		if ok {
+			fmt.Printf("This is the link [%s]", link)
+		}
+	}
 }
 
 func parseURL(urlStr string) *url.URL {
