@@ -85,6 +85,10 @@ func (r *FileData) SetContent(data []byte) {
 	r.content = data
 }
 
+func (r *FileData) SetContentString(content string) {
+	r.SetContent([]byte(content))
+}
+
 func (r *FileData) loadEnc() error {
 	if r.HasEncData() {
 		err := r.load()
@@ -98,8 +102,7 @@ func (r *FileData) loadEnc() error {
 }
 
 func (r *FileData) storeData(data []byte) error {
-	err := ioutil.WriteFile(r.fileName, data, 0644)
-	return err
+	return ioutil.WriteFile(r.fileName, data, 0644)
 }
 
 func (r *FileData) load() error {

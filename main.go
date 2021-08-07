@@ -9,35 +9,21 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"stuartdd.com/gui"
-	"stuartdd.com/lib"
-
+	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"stuartdd.com/gui"
+	"stuartdd.com/lib"
 )
 
 var fileData *lib.FileData
 var dataRoot *lib.DataRoot
 var window fyne.Window
-
-func shouldClose() {
-	count := 0
-	for _, v := range gui.EditEntryList {
-		if v.IsChanged() {
-			fmt.Println(v)
-			count++
-		}
-	}
-	if count > 0 {
-		fmt.Println("Nope!")
-	} else {
-		fmt.Println("That's all folks")
-		window.Close()
-		os.Exit(0)
-	}
-}
+var currentUser string = ""
+var shouldCloseLock bool = false
 
 func main() {
 	if len(os.Args) == 1 {
@@ -46,6 +32,7 @@ func main() {
 	}
 
 	a := app.NewWithID("io.fyne.demo")
+	a.Storage().RootURI()
 	a.SetIcon(theme.FyneLogo())
 
 	fd, err := lib.NewFileData(os.Args[1])
@@ -74,17 +61,19 @@ func main() {
 		}
 	}()
 
-	newItem := fyne.NewMenuItem("New", nil)
-	otherItem := fyne.NewMenuItem("Other", nil)
-	otherItem.ChildMenu = fyne.NewMenu("",
-		fyne.NewMenuItem("Project", func() { fmt.Println("Menu New->Other->Project") }),
-		fyne.NewMenuItem("Mail", func() { fmt.Println("Menu New->Other->Mail") }),
-	)
+	saveItem := fyne.NewMenuItem("Save", func() { commitAndSaveData() })
 
-	newItem.ChildMenu = fyne.NewMenu("",
-		fyne.NewMenuItem("File", func() { fmt.Println("Menu New->File") }),
-		fyne.NewMenuItem("Directory", func() { fmt.Println("Menu New->Directory") }),
-		otherItem,
+	settingsItem := fyne.NewMenuItem("Settings", func() {
+		w := a.NewWindow("Fyne Settings")
+		w.SetContent(settings.NewSettings().LoadAppearanceScreen(w))
+		w.Resize(fyne.NewSize(480, 480))
+		w.Show()
+	})
+
+	newItem := fyne.NewMenu("New",
+		fyne.NewMenuItem("User", func() { fmt.Println("Menu New->User") }),
+		fyne.NewMenuItem("PW Hint", func() { fmt.Println("Menu New->PW Hint") }),
+		fyne.NewMenuItem("Note", func() { fmt.Println("Menu New->Note") }),
 	)
 
 	helpMenu := fyne.NewMenu("Help",
@@ -104,10 +93,10 @@ func main() {
 
 	mainMenu := fyne.NewMainMenu(
 		// a quit item will be appended to our first menu
-		fyne.NewMenu("File", newItem, fyne.NewMenuItemSeparator()),
+		fyne.NewMenu("File", saveItem, settingsItem, fyne.NewMenuItemSeparator()),
+		newItem,
 		helpMenu,
 	)
-
 	window.SetMainMenu(mainMenu)
 	window.SetMaster()
 
@@ -116,7 +105,14 @@ func main() {
 	content.Objects = []fyne.CanvasObject{welcomePage.View(window, welcomePage)}
 	title := widget.NewLabel(welcomePage.Title)
 	setPage := func(t gui.DetailPage) {
-		title.SetText(t.Title)
+		if t.User == "" {
+			currentUser = t.Title
+			title.SetText(t.Title)
+		} else {
+			currentUser = t.User
+			title.SetText(fmt.Sprintf("%s: %s", t.User, t.Title))
+		}
+		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentUser))
 		content.Objects = []fyne.CanvasObject{t.View(window, t)}
 		content.Refresh()
 	}
@@ -157,7 +153,7 @@ func makeNav(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 		},
 	}
 
-	themes := fyne.NewContainerWithLayout(layout.NewGridLayout(2),
+	themes := container.New(layout.NewGridLayout(2),
 		widget.NewButton("Dark", func() {
 			a.Settings().SetTheme(theme.DarkTheme())
 		}),
@@ -167,4 +163,59 @@ func makeNav(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	)
 
 	return container.NewBorder(nil, themes, nil, nil, tree)
+}
+
+func commitAndSaveData() {
+	count := 0
+	for _, v := range gui.EditEntryList {
+		if v.IsChanged() {
+			if v.CommitEdit(dataRoot.GetDataRootMap()) {
+				count++
+			}
+		}
+	}
+	if count == 0 {
+		dialog.NewInformation("File Save", "There were no items to save!\n\nPress OK to continue", window).Show()
+	} else {
+		c, err := dataRoot.ToJson()
+		if err != nil {
+			dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
+			return
+		}
+		fileData.SetContentString(c)
+		err = fileData.StoreContent()
+		if err != nil {
+			dialog.NewInformation("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
+		} else {
+			dialog.NewInformation("File Saved OK:", fmt.Sprintf("%d item(s) were saved", count), window).Show()
+		}
+	}
+}
+
+func shouldClose() {
+	if !shouldCloseLock {
+		shouldCloseLock = true
+		count := 0
+		for _, v := range gui.EditEntryList {
+			if v.IsChanged() {
+				count++
+			}
+		}
+		if count > 0 {
+			fmt.Println("Nope!")
+			d := dialog.NewConfirm("Save Changes", "There are unsaved changes\nDo you want to save them before closing?", saveChangesConfirm, window)
+			d.Show()
+		} else {
+			fmt.Println("That's all folks")
+			window.Close()
+		}
+	}
+}
+
+func saveChangesConfirm(option bool) {
+	shouldCloseLock = false
+	if !option {
+		fmt.Println("Quit without saving changes")
+		window.Close()
+	}
 }

@@ -71,6 +71,20 @@ func (r *DataRoot) ToStruct() string {
 	return sb.String()
 }
 
+func GetMapForUid(uid string, m *map[string]interface{}) *map[string]interface{} {
+	nodes := strings.Split(uid, ".")
+	n := *m
+	x := n["groups"]
+	for _, v := range nodes {
+		y := x.(map[string]interface{})[v]
+		if reflect.ValueOf(y).Kind() != reflect.String {
+			x = y
+		}
+	}
+	o := x.(map[string]interface{})
+	return &o
+}
+
 func appendMapStruct(sb *strings.Builder, m map[string]interface{}, ind int) {
 	for k, v := range m {
 		if reflect.ValueOf(v).Kind() != reflect.String {

@@ -7,9 +7,10 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"stuartdd.com/lib"
 )
 
-var EditEntryList = make(map[string]*EditEntry, 0)
+var EditEntryList = make(map[string]*EditEntry)
 
 type EditEntry struct {
 	Path         string
@@ -26,9 +27,9 @@ type EditEntry struct {
 }
 
 type DetailPage struct {
-	Uid, Title, Intro string
-	View              func(w fyne.Window, details DetailPage) fyne.CanvasObject
-	DataRootMap       *map[string]interface{}
+	Uid, Title, User string
+	View             func(w fyne.Window, details DetailPage) fyne.CanvasObject
+	DataRootMap      *map[string]interface{}
 }
 
 func NewDetailEdit(path string, title string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), linkFunc func(path string)) *EditEntry {
@@ -65,6 +66,18 @@ func (p *EditEntry) SetNew(s string) {
 	}
 }
 
+func (p *EditEntry) CommitEdit(data *map[string]interface{}) bool {
+	m := lib.GetMapForUid(p.Path, data)
+	if m != nil {
+		n := *m
+		n[p.Title] = p.New
+		p.Old = p.New
+		p.SetNew(p.New)
+		return true
+	}
+	return false
+}
+
 func (p *EditEntry) RevertEdit() {
 	p.SetNew(p.Old)
 	p.Wid.SetText(p.Old)
@@ -99,19 +112,12 @@ func (p *EditEntry) ParseForLink() (string, bool) {
 	}
 }
 
-func NewDetailPage(uid string, title, intro string, view func(w fyne.Window, details DetailPage) fyne.CanvasObject, dataRootMap *map[string]interface{}) *DetailPage {
-	return &DetailPage{Uid: uid, Title: title, Intro: intro, View: view, DataRootMap: dataRootMap}
+func NewDetailPage(uid string, title string, user string, view func(w fyne.Window, details DetailPage) fyne.CanvasObject, dataRootMap *map[string]interface{}) *DetailPage {
+	return &DetailPage{Uid: uid, Title: title, User: user, View: view, DataRootMap: dataRootMap}
 }
 
 func (p *DetailPage) GetMapForUid() *map[string]interface{} {
-	nodes := strings.Split(p.Uid, ".")
-	m := *p.DataRootMap
-	n := m["groups"]
-	for _, v := range nodes {
-		n = n.(map[string]interface{})[v]
-	}
-	o := n.(map[string]interface{})
-	return &o
+	return lib.GetMapForUid(p.Uid, p.DataRootMap)
 }
 
 func parseForLink(s string) (string, bool) {

@@ -20,32 +20,32 @@ var (
 )
 
 func GetWelcomePage() DetailPage {
-	return DetailPage{"id", welcomeTitle, welcomeIntro, welcomeScreen, nil}
+	return DetailPage{"id", "", welcomeTitle, welcomeScreen, nil}
 }
 
 func GetDetailPage(id string, dataRootMap *map[string]interface{}) DetailPage {
 	nodes := strings.Split(id, ".")
 	switch len(nodes) {
 	case 1:
-		return DetailPage{id, id, "User details", welcomeScreen, dataRootMap}
+		return DetailPage{id, id, "", welcomeScreen, dataRootMap}
 	case 2:
 		if nodes[1] == idPwDetails {
-			return DetailPage{id, "PW Hints", "Password Hints overview.", welcomeScreen, dataRootMap}
+			return DetailPage{id, "PW Hints", nodes[0], welcomeScreen, dataRootMap}
 		}
 		if nodes[1] == idNotes {
-			return DetailPage{id, "Notes", "Notes overview.", notesScreen, dataRootMap}
+			return DetailPage{id, "Notes", nodes[0], notesScreen, dataRootMap}
 		}
-		return DetailPage{id, "Unknown", "Not PW Hints or Notes page.", welcomeScreen, dataRootMap}
+		return DetailPage{id, "Unknown", nodes[0], welcomeScreen, dataRootMap}
 	case 3:
 		if nodes[1] == idPwDetails {
-			return DetailPage{id, nodes[2], "Hints page.", hintsScreen, dataRootMap}
+			return DetailPage{id, nodes[2], nodes[0], hintsScreen, dataRootMap}
 		}
 		if nodes[1] == idNotes {
-			return DetailPage{id, nodes[2], "Notes page.", notesScreen, dataRootMap}
+			return DetailPage{id, nodes[2], nodes[0], notesScreen, dataRootMap}
 		}
-		return DetailPage{id, "Unknown", "Not PW Hints or Notes page.", welcomeScreen, dataRootMap}
+		return DetailPage{id, "Unknown", "", welcomeScreen, dataRootMap}
 	}
-	return DetailPage{id, id, "Root page.", welcomeScreen, dataRootMap}
+	return DetailPage{id, id, "", welcomeScreen, dataRootMap}
 }
 
 func welcomeScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {

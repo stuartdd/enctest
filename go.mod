@@ -17,6 +17,6 @@ require (
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	stuartdd.com/lib v0.0.0-00010101000000-000000000000
 	stuartdd.com/gui v0.0.0-00010101000000-000000000000
+	stuartdd.com/lib v0.0.0-00010101000000-000000000000
 )

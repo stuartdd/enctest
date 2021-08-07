@@ -1,46 +1,46 @@
 {
-	"timeStamp": "Fri Jul 30 21:25:10 BST 2021",
-	"groups": {
-		"UserA": {
-			"pwHints": {
-				"GMailA": {
-					"userId": "fakeuser@gmail.com",
-					"pre": "abc",
-					"post": "123",
-					"notes": "a note to User A"
-				},
-				"PrincipalityA": {
-					"userId": "Puser",
-					"pre": "efg",
-					"post": "456",
-					"notes": "https://www.principality.co.uk/en/your-account"
-				}
-			},
-			"notes": {
-				"note": "An amazing A note"
-			}
-		},
-		"UserB": {
-			"pwHints": {
-				"GMail B": {
-					"userId": "another@gmail.com",
-					"pre": "abc",
-					"post": "123",
-					"notes": "a note to User B",
-					"positional": "1234567890"
-				},
-				"Principality B": {
-					"userId": "Buser",
-					"pre": "efg",
-					"post": "456",
-					"link": "https://www.principality.co.uk/en/your-account",
-					"notes": "Principality note"
-				}
-			},
-			"notes": {
-				"link": "https://www.principality.co.uk/en/your-account",
-				"note for B": "An amazing B note"
-			}
-		}
-	}
+    "groups": {
+        "UserA": {
+            "notes": {
+                "note": "An amazing A note (dont panic)"
+            },
+            "pwHints": {
+                "GMailA": {
+                    "notes": "a note to User A",
+                    "post": "123",
+                    "pre": "abc",
+                    "userId": "fakeuser@gmail.com"
+                },
+                "PrincipalityA": {
+                    "notes": "https://www.principality.co.uk/en/your-account",
+                    "post": "456",
+                    "pre": "efg",
+                    "userId": "Puser"
+                }
+            }
+        },
+        "UserB": {
+            "notes": {
+                "link": "https://www.principality.co.uk/en/your-account",
+                "note for B": "An amazing B note 123"
+            },
+            "pwHints": {
+                "GMail B": {
+                    "notes": "a note to User B",
+                    "positional": "1234567890",
+                    "post": "123",
+                    "pre": "abc",
+                    "userId": "another@gmail.com"
+                },
+                "Principality B": {
+                    "link": "https://www.principality.co.uk/en/your-account",
+                    "notes": "Principality note",
+                    "post": "456",
+                    "pre": "efg",
+                    "userId": "Buser"
+                }
+            }
+        }
+    },
+    "timeStamp": "Fri Jul 30 21:25:10 BST 2021"
 }
