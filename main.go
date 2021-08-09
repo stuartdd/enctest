@@ -19,11 +19,18 @@ import (
 	"stuartdd.com/lib"
 )
 
-var fileData *lib.FileData
-var dataRoot *lib.DataRoot
-var window fyne.Window
-var currentUser string = ""
-var shouldCloseLock bool = false
+var (
+	splitPrefName   string = "split"
+	themePrefName   string = "theme"
+	widthPrefName   string = "width"
+	heightPrefName  string = "height"
+	window          fyne.Window
+	fileData        *lib.FileData
+	dataRoot        *lib.DataRoot
+	split           *container.Split
+	currentUser     string = ""
+	shouldCloseLock bool   = false
+)
 
 func main() {
 	if len(os.Args) == 1 {
@@ -31,8 +38,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	a := app.NewWithID("io.fyne.demo")
-	a.Storage().RootURI()
+	a := app.NewWithID("stuartdd.enctest")
+	setThemeById(a.Preferences().StringWithFallback(themePrefName, "dark"))
 	a.SetIcon(theme.FyneLogo())
 
 	fd, err := lib.NewFileData(os.Args[1])
@@ -48,7 +55,6 @@ func main() {
 		os.Exit(1)
 	}
 	dataRoot = dr
-
 	window = a.NewWindow(fmt.Sprintf("Data File: %s", fileData.GetFileName()))
 	window.SetCloseIntercept(shouldClose)
 
@@ -119,17 +125,15 @@ func main() {
 	rhsPage := container.NewBorder(
 		container.NewVBox(title, widget.NewSeparator(), widget.NewSeparator()), nil, nil, nil, content)
 
-	split := container.NewHSplit(makeNav(setPage), rhsPage)
-	split.Offset = 0.2
+	split = container.NewHSplit(makeNav(setPage), rhsPage)
+	split.Offset = a.Preferences().FloatWithFallback(splitPrefName, 0.2)
+
 	window.SetContent(split)
-
-	window.Resize(fyne.NewSize(640, 460))
-
+	window.Resize(fyne.NewSize(float32(a.Preferences().FloatWithFallback(widthPrefName, 640)), float32(a.Preferences().FloatWithFallback(heightPrefName, 460))))
 	window.ShowAndRun()
 }
 
 func makeNav(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
-	a := fyne.CurrentApp()
 
 	tree := &widget.Tree{
 		ChildUIDs: func(uid string) []string {
@@ -155,10 +159,10 @@ func makeNav(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 
 	themes := container.New(layout.NewGridLayout(2),
 		widget.NewButton("Dark", func() {
-			a.Settings().SetTheme(theme.DarkTheme())
+			setThemeById("dark")
 		}),
 		widget.NewButton("Light", func() {
-			a.Settings().SetTheme(theme.LightTheme())
+			setThemeById("light")
 		}),
 	)
 
@@ -195,6 +199,7 @@ func commitAndSaveData() {
 func shouldClose() {
 	if !shouldCloseLock {
 		shouldCloseLock = true
+		savePreferences()
 		count := 0
 		for _, v := range gui.EditEntryList {
 			if v.IsChanged() {
@@ -210,6 +215,23 @@ func shouldClose() {
 			window.Close()
 		}
 	}
+}
+
+func savePreferences() {
+	p := fyne.CurrentApp().Preferences()
+	p.SetFloat(splitPrefName, split.Offset)
+	p.SetFloat(widthPrefName, float64(window.Canvas().Size().Width))
+	p.SetFloat(heightPrefName, float64(window.Canvas().Size().Height))
+}
+
+func setThemeById(id string) {
+	switch id {
+	case "dark":
+		fyne.CurrentApp().Settings().SetTheme(theme.DarkTheme())
+	case "light":
+		fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
+	}
+	fyne.CurrentApp().Preferences().SetString(themePrefName, id)
 }
 
 func saveChangesConfirm(option bool) {
