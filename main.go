@@ -20,16 +20,17 @@ import (
 )
 
 var (
-	splitPrefName   string = "split"
-	themePrefName   string = "theme"
-	widthPrefName   string = "width"
-	heightPrefName  string = "height"
+	salt            = []byte("012345678901234567890123456789XX")
+	splitPrefName   = "split"
+	themePrefName   = "theme"
+	widthPrefName   = "width"
+	heightPrefName  = "height"
 	window          fyne.Window
 	fileData        *lib.FileData
 	dataRoot        *lib.DataRoot
 	split           *container.Split
-	currentUser     string = ""
-	shouldCloseLock bool   = false
+	currentUser     = ""
+	shouldCloseLock = false
 )
 
 func main() {
@@ -67,7 +68,8 @@ func main() {
 		}
 	}()
 
-	saveItem := fyne.NewMenuItem("Save", func() { commitAndSaveData() })
+	saveItem := fyne.NewMenuItem("Save", func() { commitAndSaveData("") })
+	saveEncItem := fyne.NewMenuItem("Save Encrypted", func() { commitAndSaveDataWithPw() })
 
 	settingsItem := fyne.NewMenuItem("Settings", func() {
 		w := a.NewWindow("Fyne Settings")
@@ -99,7 +101,7 @@ func main() {
 
 	mainMenu := fyne.NewMainMenu(
 		// a quit item will be appended to our first menu
-		fyne.NewMenu("File", saveItem, settingsItem, fyne.NewMenuItemSeparator()),
+		fyne.NewMenu("File", saveItem, saveEncItem, settingsItem, fyne.NewMenuItemSeparator()),
 		newItem,
 		helpMenu,
 	)
@@ -172,7 +174,29 @@ func makeThemeButtons() fyne.CanvasObject {
 	)
 }
 
-func commitAndSaveData() {
+func readPassword() string {
+	var pw string
+	pass := widget.NewPasswordEntry()
+	dialog.ShowCustomConfirm("Enter a password", "Confirm", "Cancel", widget.NewForm(
+		widget.NewFormItem("Password", pass),
+	), func(ok bool) {
+		if ok {
+			pw = pass.Text
+			fmt.Printf("PW 1:%s\n", pw)
+		} else {
+			pw = ""
+		}
+	}, window)
+	fmt.Printf("PW 2:%s\n", pw)
+	return pw
+}
+
+func commitAndSaveDataWithPw() {
+	fmt.Printf("PW 3:%s\n", readPassword())
+	//	commitAndSaveData("password")
+}
+
+func commitAndSaveData(pw string) {
 	count := 0
 	for _, v := range gui.EditEntryList {
 		if v.IsChanged() {
@@ -190,7 +214,11 @@ func commitAndSaveData() {
 			return
 		}
 		fileData.SetContentString(c)
-		err = fileData.StoreContent()
+		if pw == "" {
+			err = fileData.StoreContent()
+		} else {
+			err = fileData.StoreContentEncrypted([]byte(pw), salt, 20)
+		}
 		if err != nil {
 			dialog.NewInformation("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
 		} else {
