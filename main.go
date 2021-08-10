@@ -122,20 +122,23 @@ func main() {
 		content.Objects = []fyne.CanvasObject{t.View(window, t)}
 		content.Refresh()
 	}
+
 	rhsPage := container.NewBorder(
 		container.NewVBox(title, widget.NewSeparator(), widget.NewSeparator()), nil, nil, nil, content)
 
-	split = container.NewHSplit(makeNav(setPage), rhsPage)
+	navTree := makeNavTree(setPage)
+
+	split = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(), nil, nil, navTree), rhsPage)
 	split.Offset = a.Preferences().FloatWithFallback(splitPrefName, 0.2)
 
+	navTree.Select(dataRoot.GetRootUid())
 	window.SetContent(split)
 	window.Resize(fyne.NewSize(float32(a.Preferences().FloatWithFallback(widthPrefName, 640)), float32(a.Preferences().FloatWithFallback(heightPrefName, 460))))
 	window.ShowAndRun()
 }
 
-func makeNav(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
-
-	tree := &widget.Tree{
+func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
+	return &widget.Tree{
 		ChildUIDs: func(uid string) []string {
 			id := dataRoot.GetNavIndex(uid)
 			return id
@@ -156,8 +159,10 @@ func makeNav(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 			setPage(t)
 		},
 	}
+}
 
-	themes := container.New(layout.NewGridLayout(2),
+func makeThemeButtons() fyne.CanvasObject {
+	return container.New(layout.NewGridLayout(2),
 		widget.NewButton("Dark", func() {
 			setThemeById("dark")
 		}),
@@ -165,8 +170,6 @@ func makeNav(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 			setThemeById("light")
 		}),
 	)
-
-	return container.NewBorder(nil, themes, nil, nil, tree)
 }
 
 func commitAndSaveData() {

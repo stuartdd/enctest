@@ -45,6 +45,20 @@ func NewDataRoot(j []byte) (*DataRoot, error) {
 	return dr, nil
 }
 
+func (p *DataRoot) GetRootUid() string {
+	l := make([]string, 0)
+	for k, _ := range p.navIndex {
+		if k != "" {
+			l = append(l, k)
+		}
+	}
+	if len(l) > 0 {
+		sort.Strings(l)
+		return l[0]
+	}
+	return ""
+}
+
 func (r *DataRoot) GetDataRootMap() *map[string]interface{} {
 	return &r.dataMap
 }
