@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -20,7 +21,7 @@ import (
 )
 
 var (
-	salt            = []byte("012345678901234567890123456789XX")
+	salt            = []byte("SQhMXVt8rQED2MxHTHxmuZLMxdJz5DQI")
 	splitPrefName   = "split"
 	themePrefName   = "theme"
 	widthPrefName   = "width"
@@ -30,6 +31,7 @@ var (
 	dataRoot        *lib.DataRoot
 	split           *container.Split
 	currentUser     = ""
+	fileNameArg     = ""
 	shouldCloseLock = false
 )
 
@@ -38,12 +40,13 @@ func main() {
 		fmt.Println("ERROR: File name not provided")
 		os.Exit(1)
 	}
+	fileNameArg = os.Args[1]
 
 	a := app.NewWithID("stuartdd.enctest")
 	setThemeById(a.Preferences().StringWithFallback(themePrefName, "dark"))
 	a.SetIcon(theme.FyneLogo())
 
-	fd, err := lib.NewFileData(os.Args[1])
+	fd, err := lib.NewFileData("")
 	if err != nil {
 		fmt.Printf("ERROR: Cannot load data. %s", err)
 		os.Exit(1)
@@ -56,7 +59,8 @@ func main() {
 		os.Exit(1)
 	}
 	dataRoot = dr
-	window = a.NewWindow(fmt.Sprintf("Data File: %s", fileData.GetFileName()))
+
+	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", fileNameArg))
 	window.SetCloseIntercept(shouldClose)
 
 	go func() {
@@ -68,8 +72,8 @@ func main() {
 		}
 	}()
 
-	saveItem := fyne.NewMenuItem("Save", func() { commitAndSaveData("") })
-	saveEncItem := fyne.NewMenuItem("Save Encrypted", func() { commitAndSaveDataWithPw() })
+	saveItem := fyne.NewMenuItem("Save", func() { commitAndSaveData(false) })
+	saveEncItem := fyne.NewMenuItem("Save Encrypted", func() { commitAndSaveData(true) })
 
 	settingsItem := fyne.NewMenuItem("Settings", func() {
 		w := a.NewWindow("Fyne Settings")
@@ -133,10 +137,58 @@ func main() {
 	split = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(), nil, nil, navTree), rhsPage)
 	split.Offset = a.Preferences().FloatWithFallback(splitPrefName, 0.2)
 
-	navTree.Select(dataRoot.GetRootUid())
+	go func() {
+		time.Sleep(1 * time.Second)
+		loadData(fileNameArg, func() {
+			dr, err := lib.NewDataRoot(fileData.GetContent())
+			if err != nil {
+				fmt.Printf("ERROR: Cannot process data. %s", err)
+				os.Exit(1)
+			}
+			dataRoot = dr
+			navTree = makeNavTree(setPage)
+			split = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(), nil, nil, navTree), rhsPage)
+			window.SetContent(split)
+			navTree.Select(dataRoot.GetRootUid())
+		}, func(s string, e error) {
+			fmt.Printf("ERROR: %s. %s", s, e.Error())
+			os.Exit(1)
+		})
+	}()
+
 	window.SetContent(split)
+	navTree.Select(dataRoot.GetRootUid())
 	window.Resize(fyne.NewSize(float32(a.Preferences().FloatWithFallback(widthPrefName, 640)), float32(a.Preferences().FloatWithFallback(heightPrefName, 460))))
 	window.ShowAndRun()
+}
+
+func loadData(fileName string, success func(), fail func(string, error)) {
+	fd, err := lib.NewFileData(fileName)
+	if err != nil {
+		fail(fmt.Sprintf("Failed to load data file %s", fileName), err)
+	}
+	fileData = fd
+	if !fileData.IsRawJson() {
+		pass := widget.NewPasswordEntry()
+		dialog.ShowCustomConfirm("Enter the password to DECRYPT the file", "Confirm", "Cancel", widget.NewForm(
+			widget.NewFormItem("Password", pass),
+		), func(ok bool) {
+			if ok && pass.Text != "" {
+				fmt.Println("HERE")
+				err := fileData.DecryptContents([]byte(pass.Text), salt)
+				fmt.Println("THERE")
+				if err != nil {
+					fail(fmt.Sprintf("Failed to decrypt data file %s", fileName), err)
+				} else {
+					success()
+				}
+			} else {
+				fail(fmt.Sprintf("Failed to decrypt data file %s", fileName), errors.New("password was not provided"))
+			}
+		}, window)
+	} else {
+		success()
+	}
 }
 
 func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
@@ -174,55 +226,43 @@ func makeThemeButtons() fyne.CanvasObject {
 	)
 }
 
-func readPassword() string {
-	var pw string
-	pass := widget.NewPasswordEntry()
-	dialog.ShowCustomConfirm("Enter a password", "Confirm", "Cancel", widget.NewForm(
-		widget.NewFormItem("Password", pass),
-	), func(ok bool) {
-		if ok {
-			pw = pass.Text
-			fmt.Printf("PW 1:%s\n", pw)
-		} else {
-			pw = ""
-		}
-	}, window)
-	fmt.Printf("PW 2:%s\n", pw)
-	return pw
-}
-
-func commitAndSaveDataWithPw() {
-	fmt.Printf("PW 3:%s\n", readPassword())
-	//	commitAndSaveData("password")
-}
-
-func commitAndSaveData(pw string) {
-	count := 0
-	for _, v := range gui.EditEntryList {
-		if v.IsChanged() {
-			if v.CommitEdit(dataRoot.GetDataRootMap()) {
-				count++
-			}
-		}
-	}
+func commitAndSaveData(enc bool) {
+	count := countChangedItems()
 	if count == 0 {
 		dialog.NewInformation("File Save", "There were no items to save!\n\nPress OK to continue", window).Show()
 	} else {
-		c, err := dataRoot.ToJson()
-		if err != nil {
-			dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
-			return
-		}
-		fileData.SetContentString(c)
-		if pw == "" {
+		if enc {
+			pass := widget.NewPasswordEntry()
+			dialog.ShowCustomConfirm("Enter a password", "Confirm", "Cancel", widget.NewForm(
+				widget.NewFormItem("Password", pass),
+			), func(ok bool) {
+				if ok && pass.Text != "" {
+					_, err := commitChangedItems()
+					if err != nil {
+						dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
+						return
+					}
+					fmt.Printf("SAVE ENC %s %s\n", pass.Text, salt)
+					err = fileData.StoreContentEncrypted([]byte(pass.Text), salt)
+					if err != nil {
+						dialog.NewInformation("Save Encrypted File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
+					}
+				} else {
+					dialog.NewInformation("Save Encrypted File Error:", "Error Message:\n\n-- Password not provided --\n\nFile was not saved!\nPress OK to continue", window).Show()
+				}
+			}, window)
+		} else {
+			_, err := commitChangedItems()
+			if err != nil {
+				dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
+				return
+			}
 			err = fileData.StoreContent()
-		} else {
-			err = fileData.StoreContentEncrypted([]byte(pw), salt, 20)
-		}
-		if err != nil {
-			dialog.NewInformation("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
-		} else {
-			dialog.NewInformation("File Saved OK:", fmt.Sprintf("%d item(s) were saved", count), window).Show()
+			if err != nil {
+				dialog.NewInformation("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
+			} else {
+				dialog.NewInformation("File Saved OK:", fmt.Sprintf("%d item(s) were saved", count), window).Show()
+			}
 		}
 	}
 }
@@ -231,12 +271,7 @@ func shouldClose() {
 	if !shouldCloseLock {
 		shouldCloseLock = true
 		savePreferences()
-		count := 0
-		for _, v := range gui.EditEntryList {
-			if v.IsChanged() {
-				count++
-			}
-		}
+		count := countChangedItems()
 		if count > 0 {
 			fmt.Println("Nope!")
 			d := dialog.NewConfirm("Save Changes", "There are unsaved changes\nDo you want to save them before closing?", saveChangesConfirm, window)
@@ -246,6 +281,33 @@ func shouldClose() {
 			window.Close()
 		}
 	}
+}
+
+func countChangedItems() int {
+	count := 0
+	for _, v := range gui.EditEntryList {
+		if v.IsChanged() {
+			count++
+		}
+	}
+	return count
+}
+
+func commitChangedItems() (int, error) {
+	count := 0
+	for _, v := range gui.EditEntryList {
+		if v.IsChanged() {
+			if v.CommitEdit(dataRoot.GetDataRootMap()) {
+				count++
+			}
+		}
+	}
+	c, err := dataRoot.ToJson()
+	if err != nil {
+		return 0, err
+	}
+	fileData.SetContentString(c)
+	return count, nil
 }
 
 func savePreferences() {
