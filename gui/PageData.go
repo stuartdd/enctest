@@ -28,7 +28,7 @@ type EditEntry struct {
 
 type DetailPage struct {
 	Uid, Title, User string
-	View             func(w fyne.Window, details DetailPage) fyne.CanvasObject
+	ViewFunc         func(w fyne.Window, details DetailPage) fyne.CanvasObject
 	DataRootMap      *map[string]interface{}
 }
 
@@ -112,8 +112,8 @@ func (p *EditEntry) ParseForLink() (string, bool) {
 	}
 }
 
-func NewDetailPage(uid string, title string, user string, view func(w fyne.Window, details DetailPage) fyne.CanvasObject, dataRootMap *map[string]interface{}) *DetailPage {
-	return &DetailPage{Uid: uid, Title: title, User: user, View: view, DataRootMap: dataRootMap}
+func NewDetailPage(uid string, title string, user string, viewFunc func(w fyne.Window, details DetailPage) fyne.CanvasObject, dataRootMap *map[string]interface{}) *DetailPage {
+	return &DetailPage{Uid: uid, Title: title, User: user, ViewFunc: viewFunc, DataRootMap: dataRootMap}
 }
 
 func (p *DetailPage) GetMapForUid() *map[string]interface{} {

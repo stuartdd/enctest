@@ -3,7 +3,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"time"
@@ -38,7 +37,7 @@ var (
 	window             fyne.Window
 	fileData           *lib.FileData
 	dataRoot           *lib.DataRoot
-	splitContainer     *container.Split
+	splitContainer     *container.Split // So we can save the divider position to preferences.
 	currentUser        = ""
 	loadThreadFileName = ""
 	shouldCloseLock    = false
@@ -56,20 +55,6 @@ func main() {
 	a := app.NewWithID("stuartdd.enctest")
 	setThemeById(a.Preferences().StringWithFallback(themePrefName, "dark"))
 	a.SetIcon(theme.FyneLogo())
-
-	// fd, err := lib.NewFileData("")
-	// if err != nil {
-	// 	fmt.Printf("ERROR: Cannot load data. %s", err)
-	// 	os.Exit(1)
-	// }
-	// fileData = fd
-
-	// dr, err := lib.NewDataRoot(fileData.GetContent())
-	// if err != nil {
-	// 	fmt.Printf("ERROR: Cannot process data. %s", err)
-	// 	os.Exit(1)
-	// }
-	// dataRoot = dr
 
 	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", loadThreadFileName))
 	window.SetCloseIntercept(shouldClose)
@@ -123,12 +108,16 @@ func main() {
 
 	window.SetMaster()
 
-	defaultPageRHS := gui.GetWelcomePage()
+	title := widget.NewLabel("")
 	contentRHS := container.NewMax()
-	//	contentRHS.Objects = []fyne.CanvasObject{defaultPageRHS.View(window, defaultPageRHS)}
-	title := widget.NewLabel(defaultPageRHS.Title)
+	layoutRHS := container.NewBorder(
+		container.NewVBox(title, widget.NewSeparator(), widget.NewSeparator()), nil, nil, nil, contentRHS)
 
-	setPageRHS := func(detailPage gui.DetailPage) {
+	/*
+		function called when a selection is made in the LHS tree.
+		This updates the contentRHS which is the RHS page for editing data
+	*/
+	setPageRHSFunc := func(detailPage gui.DetailPage) {
 		if detailPage.User == "" {
 			currentUser = detailPage.Title
 			title.SetText(detailPage.Title)
@@ -137,12 +126,9 @@ func main() {
 			title.SetText(fmt.Sprintf("%s: %s", detailPage.User, detailPage.Title))
 		}
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentUser))
-		contentRHS.Objects = []fyne.CanvasObject{detailPage.View(window, detailPage)}
+		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage)}
 		contentRHS.Refresh()
 	}
-
-	pageRHS := container.NewBorder(
-		container.NewVBox(title, widget.NewSeparator(), widget.NewSeparator()), nil, nil, nil, contentRHS)
 
 	/*
 		Load thread keeps running in background
@@ -152,7 +138,6 @@ func main() {
 	*/
 	go func() {
 		for {
-			fmt.Println("loop")
 			time.Sleep(500 * time.Millisecond)
 			if loadThreadState == LOAD_THREAD_LOAD {
 				loadThreadState = LOAD_THREAD_LOADING
@@ -192,40 +177,17 @@ func main() {
 				}
 				fileData = fd
 				dataRoot = dr
-				navTreeLHS := makeNavTree(setPageRHS)
+				navTreeLHS := makeNavTree(setPageRHSFunc)
 				navTreeLHS.Select(dataRoot.GetRootUid())
-				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(), nil, nil, navTreeLHS), pageRHS)
+				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(), nil, nil, navTreeLHS), layoutRHS)
+				splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
 				window.SetContent(splitContainer)
 			}
 		}
 	}()
 
-	window.SetContent(contentRHS)
 	window.Resize(fyne.NewSize(float32(a.Preferences().FloatWithFallback(widthPrefName, 640)), float32(a.Preferences().FloatWithFallback(heightPrefName, 460))))
 	window.ShowAndRun()
-}
-
-func getPasswordAndDecrypt(fd *lib.FileData, success func(), fail func()) {
-	pass := widget.NewPasswordEntry()
-	dialog.ShowCustomConfirm("Enter the password to DECRYPT the file", "Confirm", "Exit Application", widget.NewForm(
-		widget.NewFormItem("Password", pass),
-	), func(ok bool) {
-		if ok {
-			if pass.Text == "" {
-				fail()
-			} else {
-				err := fd.DecryptContents([]byte(pass.Text))
-				if err != nil {
-					fail()
-				} else {
-					success()
-				}
-			}
-		} else {
-			fmt.Printf("Failed to decrypt data file %s. password was not provided", fd.GetFileName())
-			os.Exit(1)
-		}
-	}, window)
 }
 
 func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
@@ -262,14 +224,27 @@ func makeThemeButtons() fyne.CanvasObject {
 		}),
 	)
 }
-
-func KeyDown(k *fyne.KeyEvent) {
-	switch k.Name {
-	case fyne.KeyReturn:
-		log.Fatal("keyUP", fmt.Sprint("%h", k.Name))
-	}
-	// s.Field.KeyUp(k)
-	// widget.Refresh(s)
+func getPasswordAndDecrypt(fd *lib.FileData, success func(), fail func()) {
+	pass := widget.NewPasswordEntry()
+	dialog.ShowCustomConfirm("Enter the password to DECRYPT the file", "Confirm", "Exit Application", widget.NewForm(
+		widget.NewFormItem("Password", pass),
+	), func(ok bool) {
+		if ok {
+			if pass.Text == "" {
+				fail()
+			} else {
+				err := fd.DecryptContents([]byte(pass.Text))
+				if err != nil {
+					fail()
+				} else {
+					success()
+				}
+			}
+		} else {
+			fmt.Printf("Failed to decrypt data file %s. password was not provided", fd.GetFileName())
+			os.Exit(1)
+		}
+	}, window)
 }
 
 func commitAndSaveData(enc int, mustBeChanged bool) {
