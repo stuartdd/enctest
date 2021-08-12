@@ -2,8 +2,8 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"time"
@@ -20,19 +20,29 @@ import (
 	"stuartdd.com/lib"
 )
 
+const (
+	SAVE_AS_IS          = iota
+	SAVE_ENCRYPTED      = iota
+	SAVE_UN_ENCRYPTED   = iota
+	LOAD_THREAD_LOAD    = iota
+	LOAD_THREAD_LOADING = iota
+	LOAD_THREAD_INPW    = iota
+	LOAD_THREAD_DONE    = iota
+	splitPrefName       = "split"
+	themePrefName       = "theme"
+	widthPrefName       = "width"
+	heightPrefName      = "height"
+)
+
 var (
-	salt            = []byte("SQhMXVt8rQED2MxHTHxmuZLMxdJz5DQI")
-	splitPrefName   = "split"
-	themePrefName   = "theme"
-	widthPrefName   = "width"
-	heightPrefName  = "height"
-	window          fyne.Window
-	fileData        *lib.FileData
-	dataRoot        *lib.DataRoot
-	split           *container.Split
-	currentUser     = ""
-	fileNameArg     = ""
-	shouldCloseLock = false
+	window             fyne.Window
+	fileData           *lib.FileData
+	dataRoot           *lib.DataRoot
+	splitContainer     *container.Split
+	currentUser        = ""
+	loadThreadFileName = ""
+	shouldCloseLock    = false
+	loadThreadState    = 0
 )
 
 func main() {
@@ -40,29 +50,29 @@ func main() {
 		fmt.Println("ERROR: File name not provided")
 		os.Exit(1)
 	}
-	fileNameArg = os.Args[1]
+	loadThreadFileName = os.Args[1]
+	loadThreadState = LOAD_THREAD_LOAD
 
 	a := app.NewWithID("stuartdd.enctest")
 	setThemeById(a.Preferences().StringWithFallback(themePrefName, "dark"))
 	a.SetIcon(theme.FyneLogo())
 
-	fd, err := lib.NewFileData("")
-	if err != nil {
-		fmt.Printf("ERROR: Cannot load data. %s", err)
-		os.Exit(1)
-	}
-	fileData = fd
+	// fd, err := lib.NewFileData("")
+	// if err != nil {
+	// 	fmt.Printf("ERROR: Cannot load data. %s", err)
+	// 	os.Exit(1)
+	// }
+	// fileData = fd
 
-	dr, err := lib.NewDataRoot(fileData.GetContent())
-	if err != nil {
-		fmt.Printf("ERROR: Cannot process data. %s", err)
-		os.Exit(1)
-	}
-	dataRoot = dr
+	// dr, err := lib.NewDataRoot(fileData.GetContent())
+	// if err != nil {
+	// 	fmt.Printf("ERROR: Cannot process data. %s", err)
+	// 	os.Exit(1)
+	// }
+	// dataRoot = dr
 
-	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", fileNameArg))
+	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", loadThreadFileName))
 	window.SetCloseIntercept(shouldClose)
-
 	go func() {
 		time.Sleep(2 * time.Second)
 		for _, item := range window.MainMenu().Items[0].Items {
@@ -72,22 +82,23 @@ func main() {
 		}
 	}()
 
-	saveItem := fyne.NewMenuItem("Save", func() { commitAndSaveData(false) })
-	saveEncItem := fyne.NewMenuItem("Save Encrypted", func() { commitAndSaveData(true) })
-
+	/*
+		Create the menus
+	*/
+	saveItem := fyne.NewMenuItem("Save", func() { commitAndSaveData(SAVE_AS_IS, true) })
+	saveEncItem := fyne.NewMenuItem("Save Encrypted", func() { commitAndSaveData(SAVE_ENCRYPTED, false) })
+	saveUnEncItem := fyne.NewMenuItem("Save Un-Encrypted", func() { commitAndSaveData(SAVE_UN_ENCRYPTED, false) })
 	settingsItem := fyne.NewMenuItem("Settings", func() {
 		w := a.NewWindow("Fyne Settings")
 		w.SetContent(settings.NewSettings().LoadAppearanceScreen(w))
 		w.Resize(fyne.NewSize(480, 480))
 		w.Show()
 	})
-
 	newItem := fyne.NewMenu("New",
 		fyne.NewMenuItem("User", func() { fmt.Println("Menu New->User") }),
 		fyne.NewMenuItem("PW Hint", func() { fmt.Println("Menu New->PW Hint") }),
 		fyne.NewMenuItem("Note", func() { fmt.Println("Menu New->Note") }),
 	)
-
 	helpMenu := fyne.NewMenu("Help",
 		fyne.NewMenuItem("Documentation", func() {
 			u, _ := url.Parse("https://developer.fyne.io")
@@ -102,93 +113,119 @@ func main() {
 			u, _ := url.Parse("https://github.com/sponsors/fyne-io")
 			_ = a.OpenURL(u)
 		}))
-
 	mainMenu := fyne.NewMainMenu(
 		// a quit item will be appended to our first menu
-		fyne.NewMenu("File", saveItem, saveEncItem, settingsItem, fyne.NewMenuItemSeparator()),
+		fyne.NewMenu("File", saveItem, saveEncItem, saveUnEncItem, settingsItem, fyne.NewMenuItemSeparator()),
 		newItem,
 		helpMenu,
 	)
 	window.SetMainMenu(mainMenu)
+
 	window.SetMaster()
 
-	welcomePage := gui.GetWelcomePage()
-	content := container.NewMax()
-	content.Objects = []fyne.CanvasObject{welcomePage.View(window, welcomePage)}
-	title := widget.NewLabel(welcomePage.Title)
-	setPage := func(t gui.DetailPage) {
-		if t.User == "" {
-			currentUser = t.Title
-			title.SetText(t.Title)
+	defaultPageRHS := gui.GetWelcomePage()
+	contentRHS := container.NewMax()
+	//	contentRHS.Objects = []fyne.CanvasObject{defaultPageRHS.View(window, defaultPageRHS)}
+	title := widget.NewLabel(defaultPageRHS.Title)
+
+	setPageRHS := func(detailPage gui.DetailPage) {
+		if detailPage.User == "" {
+			currentUser = detailPage.Title
+			title.SetText(detailPage.Title)
 		} else {
-			currentUser = t.User
-			title.SetText(fmt.Sprintf("%s: %s", t.User, t.Title))
+			currentUser = detailPage.User
+			title.SetText(fmt.Sprintf("%s: %s", detailPage.User, detailPage.Title))
 		}
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentUser))
-		content.Objects = []fyne.CanvasObject{t.View(window, t)}
-		content.Refresh()
+		contentRHS.Objects = []fyne.CanvasObject{detailPage.View(window, detailPage)}
+		contentRHS.Refresh()
 	}
 
-	rhsPage := container.NewBorder(
-		container.NewVBox(title, widget.NewSeparator(), widget.NewSeparator()), nil, nil, nil, content)
+	pageRHS := container.NewBorder(
+		container.NewVBox(title, widget.NewSeparator(), widget.NewSeparator()), nil, nil, nil, contentRHS)
 
-	navTree := makeNavTree(setPage)
-
-	split = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(), nil, nil, navTree), rhsPage)
-	split.Offset = a.Preferences().FloatWithFallback(splitPrefName, 0.2)
-
+	/*
+		Load thread keeps running in background
+		To Trigger it:
+			set loadThreadFileName = filename
+			set loadThreadState = LOAD_THREAD_LOAD
+	*/
 	go func() {
-		time.Sleep(1 * time.Second)
-		loadData(fileNameArg, func() {
-			dr, err := lib.NewDataRoot(fileData.GetContent())
-			if err != nil {
-				fmt.Printf("ERROR: Cannot process data. %s", err)
-				os.Exit(1)
+		for {
+			fmt.Println("loop")
+			time.Sleep(500 * time.Millisecond)
+			if loadThreadState == LOAD_THREAD_LOAD {
+				loadThreadState = LOAD_THREAD_LOADING
+				fd, err := lib.NewFileData(loadThreadFileName)
+				if err != nil {
+					fmt.Printf("Failed to load data file %s", loadThreadFileName)
+					os.Exit(1)
+				}
+				/*
+					While file is ENCRYPTED
+						Get PW and decrypt
+				*/
+				for !fd.IsRawJson() {
+					if !(loadThreadState == LOAD_THREAD_INPW) {
+						loadThreadState = LOAD_THREAD_INPW
+						getPasswordAndDecrypt(fd, func() {
+							// SUCCESS
+							loadThreadState = LOAD_THREAD_DONE
+						}, func() {
+							// FAIL
+							loadThreadState = LOAD_THREAD_LOADING
+						})
+					}
+					if loadThreadState != LOAD_THREAD_DONE {
+						time.Sleep(1000 * time.Millisecond)
+					}
+				}
+				/*
+					Data is decrypted so process the JSON so
+						update the navigation tree
+						select the root element
+				*/
+				dr, err := lib.NewDataRoot(fd.GetContent())
+				if err != nil {
+					fmt.Printf("ERROR: Cannot process data. %s", err)
+					os.Exit(1)
+				}
+				fileData = fd
+				dataRoot = dr
+				navTreeLHS := makeNavTree(setPageRHS)
+				navTreeLHS.Select(dataRoot.GetRootUid())
+				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(), nil, nil, navTreeLHS), pageRHS)
+				window.SetContent(splitContainer)
 			}
-			dataRoot = dr
-			navTree = makeNavTree(setPage)
-			split = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(), nil, nil, navTree), rhsPage)
-			window.SetContent(split)
-			navTree.Select(dataRoot.GetRootUid())
-		}, func(s string, e error) {
-			fmt.Printf("ERROR: %s. %s", s, e.Error())
-			os.Exit(1)
-		})
+		}
 	}()
 
-	window.SetContent(split)
-	navTree.Select(dataRoot.GetRootUid())
+	window.SetContent(contentRHS)
 	window.Resize(fyne.NewSize(float32(a.Preferences().FloatWithFallback(widthPrefName, 640)), float32(a.Preferences().FloatWithFallback(heightPrefName, 460))))
 	window.ShowAndRun()
 }
 
-func loadData(fileName string, success func(), fail func(string, error)) {
-	fd, err := lib.NewFileData(fileName)
-	if err != nil {
-		fail(fmt.Sprintf("Failed to load data file %s", fileName), err)
-	}
-	fileData = fd
-	if !fileData.IsRawJson() {
-		pass := widget.NewPasswordEntry()
-		dialog.ShowCustomConfirm("Enter the password to DECRYPT the file", "Confirm", "Cancel", widget.NewForm(
-			widget.NewFormItem("Password", pass),
-		), func(ok bool) {
-			if ok && pass.Text != "" {
-				fmt.Println("HERE")
-				err := fileData.DecryptContents([]byte(pass.Text), salt)
-				fmt.Println("THERE")
+func getPasswordAndDecrypt(fd *lib.FileData, success func(), fail func()) {
+	pass := widget.NewPasswordEntry()
+	dialog.ShowCustomConfirm("Enter the password to DECRYPT the file", "Confirm", "Exit Application", widget.NewForm(
+		widget.NewFormItem("Password", pass),
+	), func(ok bool) {
+		if ok {
+			if pass.Text == "" {
+				fail()
+			} else {
+				err := fd.DecryptContents([]byte(pass.Text))
 				if err != nil {
-					fail(fmt.Sprintf("Failed to decrypt data file %s", fileName), err)
+					fail()
 				} else {
 					success()
 				}
-			} else {
-				fail(fmt.Sprintf("Failed to decrypt data file %s", fileName), errors.New("password was not provided"))
 			}
-		}, window)
-	} else {
-		success()
-	}
+		} else {
+			fmt.Printf("Failed to decrypt data file %s. password was not provided", fd.GetFileName())
+			os.Exit(1)
+		}
+	}, window)
 }
 
 func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
@@ -226,14 +263,23 @@ func makeThemeButtons() fyne.CanvasObject {
 	)
 }
 
-func commitAndSaveData(enc bool) {
+func KeyDown(k *fyne.KeyEvent) {
+	switch k.Name {
+	case fyne.KeyReturn:
+		log.Fatal("keyUP", fmt.Sprint("%h", k.Name))
+	}
+	// s.Field.KeyUp(k)
+	// widget.Refresh(s)
+}
+
+func commitAndSaveData(enc int, mustBeChanged bool) {
 	count := countChangedItems()
-	if count == 0 {
+	if count == 0 && mustBeChanged {
 		dialog.NewInformation("File Save", "There were no items to save!\n\nPress OK to continue", window).Show()
 	} else {
-		if enc {
+		if enc == SAVE_ENCRYPTED {
 			pass := widget.NewPasswordEntry()
-			dialog.ShowCustomConfirm("Enter a password", "Confirm", "Cancel", widget.NewForm(
+			dialog.ShowCustomConfirm("Enter the password to ENCRYPT the file", "Confirm", "Cancel", widget.NewForm(
 				widget.NewFormItem("Password", pass),
 			), func(ok bool) {
 				if ok && pass.Text != "" {
@@ -242,8 +288,7 @@ func commitAndSaveData(enc bool) {
 						dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
 						return
 					}
-					fmt.Printf("SAVE ENC %s %s\n", pass.Text, salt)
-					err = fileData.StoreContentEncrypted([]byte(pass.Text), salt)
+					err = fileData.StoreContentEncrypted([]byte(pass.Text))
 					if err != nil {
 						dialog.NewInformation("Save Encrypted File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
 					}
@@ -257,7 +302,11 @@ func commitAndSaveData(enc bool) {
 				dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
 				return
 			}
-			err = fileData.StoreContent()
+			if enc == SAVE_AS_IS {
+				err = fileData.StoreContentAsIs()
+			} else {
+				err = fileData.StoreContentUnEncrypted()
+			}
 			if err != nil {
 				dialog.NewInformation("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
 			} else {
@@ -312,7 +361,7 @@ func commitChangedItems() (int, error) {
 
 func savePreferences() {
 	p := fyne.CurrentApp().Preferences()
-	p.SetFloat(splitPrefName, split.Offset)
+	p.SetFloat(splitPrefName, splitContainer.Offset)
 	p.SetFloat(widthPrefName, float64(window.Canvas().Size().Width))
 	p.SetFloat(heightPrefName, float64(window.Canvas().Size().Height))
 }

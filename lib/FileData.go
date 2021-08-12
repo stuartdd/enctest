@@ -12,7 +12,6 @@ import (
 
 type FileData struct {
 	fileName string
-	salt     []byte
 	key      []byte
 	content  []byte
 	isEmpty  bool
@@ -21,51 +20,49 @@ type FileData struct {
 var (
 	emptyDataJson = "{\"timeStamp\": \"Fri Jul 30 21:25:10 BST 2021\",\"groups\": {\"Empty\":{}}}"
 	encIterations = 64
+	encSalt       = []byte("SQhMXVt8rQED2MxHTHxmuZLMxdJz5DQI")
 )
 
 func NewFileData(fName string) (*FileData, error) {
 	if fName == "" {
-		fd := FileData{fileName: "", content: []byte(emptyDataJson), key: make([]byte, 0), salt: make([]byte, 0), isEmpty: true}
+		fd := FileData{fileName: "", content: []byte(emptyDataJson), key: make([]byte, 0), isEmpty: true}
 		return &fd, nil
 	}
-	fd := FileData{fileName: fName, content: make([]byte, 0), key: make([]byte, 0), salt: make([]byte, 0), isEmpty: false}
+	fd := FileData{fileName: fName, content: make([]byte, 0), key: make([]byte, 0), isEmpty: false}
 	return &fd, fd.loadData()
 }
 
-func (r *FileData) DecryptContents(encKey, encSalt []byte) error {
+func (r *FileData) DecryptContents(encKey []byte) error {
 	if r.isEmpty {
 		return errors.New("Cannot decrypt empty content data")
 	}
-	cont, err := decrypt(encKey, encSalt, r.content)
+	cont, err := decrypt(encKey, r.content)
 	if err != nil {
 		return err
 	}
 	r.key = encKey
-	r.salt = encSalt
 	r.content = cont
 	return nil
 }
 
-func (r *FileData) StoreContentEncrypted(encKey, encSalt []byte) error {
-	cont, err := encrypt(encKey, encSalt, r.content)
+func (r *FileData) StoreContentEncrypted(encKey []byte) error {
+	cont, err := encrypt(encKey, r.content)
 	if err != nil {
 		return err
 	}
 	err = r.storeData(cont)
 	r.key = encKey
-	r.salt = encSalt
 	return err
 }
 
 func (r *FileData) StoreContentUnEncrypted() error {
 	r.key = make([]byte, 0)
-	r.salt = make([]byte, 0)
 	return r.storeData(r.content)
 }
 
-func (r *FileData) StoreContent() error {
+func (r *FileData) StoreContentAsIs() error {
 	if r.HasEncData() {
-		return r.StoreContentEncrypted(r.key, r.salt)
+		return r.StoreContentEncrypted(r.key)
 	} else {
 		return r.storeData(r.content)
 	}
@@ -83,9 +80,6 @@ func (r *FileData) IsRawJson() bool {
 
 func (r *FileData) HasEncData() bool {
 	if len(r.key) == 0 {
-		return false
-	}
-	if len(r.salt) == 0 {
 		return false
 	}
 	return true
@@ -125,9 +119,9 @@ func (r *FileData) loadData() error {
 	return nil
 }
 
-func decrypt(key, salt []byte, data []byte) ([]byte, error) {
+func decrypt(key []byte, data []byte) ([]byte, error) {
 
-	key, err := deriveKey(key, salt)
+	key, err := deriveKey(key)
 	if err != nil {
 		return nil, err
 	}
@@ -152,9 +146,9 @@ func decrypt(key, salt []byte, data []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-func encrypt(key, salt []byte, data []byte) ([]byte, error) {
+func encrypt(key, data []byte) ([]byte, error) {
 
-	key, err := deriveKey(key, salt)
+	key, err := deriveKey(key)
 	if err != nil {
 		return nil, err
 	}
@@ -179,14 +173,11 @@ func encrypt(key, salt []byte, data []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-func deriveKey(key, salt []byte) ([]byte, error) {
-	if len(salt) == 0 {
-		return nil, errors.New("deriveKey: salt was not provided")
-	}
+func deriveKey(key []byte) ([]byte, error) {
 	if len(key) == 0 {
 		return nil, errors.New("deriveKey: key was not provided")
 	}
-	key, err := scrypt.Key(key, salt, 16384*encIterations, 8, 1, 32)
+	key, err := scrypt.Key(key, encSalt, 1024*encIterations, 8, 1, 32)
 	if err != nil {
 		return nil, err
 	}
