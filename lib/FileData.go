@@ -18,16 +18,11 @@ type FileData struct {
 }
 
 var (
-	emptyDataJson = "{\"timeStamp\": \"Fri Jul 30 21:25:10 BST 2021\",\"groups\": {\"Empty\":{}}}"
 	encIterations = 64
 	encSalt       = []byte("SQhMXVt8rQED2MxHTHxmuZLMxdJz5DQI")
 )
 
 func NewFileData(fName string) (*FileData, error) {
-	if fName == "" {
-		fd := FileData{fileName: "", content: []byte(emptyDataJson), key: make([]byte, 0), isEmpty: true}
-		return &fd, nil
-	}
 	fd := FileData{fileName: fName, content: make([]byte, 0), key: make([]byte, 0), isEmpty: false}
 	return &fd, fd.loadData()
 }
