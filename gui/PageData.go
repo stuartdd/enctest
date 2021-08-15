@@ -39,7 +39,8 @@ func NewDetailEdit(path string, title string, old string, onChangeFunc func(s st
 	}
 	w.SetText(old)
 	l := widget.NewLabel(fmt.Sprintf(" %s ", title))
-	u := widget.NewButtonWithIcon("", theme.ContentUndoIcon(), func() {
+	t := theme.ContentUndoIcon()
+	u := widget.NewButtonWithIcon("", t, func() {
 		unDoFunc(path)
 	})
 	n := widget.NewButtonWithIcon("", theme.ContentRemoveIcon(), func() {

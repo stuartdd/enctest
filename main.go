@@ -17,6 +17,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"stuartdd.com/gui"
 	"stuartdd.com/lib"
+	"stuartdd.com/theme2"
 )
 
 const (
@@ -28,7 +29,7 @@ const (
 	LOAD_THREAD_INPW    = iota
 	LOAD_THREAD_DONE    = iota
 	splitPrefName       = "split"
-	themePrefName       = "theme"
+	themeVarName        = "theme"
 	widthPrefName       = "width"
 	heightPrefName      = "height"
 )
@@ -53,7 +54,9 @@ func main() {
 	loadThreadState = LOAD_THREAD_LOAD
 
 	a := app.NewWithID("stuartdd.enctest")
-	setThemeById(a.Preferences().StringWithFallback(themePrefName, "dark"))
+	t := theme2.NewMyTheme(a.Preferences().StringWithFallback(themeVarName, "dark"))
+	a.Settings().SetTheme(t)
+
 	a.SetIcon(theme.FyneLogo())
 
 	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", loadThreadFileName))
@@ -336,19 +339,17 @@ func commitChangedItems() (int, error) {
 
 func savePreferences() {
 	p := fyne.CurrentApp().Preferences()
-	p.SetFloat(splitPrefName, splitContainer.Offset)
+	if splitContainer != nil {
+		p.SetFloat(splitPrefName, splitContainer.Offset)
+	}
 	p.SetFloat(widthPrefName, float64(window.Canvas().Size().Width))
 	p.SetFloat(heightPrefName, float64(window.Canvas().Size().Height))
 }
 
-func setThemeById(id string) {
-	switch id {
-	case "dark":
-		fyne.CurrentApp().Settings().SetTheme(theme.DarkTheme())
-	case "light":
-		fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
-	}
-	fyne.CurrentApp().Preferences().SetString(themePrefName, id)
+func setThemeById(varient string) {
+	t := theme2.NewMyTheme(varient)
+	fyne.CurrentApp().Settings().SetTheme(t)
+	fyne.CurrentApp().Preferences().SetString(themeVarName, varient)
 }
 
 func saveChangesConfirm(option bool) {

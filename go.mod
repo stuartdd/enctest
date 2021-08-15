@@ -6,8 +6,10 @@ replace stuartdd.com/lib => ./lib
 
 replace stuartdd.com/gui => ./gui
 
+replace stuartdd.com/theme2 => ./theme2
+
 require (
-	fyne.io/fyne/v2 v2.0.3
+	fyne.io/fyne/v2 v2.0.4
 	github.com/go-gl/gl v0.0.0-20210501111010-69f74958bac0 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210727001814-0db043d8d5be // indirect
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
@@ -19,4 +21,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	stuartdd.com/gui v0.0.0-00010101000000-000000000000
 	stuartdd.com/lib v0.0.0-00010101000000-000000000000
+	stuartdd.com/theme2 v0.0.0-00010101000000-000000000000
 )
