@@ -1,6 +1,7 @@
 package theme2
 
 import (
+	"fmt"
 	"image/color"
 	"strings"
 
@@ -17,81 +18,62 @@ SVG theme resource not rendered correctly on button when Disabled
 */
 
 type AppTheme struct {
-	light bool
+	lightName string
+	variant   fyne.ThemeVariant
 }
 
-const IconNameLinkToWeb fyne.ThemeIconName = "linkToWeb"
-const IconNameApplication fyne.ThemeIconName = "applicationIcon"
+const (
+	IconNameLinkToWeb fyne.ThemeIconName = "linkToWeb"
+	LN                string             = "Light"
+	DN                string             = "Dark"
+)
+
+var (
+	_ fyne.Theme = (*AppTheme)(nil)
+
+	appIcons = map[string]fyne.Resource{
+		string(theme.IconNameContentUndo) + LN: resourceRevertLightSvg,
+		string(theme.IconNameContentUndo) + DN: resourceRevertDarkSvg,
+		string(IconNameLinkToWeb) + LN:         resourceLinkLightSvg,
+		string(IconNameLinkToWeb) + DN:         resourceLinkDarkSvg,
+	}
+
+	colorPalette = map[string]color.Color{
+		string(theme.ColorNamePrimary) + LN: color.NRGBA{R: 0x43, G: 0xf4, B: 0x36, A: 0xff},
+		string(theme.ColorNamePrimary) + DN: color.NRGBA{R: 0xf4, G: 0x43, B: 0x36, A: 0xff},
+		string(theme.ColorNameButton) + LN:  color.NRGBA{R: 0x43, G: 0xf4, B: 0x36, A: 0x7f},
+		string(theme.ColorNameButton) + DN:  color.NRGBA{R: 0xf4, G: 0x43, B: 0x36, A: 0x7f},
+	}
+)
 
 func LinkToWebIcon() fyne.Resource {
-	return safeIconLookup(IconNameLinkToWeb)
+	return safeLookupViaTheme(IconNameLinkToWeb)
 }
 
 func AppLogo() fyne.Resource {
 	return resourceAppIconPng
 }
 
-func safeIconLookup(n fyne.ThemeIconName) fyne.Resource {
-	t := fyne.CurrentApp().Settings().Theme()
-	icon := t.Icon(n)
-	if icon != nil {
-		return icon
-	}
-	return t.Icon(theme.IconNameQuestion)
-}
-
 func NewAppTheme(varient string) *AppTheme {
 	if strings.ToLower(varient) == "light" {
-		return &AppTheme{light: true}
+		return &AppTheme{lightName: LN, variant: theme.VariantLight}
 	}
-	return &AppTheme{light: false}
+	return &AppTheme{lightName: DN, variant: theme.VariantDark}
 }
 
-var (
-	_ fyne.Theme = (*AppTheme)(nil)
-
-	darkPalette = map[fyne.ThemeColorName]color.Color{
-		theme.ColorNameButton: color.NRGBA{R: 0xf4, G: 0x43, B: 0x36, A: 0x7f},
-	}
-
-	lightPalette = map[fyne.ThemeColorName]color.Color{
-		theme.ColorNameButton: color.NRGBA{R: 0x43, G: 0xf4, B: 0x36, A: 0x7f},
-	}
-)
-
 func (m AppTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
-	if m.light {
-		c, ok := lightPalette[name]
-		if ok {
-			return c
-		}
-		return theme.DefaultTheme().Color(name, theme.VariantLight)
-	} else {
-		c, ok := darkPalette[name]
-		if ok {
-			return c
-		}
-		return theme.DefaultTheme().Color(name, theme.VariantDark)
+	c, ok := colorPalette[string(name)+m.lightName]
+	if ok {
+		return c
 	}
+	return theme.DefaultTheme().Color(name, m.variant)
 }
 
 func (m AppTheme) Icon(name fyne.ThemeIconName) fyne.Resource {
-	if name == IconNameLinkToWeb {
-		if m.light {
-			return resourceLinkLightSvg
-		}
-		return resourceLinkDarkSvg
+	r, ok := appIcons[string(name)+m.lightName]
+	if ok {
+		return r
 	}
-	if name == IconNameApplication {
-		return resourceAppIconPng
-	}
-	if name == theme.IconNameContentUndo {
-		if m.light {
-			return resourceRevertLightSvg
-		}
-		return resourceRevertDarkSvg
-	}
-
 	return theme.DefaultTheme().Icon(name)
 }
 
@@ -100,5 +82,34 @@ func (m AppTheme) Font(style fyne.TextStyle) fyne.Resource {
 }
 
 func (m AppTheme) Size(name fyne.ThemeSizeName) float32 {
-	return theme.DefaultTheme().Size(name)
+	switch name {
+	case theme.SizeNameSeparatorThickness:
+		return 2
+	case theme.SizeNameInlineIcon:
+		return 20
+	case theme.SizeNamePadding:
+		return 4
+	case theme.SizeNameScrollBar:
+		return 16
+	case theme.SizeNameScrollBarSmall:
+		return 3
+	case theme.SizeNameText:
+		return 14
+	case theme.SizeNameCaptionText:
+		return 11
+	case theme.SizeNameInputBorder:
+		return 8
+	default:
+		fmt.Println(name)
+		return theme.DefaultTheme().Size(name)
+	}
+}
+
+func safeLookupViaTheme(n fyne.ThemeIconName) fyne.Resource {
+	t := fyne.CurrentApp().Settings().Theme()
+	icon := t.Icon(n)
+	if icon != nil {
+		return icon
+	}
+	return t.Icon(theme.IconNameQuestion)
 }
