@@ -344,7 +344,7 @@ func savePreferences() {
 }
 
 func setThemeById(varient string) {
-	t := theme2.NewMyTheme(varient)
+	t := theme2.NewAppTheme(varient)
 	fyne.CurrentApp().Settings().SetTheme(t)
 	fyne.CurrentApp().Preferences().SetString(themeVarName, varient)
 }
