@@ -13,7 +13,6 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"stuartdd.com/gui"
 	"stuartdd.com/lib"
@@ -54,10 +53,8 @@ func main() {
 	loadThreadState = LOAD_THREAD_LOAD
 
 	a := app.NewWithID("stuartdd.enctest")
-	t := theme2.NewMyTheme(a.Preferences().StringWithFallback(themeVarName, "dark"))
-	a.Settings().SetTheme(t)
-
-	a.SetIcon(theme.FyneLogo())
+	a.Settings().SetTheme(theme2.NewAppTheme(a.Preferences().StringWithFallback(themeVarName, "dark")))
+	a.SetIcon(theme2.AppLogo())
 
 	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", loadThreadFileName))
 	window.SetCloseIntercept(shouldClose)

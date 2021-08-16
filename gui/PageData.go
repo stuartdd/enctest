@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"stuartdd.com/lib"
+	"stuartdd.com/theme2"
 )
 
 var EditEntryList = make(map[string]*EditEntry)
@@ -39,11 +40,10 @@ func NewDetailEdit(path string, title string, old string, onChangeFunc func(s st
 	}
 	w.SetText(old)
 	l := widget.NewLabel(fmt.Sprintf(" %s ", title))
-	t := theme.ContentUndoIcon()
-	u := widget.NewButtonWithIcon("", t, func() {
+	u := widget.NewButtonWithIcon("", theme.ContentUndoIcon(), func() {
 		unDoFunc(path)
 	})
-	n := widget.NewButtonWithIcon("", theme.ContentRemoveIcon(), func() {
+	n := widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
 		linkFunc(path)
 	})
 	u.Disable()
