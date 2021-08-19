@@ -66,13 +66,21 @@ func (m AppTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) col
 	if ok {
 		return c
 	}
+	c, ok = colorPalette[string(name)]
+	if ok {
+		return c
+	}
 	return theme.DefaultTheme().Color(name, m.variant)
 }
 
 func (m AppTheme) Icon(name fyne.ThemeIconName) fyne.Resource {
-	r, ok := appIcons[string(name)+m.lightName]
+	i, ok := appIcons[string(name)+m.lightName]
 	if ok {
-		return r
+		return i
+	}
+	i, ok = appIcons[string(name)]
+	if ok {
+		return i
 	}
 	return theme.DefaultTheme().Icon(name)
 }

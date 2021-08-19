@@ -33,8 +33,13 @@ type DetailPage struct {
 	DataRootMap      *map[string]interface{}
 }
 
-func NewDetailEdit(path string, title string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), linkFunc func(path string)) *EditEntry {
-	w := widget.NewMultiLineEntry()
+func NewEditEntry(path string, title string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), linkFunc func(path string)) *EditEntry {
+	var w *widget.Entry
+	if strings.Contains(strings.ToLower(title), "note") {
+		w = widget.NewMultiLineEntry()
+	} else {
+		w = widget.NewEntry()
+	}
 	w.OnChanged = func(input string) {
 		onChangeFunc(input, path)
 	}
@@ -51,20 +56,23 @@ func NewDetailEdit(path string, title string, old string, onChangeFunc func(s st
 	return &EditEntry{Path: path, Title: title, Wid: w, Lab: l, UnDo: u, Link: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, LinkFunc: linkFunc}
 }
 
+func (p *EditEntry) RefreshButtons() {
+	p.UnDo = widget.NewButtonWithIcon("", theme.ContentUndoIcon(), func() {
+		p.UnDoFunc(p.Path)
+	})
+	p.Link = widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
+		p.LinkFunc(p.Path)
+	})
+	p.updateButtons()
+}
+
 func (p *EditEntry) SetNew(s string) {
 	if p.Old == s {
 		p.New = ""
-		p.UnDo.Disable()
 	} else {
 		p.New = s
-		p.UnDo.Enable()
 	}
-	_, ok := p.ParseForLink()
-	if ok {
-		p.Link.Enable()
-	} else {
-		p.Link.Disable()
-	}
+	p.updateButtons()
 }
 
 func (p *EditEntry) CommitEdit(data *map[string]interface{}) bool {
@@ -84,10 +92,6 @@ func (p *EditEntry) RevertEdit() {
 	p.Wid.SetText(p.Old)
 }
 
-func (p *EditEntry) IsChanged() bool {
-	return p.New != ""
-}
-
 func (p *EditEntry) String() string {
 	if p.IsChanged() {
 		return fmt.Sprintf("Item:'%s' Is updated from '%s' to '%s'", p.Path, p.Old, p.New)
@@ -96,20 +100,34 @@ func (p *EditEntry) String() string {
 	}
 }
 
-func (p *EditEntry) ParseForLink() (string, bool) {
-	var s string
-	if p.IsChanged() {
-		s = p.New
-	} else {
-		s = p.Old
-	}
-	l, ok := parseForLink(s)
+func (p *EditEntry) IsChanged() bool {
+	return p.New != ""
+}
+
+func (p *EditEntry) HasLink() (string, bool) {
+	lnk, ok := parseStringForLink(p.GetCurrentText())
+	return lnk, ok
+}
+
+func (p *EditEntry) updateButtons() {
+	_, ok := p.HasLink()
 	if ok {
 		p.Link.Enable()
-		return l, true
 	} else {
 		p.Link.Disable()
-		return "", false
+	}
+	if p.IsChanged() {
+		p.UnDo.Enable()
+	} else {
+		p.UnDo.Disable()
+	}
+}
+
+func (p *EditEntry) GetCurrentText() string {
+	if p.IsChanged() {
+		return p.New
+	} else {
+		return p.Old
 	}
 }
 
@@ -121,7 +139,7 @@ func (p *DetailPage) GetMapForUid() *map[string]interface{} {
 	return lib.GetMapForUid(p.Uid, p.DataRootMap)
 }
 
-func parseForLink(s string) (string, bool) {
+func parseStringForLink(s string) (string, bool) {
 	var sb strings.Builder
 	lc := strings.ToLower(s)
 	pos := strings.Index(lc, "http://")

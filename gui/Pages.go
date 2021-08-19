@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -12,7 +13,6 @@ import (
 )
 
 var (
-	welcomeIntro = "Please select an item from the tree view on the left."
 	welcomeTitle = "Welcome"
 	appDesc      = "Welcome to Password Manager"
 	idNotes      = "notes"
@@ -68,16 +68,24 @@ func welcomeScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 }
 
 func notesScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
-	data := details.GetMapForUid()
+	data := *details.GetMapForUid()
 	cObj := make([]fyne.CanvasObject, 0)
-	for k, v := range *data {
+
+	keys := make([]string, 0)
+	for k, _ := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		v := data[k]
 		idd := details.Uid + "." + k
 		e, ok := EditEntryList[idd]
 		if !ok {
-			e = NewDetailEdit(idd, k, fmt.Sprintf("%s", v), noteChangedFunction, unDoFunction, goToLinkFunction)
+			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), textChangedFunction, unDoFunction, goToLinkFunction)
 			EditEntryList[idd] = e
 		}
-		e.ParseForLink()
+		e.RefreshButtons()
 		cObj = append(cObj, container.NewHBox(e.Link, e.UnDo, e.Lab))
 		cObj = append(cObj, widget.NewSeparator())
 		cObj = append(cObj, e.Wid)
@@ -86,17 +94,32 @@ func notesScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 }
 
 func hintsScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
-	return container.NewCenter(container.NewVBox(
-		// widget.NewLabelWithStyle("Display Password Hints", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		container.NewCenter(
-			container.NewHBox(
-				widget.NewLabel(fmt.Sprintf("%s", details.GetMapForUid())),
-			),
-		),
-	))
+	data := *details.GetMapForUid()
+	cObj := make([]fyne.CanvasObject, 0)
+
+	keys := make([]string, 0)
+	for k, _ := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		v := data[k]
+		idd := details.Uid + "." + k
+		e, ok := EditEntryList[idd]
+		if !ok {
+			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), textChangedFunction, unDoFunction, goToLinkFunction)
+			EditEntryList[idd] = e
+		}
+		e.RefreshButtons()
+		cObj = append(cObj, container.NewHBox(e.Link, e.UnDo, e.Lab))
+		cObj = append(cObj, widget.NewSeparator())
+		cObj = append(cObj, e.Wid)
+	}
+	return container.NewVBox(cObj...)
 }
 
-func noteChangedFunction(s string, path string) {
+func textChangedFunction(s string, path string) {
 	ee := EditEntryList[path]
 	if ee != nil {
 		ee.SetNew(s)
@@ -113,7 +136,7 @@ func unDoFunction(path string) {
 func goToLinkFunction(path string) {
 	ee := EditEntryList[path]
 	if ee != nil {
-		link, ok := ee.ParseForLink()
+		link, ok := ee.HasLink()
 		if ok {
 			fmt.Printf("This is the link [%s]", link)
 		}

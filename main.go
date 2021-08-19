@@ -38,6 +38,7 @@ var (
 	fileData           *lib.FileData
 	dataRoot           *lib.DataRoot
 	splitContainer     *container.Split // So we can save the divider position to preferences.
+	currentSelection   = ""
 	currentUser        = ""
 	loadThreadFileName = ""
 	shouldCloseLock    = false
@@ -179,7 +180,7 @@ func main() {
 				dataRoot = dr
 				navTreeLHS := makeNavTree(setPageRHSFunc)
 				navTreeLHS.Select(dataRoot.GetRootUid())
-				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(), nil, nil, navTreeLHS), layoutRHS)
+				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
 				window.SetContent(splitContainer)
 			}
@@ -208,19 +209,24 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
+			currentSelection = uid
 			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap())
 			setPage(t)
 		},
 	}
 }
 
-func makeThemeButtons() fyne.CanvasObject {
+func makeThemeButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	return container.New(layout.NewGridLayout(2),
 		widget.NewButton("Dark", func() {
 			setThemeById("dark")
+			t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap())
+			setPage(t)
 		}),
 		widget.NewButton("Light", func() {
 			setThemeById("light")
+			t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap())
+			setPage(t)
 		}),
 	)
 }
