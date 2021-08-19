@@ -39,10 +39,12 @@ var (
 	}
 
 	colorPalette = map[string]color.Color{
-		string(theme.ColorNamePrimary) + LN: color.NRGBA{R: 0x43, G: 0xf4, B: 0x36, A: 0xff},
-		string(theme.ColorNamePrimary) + DN: color.NRGBA{R: 0xf4, G: 0x43, B: 0x36, A: 0xff},
-		string(theme.ColorNameButton) + LN:  color.NRGBA{R: 0x43, G: 0xf4, B: 0x36, A: 0x7f},
-		string(theme.ColorNameButton) + DN:  color.NRGBA{R: 0xf4, G: 0x43, B: 0x36, A: 0x7f},
+		string(theme.ColorNamePrimary) + LN:         color.NRGBA{R: 0x43, G: 0xf4, B: 0x36, A: 0xff},
+		string(theme.ColorNamePrimary) + DN:         color.NRGBA{R: 0xf4, G: 0x43, B: 0x36, A: 0xff},
+		string(theme.ColorNameButton) + LN:          color.NRGBA{R: 0x43, G: 0xf4, B: 0x36, A: 0x7f},
+		string(theme.ColorNameButton) + DN:          color.NRGBA{R: 0xf4, G: 0x43, B: 0x36, A: 0x7f},
+		string(theme.ColorNameInputBackground) + LN: color.NRGBA{R: 0x36, G: 0xFF, B: 0x36, A: 0x4f},
+		string(theme.ColorNameInputBackground) + DN: color.NRGBA{R: 0xff, G: 0x36, B: 0x36, A: 0x4f},
 	}
 )
 

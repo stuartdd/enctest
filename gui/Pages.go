@@ -12,11 +12,15 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-var (
+const (
 	welcomeTitle = "Welcome"
 	appDesc      = "Welcome to Password Manager"
 	idNotes      = "notes"
 	idPwDetails  = "pwHints"
+)
+
+var (
+	preferedOrderReversed = []string{"notes", "positional", "post", "pre", "link", "userId"}
 )
 
 func GetWelcomePage() DetailPage {
@@ -70,13 +74,7 @@ func welcomeScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 func notesScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 	data := *details.GetMapForUid()
 	cObj := make([]fyne.CanvasObject, 0)
-
-	keys := make([]string, 0)
-	for k, _ := range data {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
+	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
 	for _, k := range keys {
 		v := data[k]
 		idd := details.Uid + "." + k
@@ -96,13 +94,7 @@ func notesScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 func hintsScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 	data := *details.GetMapForUid()
 	cObj := make([]fyne.CanvasObject, 0)
-
-	keys := make([]string, 0)
-	for k, _ := range data {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
+	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
 	for _, k := range keys {
 		v := data[k]
 		idd := details.Uid + "." + k
@@ -117,6 +109,34 @@ func hintsScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 		cObj = append(cObj, e.Wid)
 	}
 	return container.NewVBox(cObj...)
+}
+
+func listOfNonDupeInOrderKeys(m map[string]interface{}, ordered []string) []string {
+	keys := make([]string, 0)
+	for k, _ := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, s := range ordered {
+		pos, found := contains(keys, s)
+		if found && pos > 0 {
+			for i := pos; i > 0; i-- {
+				keys[i] = keys[i-1]
+			}
+			keys[0] = s
+		}
+	}
+	return keys
+}
+
+func contains(s []string, str string) (int, bool) {
+	for i, v := range s {
+		if v == str {
+			return i, true
+		}
+	}
+
+	return 0, false
 }
 
 func textChangedFunction(s string, path string) {
