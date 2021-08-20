@@ -142,7 +142,7 @@ func main() {
 				fmt.Println("Load State")
 				fd, err := lib.NewFileData(loadThreadFileName)
 				if err != nil {
-					fmt.Printf("Failed to load data file %s", loadThreadFileName)
+					fmt.Printf("Failed to load data file %s\n", loadThreadFileName)
 					os.Exit(1)
 				}
 				/*
@@ -171,7 +171,7 @@ func main() {
 				*/
 				dr, err := lib.NewDataRoot(fd.GetContent())
 				if err != nil {
-					fmt.Printf("ERROR: Cannot process data. %s", err)
+					fmt.Printf("ERROR: Cannot process data. %s\n", err)
 					os.Exit(1)
 				}
 				fileData = fd
@@ -181,7 +181,9 @@ func main() {
 			if loadThreadState == LOAD_THREAD_REFRESH {
 				fmt.Println("Refresh State")
 				navTreeLHS = makeNavTree(setPageRHSFunc)
-				navTreeLHS.Select(dataRoot.GetRootUid())
+				uid := dataRoot.GetRootUid(currentSelection)
+				navTreeLHS.Select(uid)
+				navTreeLHS.OpenBranch(currentUser)
 				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
 				window.SetContent(splitContainer)
@@ -250,8 +252,8 @@ func getNewUser() {
 
 func addNewNote() {
 	entry := widget.NewEntry()
-	dialog.ShowCustomConfirm("Enter the name of the note", "Confirm", "Cancel", widget.NewForm(
-		widget.NewFormItem("Password", entry),
+	dialog.ShowCustomConfirm(fmt.Sprintf("Enter the name of the new note for user '%s'", currentUser), "Confirm", "Cancel", widget.NewForm(
+		widget.NewFormItem("Note Name", entry),
 	), func(ok bool) {
 		if ok {
 			problem, ok := validateAndAdd(entry.Text, "note")
@@ -262,25 +264,33 @@ func addNewNote() {
 	}, window)
 }
 
-func validateAndAdd(name, addType string) (string, bool) {
-	if len(name) == 0 {
-		return "User name is undefined", false
+func validateAndAdd(entry, addType string) (string, bool) {
+	if len(entry) == 0 {
+		return "Input is undefined", false
 	}
-	if len(name) < 2 {
-		return "User name is too short", false
+	if len(entry) < 2 {
+		return "Input is too short", false
 	}
 	var err error = nil
+	var path string = ""
+	var name string = ""
 	switch addType {
 	case "user":
-		err = dataRoot.AddUser(name)
+		name, err = dataRoot.AddUser(entry)
 	case "note":
-		err = dataRoot.AddNote(currentUser, name, "note")
+		path, err = dataRoot.AddNote(currentUser, entry, "note")
 	case "app":
-		err = dataRoot.AddApplication(currentUser, name)
+		err = dataRoot.AddApplication(currentUser, entry)
 	}
 	loadThreadState = LOAD_THREAD_REFRESH
 	if err != nil {
 		return err.Error(), false
+	}
+	if path != "" {
+		currentSelection = path
+	}
+	if name != "" {
+		currentUser = name
 	}
 	return "", true
 }
@@ -302,7 +312,7 @@ func getPasswordAndDecrypt(fd *lib.FileData, success func(), fail func()) {
 				}
 			}
 		} else {
-			fmt.Printf("Failed to decrypt data file %s. password was not provided", fd.GetFileName())
+			fmt.Printf("Failed to decrypt data file %s. password was not provided\n", fd.GetFileName())
 			os.Exit(1)
 		}
 	}, window)

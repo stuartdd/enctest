@@ -2,6 +2,7 @@
     "groups": {
         "UserA": {
             "notes": {
+                "dsdfsdfs": "note",
                 "note": "An amazing A note (dont panic) fdf"
             },
             "pwHints": {

@@ -45,29 +45,29 @@ func NewDataRoot(j []byte) (*DataRoot, error) {
 	return dr, nil
 }
 
-func (p *DataRoot) AddUser(userName string) error {
+func (p *DataRoot) AddUser(userName string) (string, error) {
 	m := GetMapForUid(userName, &p.dataMap)
 	if m != nil {
-		return fmt.Errorf("user name '%s' already exists", userName)
+		return "", fmt.Errorf("user name '%s' already exists", userName)
 	}
 	rootMap := p.dataMap
 	groups := rootMap["groups"].(map[string]interface{})
 
 	newUser := make(map[string]interface{})
 	addApplication("application", newUser)
-	addNote("note", "note for user "+userName, newUser)
+	addNote(userName, "note", "note for user "+userName, newUser)
 
 	groups[userName] = newUser
 	p.navIndex = createNavIndex(p.dataMap)
-	return nil
+	return userName, nil
 }
 
-func (p *DataRoot) AddNote(userName, noteName, content string) error {
+func (p *DataRoot) AddNote(userName, noteName, content string) (string, error) {
 	user := GetMapForUid(userName, &p.dataMap)
 	if user == nil {
-		return fmt.Errorf("user name '%s' doen not exists", userName)
+		return "", fmt.Errorf("user name '%s' doen not exists", userName)
 	}
-	return addNote(noteName, content, *user)
+	return addNote(userName, noteName, content, *user)
 }
 
 func (p *DataRoot) AddApplication(userName, appName string) error {
@@ -78,7 +78,7 @@ func (p *DataRoot) AddApplication(userName, appName string) error {
 	return addApplication(appName, *user)
 }
 
-func addNote(noteName, content string, user map[string]interface{}) error {
+func addNote(userName, noteName, content string, user map[string]interface{}) (string, error) {
 	_, ok := user["notes"]
 	if !ok {
 		user["notes"] = make(map[string]interface{})
@@ -88,9 +88,9 @@ func addNote(noteName, content string, user map[string]interface{}) error {
 	_, ok = notes[noteName]
 	if !ok {
 		notes[noteName] = content
-		return nil
+		return fmt.Sprintf("%s.notes", userName), nil
 	}
-	return fmt.Errorf("note '%s' already exists", noteName)
+	return "", fmt.Errorf("note '%s' already exists", noteName)
 }
 
 func addApplication(appName string, user map[string]interface{}) error {
@@ -113,13 +113,17 @@ func addApplication(appName string, user map[string]interface{}) error {
 	return fmt.Errorf("application '%s' already exists", appName)
 }
 
-func (p *DataRoot) GetRootUid() string {
+func (p *DataRoot) GetRootUid(current string) string {
+	if current != "" {
+		return current
+	}
 	l := make([]string, 0)
 	for k, _ := range p.navIndex {
 		if k != "" {
 			l = append(l, k)
 		}
 	}
+
 	if len(l) > 0 {
 		sort.Strings(l)
 		return l[0]
@@ -145,6 +149,14 @@ func (r *DataRoot) ToJson() (string, error) {
 		return "", err
 	}
 	return string(output), nil
+}
+
+func (r *DataRoot) ToJsonTreeMap() string {
+	output, err := json.MarshalIndent(r.navIndex, "", "    ")
+	if err != nil {
+		return err.Error()
+	}
+	return string(output)
 }
 
 func (r *DataRoot) ToStruct() string {
@@ -220,7 +232,7 @@ func keysToList(id string, m map[string]interface{}) ([]string, []string) {
 	for k, _ := range m {
 		l = append(l, k)
 		if id == "" {
-			ll = append(ll, fmt.Sprintf("%s", k))
+			ll = append(ll, k)
 		} else {
 			ll = append(ll, fmt.Sprintf("%s.%s", id, k))
 		}
