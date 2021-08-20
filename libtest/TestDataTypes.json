@@ -28,11 +28,11 @@
                 "GMail B": {
                     "notes": "a note to User B",
                     "positional": "1234567890",
-                    "post": "123",
+                    "post": "123 the",
                     "pre": "abc",
-                    "userId": "another@gmail.com",
-                    "some More!":"hi",
-                    "some More Notes":"hi"
+                    "some More Notes": "hi",
+                    "some More!": "hi",
+                    "userId": "another@gmail.com"
                 },
                 "Principality B": {
                     "link": "https://www.principality.co.uk/en/your-account",

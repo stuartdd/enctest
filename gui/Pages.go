@@ -14,7 +14,7 @@ import (
 
 const (
 	welcomeTitle = "Welcome"
-	appDesc      = "Welcome to Password Manager"
+	appDesc      = "Welcome to Valt"
 	idNotes      = "notes"
 	idPwDetails  = "pwHints"
 )
@@ -84,9 +84,11 @@ func notesScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 			EditEntryList[idd] = e
 		}
 		e.RefreshButtons()
-		cObj = append(cObj, container.NewHBox(e.Link, e.UnDo, e.Lab))
+		fcl := container.New(&FixedLayout{100, 1}, e.Lab)
+		fcbl := container.New(&FixedLayout{10, 5}, e.Link)
+		fcbr := container.New(&FixedLayout{10, 5}, e.UnDo)
 		cObj = append(cObj, widget.NewSeparator())
-		cObj = append(cObj, e.Wid)
+		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcbl, fcl), fcbr, e.Wid))
 	}
 	return container.NewVBox(cObj...)
 }
@@ -104,9 +106,12 @@ func hintsScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 			EditEntryList[idd] = e
 		}
 		e.RefreshButtons()
-		cObj = append(cObj, container.NewHBox(e.Link, e.UnDo, e.Lab))
+		fcl := container.New(&FixedLayout{100, 1}, e.Lab)
+		fcbl := container.New(&FixedLayout{10, 5}, e.Link)
+		fcbr := container.New(&FixedLayout{10, 5}, e.UnDo)
 		cObj = append(cObj, widget.NewSeparator())
-		cObj = append(cObj, e.Wid)
+		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcbl, fcl), fcbr, e.Wid))
+
 	}
 	return container.NewVBox(cObj...)
 }

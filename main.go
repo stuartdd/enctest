@@ -9,7 +9,6 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/cmd/fyne_settings/settings"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
@@ -27,6 +26,7 @@ const (
 	LOAD_THREAD_LOADING = iota
 	LOAD_THREAD_INPW    = iota
 	LOAD_THREAD_DONE    = iota
+	LOAD_THREAD_REFRESH = iota
 	splitPrefName       = "split"
 	themeVarName        = "theme"
 	widthPrefName       = "width"
@@ -37,6 +37,7 @@ var (
 	window             fyne.Window
 	fileData           *lib.FileData
 	dataRoot           *lib.DataRoot
+	navTreeLHS         *widget.Tree
 	splitContainer     *container.Split // So we can save the divider position to preferences.
 	currentSelection   = ""
 	currentUser        = ""
@@ -74,16 +75,11 @@ func main() {
 	saveItem := fyne.NewMenuItem("Save", func() { commitAndSaveData(SAVE_AS_IS, true) })
 	saveEncItem := fyne.NewMenuItem("Save Encrypted", func() { commitAndSaveData(SAVE_ENCRYPTED, false) })
 	saveUnEncItem := fyne.NewMenuItem("Save Un-Encrypted", func() { commitAndSaveData(SAVE_UN_ENCRYPTED, false) })
-	settingsItem := fyne.NewMenuItem("Settings", func() {
-		w := a.NewWindow("Fyne Settings")
-		w.SetContent(settings.NewSettings().LoadAppearanceScreen(w))
-		w.Resize(fyne.NewSize(480, 480))
-		w.Show()
-	})
+
 	newItem := fyne.NewMenu("New",
-		fyne.NewMenuItem("User", func() { fmt.Println("Menu New->User") }),
+		fyne.NewMenuItem("User", getNewUser),
 		fyne.NewMenuItem("PW Hint", func() { fmt.Println("Menu New->PW Hint") }),
-		fyne.NewMenuItem("Note", func() { fmt.Println("Menu New->Note") }),
+		fyne.NewMenuItem("Note", addNewNote),
 	)
 	helpMenu := fyne.NewMenu("Help",
 		fyne.NewMenuItem("Documentation", func() {
@@ -101,7 +97,7 @@ func main() {
 		}))
 	mainMenu := fyne.NewMainMenu(
 		// a quit item will be appended to our first menu
-		fyne.NewMenu("File", saveItem, saveEncItem, saveUnEncItem, settingsItem, fyne.NewMenuItemSeparator()),
+		fyne.NewMenu("File", saveItem, saveEncItem, saveUnEncItem, fyne.NewMenuItemSeparator()),
 		newItem,
 		helpMenu,
 	)
@@ -112,7 +108,7 @@ func main() {
 	title := widget.NewLabel("")
 	contentRHS := container.NewMax()
 	layoutRHS := container.NewBorder(
-		container.NewVBox(title, widget.NewSeparator(), widget.NewSeparator()), nil, nil, nil, contentRHS)
+		container.NewVBox(title, widget.NewSeparator()), nil, nil, nil, contentRHS)
 
 	/*
 		function called when a selection is made in the LHS tree.
@@ -126,7 +122,8 @@ func main() {
 			currentUser = detailPage.User
 			title.SetText(fmt.Sprintf("%s: %s", detailPage.User, detailPage.Title))
 		}
-		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentUser))
+		navTreeLHS.OpenBranch(detailPage.Uid)
+		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentSelection))
 		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage)}
 		contentRHS.Refresh()
 	}
@@ -142,6 +139,7 @@ func main() {
 			time.Sleep(500 * time.Millisecond)
 			if loadThreadState == LOAD_THREAD_LOAD {
 				loadThreadState = LOAD_THREAD_LOADING
+				fmt.Println("Load State")
 				fd, err := lib.NewFileData(loadThreadFileName)
 				if err != nil {
 					fmt.Printf("Failed to load data file %s", loadThreadFileName)
@@ -178,11 +176,16 @@ func main() {
 				}
 				fileData = fd
 				dataRoot = dr
-				navTreeLHS := makeNavTree(setPageRHSFunc)
+				loadThreadState = LOAD_THREAD_REFRESH
+			}
+			if loadThreadState == LOAD_THREAD_REFRESH {
+				fmt.Println("Refresh State")
+				navTreeLHS = makeNavTree(setPageRHSFunc)
 				navTreeLHS.Select(dataRoot.GetRootUid())
 				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
 				window.SetContent(splitContainer)
+				loadThreadState = LOAD_THREAD_DONE
 			}
 		}
 	}()
@@ -230,6 +233,58 @@ func makeThemeButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject
 		}),
 	)
 }
+
+func getNewUser() {
+	entry := widget.NewEntry()
+	dialog.ShowCustomConfirm("Enter the name of the user", "Confirm", "Cancel", widget.NewForm(
+		widget.NewFormItem("Password", entry),
+	), func(ok bool) {
+		if ok {
+			problem, ok := validateAndAdd(entry.Text, "user")
+			if !ok {
+				dialog.NewInformation("Add New User", "Error: "+problem, window).Show()
+			}
+		}
+	}, window)
+}
+
+func addNewNote() {
+	entry := widget.NewEntry()
+	dialog.ShowCustomConfirm("Enter the name of the note", "Confirm", "Cancel", widget.NewForm(
+		widget.NewFormItem("Password", entry),
+	), func(ok bool) {
+		if ok {
+			problem, ok := validateAndAdd(entry.Text, "note")
+			if !ok {
+				dialog.NewInformation("Add New Note", "Error: "+problem, window).Show()
+			}
+		}
+	}, window)
+}
+
+func validateAndAdd(name, addType string) (string, bool) {
+	if len(name) == 0 {
+		return "User name is undefined", false
+	}
+	if len(name) < 2 {
+		return "User name is too short", false
+	}
+	var err error = nil
+	switch addType {
+	case "user":
+		err = dataRoot.AddUser(name)
+	case "note":
+		err = dataRoot.AddNote(currentUser, name, "note")
+	case "app":
+		err = dataRoot.AddApplication(currentUser, name)
+	}
+	loadThreadState = LOAD_THREAD_REFRESH
+	if err != nil {
+		return err.Error(), false
+	}
+	return "", true
+}
+
 func getPasswordAndDecrypt(fd *lib.FileData, success func(), fail func()) {
 	pass := widget.NewPasswordEntry()
 	dialog.ShowCustomConfirm("Enter the password to DECRYPT the file", "Confirm", "Exit Application", widget.NewForm(

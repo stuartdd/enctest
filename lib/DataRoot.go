@@ -45,6 +45,74 @@ func NewDataRoot(j []byte) (*DataRoot, error) {
 	return dr, nil
 }
 
+func (p *DataRoot) AddUser(userName string) error {
+	m := GetMapForUid(userName, &p.dataMap)
+	if m != nil {
+		return fmt.Errorf("user name '%s' already exists", userName)
+	}
+	rootMap := p.dataMap
+	groups := rootMap["groups"].(map[string]interface{})
+
+	newUser := make(map[string]interface{})
+	addApplication("application", newUser)
+	addNote("note", "note for user "+userName, newUser)
+
+	groups[userName] = newUser
+	p.navIndex = createNavIndex(p.dataMap)
+	return nil
+}
+
+func (p *DataRoot) AddNote(userName, noteName, content string) error {
+	user := GetMapForUid(userName, &p.dataMap)
+	if user == nil {
+		return fmt.Errorf("user name '%s' doen not exists", userName)
+	}
+	return addNote(noteName, content, *user)
+}
+
+func (p *DataRoot) AddApplication(userName, appName string) error {
+	user := GetMapForUid(userName, &p.dataMap)
+	if user == nil {
+		return fmt.Errorf("user name '%s' doen not exists", userName)
+	}
+	return addApplication(appName, *user)
+}
+
+func addNote(noteName, content string, user map[string]interface{}) error {
+	_, ok := user["notes"]
+	if !ok {
+		user["notes"] = make(map[string]interface{})
+	}
+	notes := user["notes"].(map[string]interface{})
+
+	_, ok = notes[noteName]
+	if !ok {
+		notes[noteName] = content
+		return nil
+	}
+	return fmt.Errorf("note '%s' already exists", noteName)
+}
+
+func addApplication(appName string, user map[string]interface{}) error {
+	_, ok := user["pwHints"]
+	if !ok {
+		user["pwHints"] = make(map[string]interface{})
+	}
+	pwHints := user["pwHints"].(map[string]interface{})
+	_, ok = pwHints[appName]
+	if !ok {
+		pwHints[appName] = make(map[string]interface{})
+		application := pwHints[appName].(map[string]interface{})
+		application["userId"] = ""
+		application["pre"] = ""
+		application["post"] = ""
+		application["notes"] = ""
+		application["positional"] = "12345"
+		return nil
+	}
+	return fmt.Errorf("application '%s' already exists", appName)
+}
+
 func (p *DataRoot) GetRootUid() string {
 	l := make([]string, 0)
 	for k, _ := range p.navIndex {
@@ -91,6 +159,9 @@ func GetMapForUid(uid string, m *map[string]interface{}) *map[string]interface{}
 	x := n["groups"]
 	for _, v := range nodes {
 		y := x.(map[string]interface{})[v]
+		if y == nil {
+			return nil
+		}
 		if reflect.ValueOf(y).Kind() != reflect.String {
 			x = y
 		}
@@ -134,10 +205,6 @@ func createNavIndexDetail(id string, uids map[string][]string, m map[string]inte
 									_, ll3 := keysToList(ll2[ii3], m3.(map[string]interface{}))
 									uids[ll2[ii3]] = ll3
 								}
-								// else {
-								// 	_, ll4 := keysToList(ll2[ii3], m3.(map[string]interface{}))
-								// 	uids[ll2[ii3]] = ll4
-								// }
 							}
 						}
 					}
