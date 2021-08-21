@@ -34,7 +34,7 @@ func GetDetailPage(id string, dataRootMap *map[string]interface{}) DetailPage {
 		return DetailPage{id, id, "", welcomeScreen, dataRootMap}
 	case 2:
 		if nodes[1] == idPwDetails {
-			return DetailPage{id, "PW Hints", nodes[0], welcomeScreen, dataRootMap}
+			return DetailPage{id, "Hints", nodes[0], welcomeScreen, dataRootMap}
 		}
 		if nodes[1] == idNotes {
 			return DetailPage{id, "Notes", nodes[0], notesScreen, dataRootMap}

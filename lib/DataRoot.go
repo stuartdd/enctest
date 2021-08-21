@@ -54,7 +54,7 @@ func (p *DataRoot) AddUser(userName string) (string, error) {
 	groups := rootMap["groups"].(map[string]interface{})
 
 	newUser := make(map[string]interface{})
-	addApplication("application", newUser)
+	addApplication("application", userName, newUser)
 	addNote(userName, "note", "note for user "+userName, newUser)
 
 	groups[userName] = newUser
@@ -67,15 +67,21 @@ func (p *DataRoot) AddNote(userName, noteName, content string) (string, error) {
 	if user == nil {
 		return "", fmt.Errorf("user name '%s' doen not exists", userName)
 	}
+	defer func() {
+		p.navIndex = createNavIndex(p.dataMap)
+	}()
 	return addNote(userName, noteName, content, *user)
 }
 
-func (p *DataRoot) AddApplication(userName, appName string) error {
+func (p *DataRoot) AddApplication(userName, appName string) (string, error) {
 	user := GetMapForUid(userName, &p.dataMap)
 	if user == nil {
-		return fmt.Errorf("user name '%s' doen not exists", userName)
+		return "", fmt.Errorf("user name '%s' does not exists", userName)
 	}
-	return addApplication(appName, *user)
+	defer func() {
+		p.navIndex = createNavIndex(p.dataMap)
+	}()
+	return addApplication(appName, userName, *user)
 }
 
 func addNote(userName, noteName, content string, user map[string]interface{}) (string, error) {
@@ -93,7 +99,7 @@ func addNote(userName, noteName, content string, user map[string]interface{}) (s
 	return "", fmt.Errorf("note '%s' already exists", noteName)
 }
 
-func addApplication(appName string, user map[string]interface{}) error {
+func addApplication(appName, userName string, user map[string]interface{}) (string, error) {
 	_, ok := user["pwHints"]
 	if !ok {
 		user["pwHints"] = make(map[string]interface{})
@@ -108,12 +114,12 @@ func addApplication(appName string, user map[string]interface{}) error {
 		application["post"] = ""
 		application["notes"] = ""
 		application["positional"] = "12345"
-		return nil
+		return fmt.Sprintf("%s.pwHints.%s", userName, appName), nil
 	}
-	return fmt.Errorf("application '%s' already exists", appName)
+	return "", fmt.Errorf("application '%s' already exists", appName)
 }
 
-func (p *DataRoot) GetRootUid(current string) string {
+func (p *DataRoot) GetRootUidOrCurrent(current string) string {
 	if current != "" {
 		return current
 	}

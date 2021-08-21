@@ -143,13 +143,13 @@ func parseStringForLink(s string) (string, bool) {
 	var sb strings.Builder
 	lc := strings.ToLower(s)
 	pos := strings.Index(lc, "http://")
-	count := 0
 	if pos == -1 {
 		pos = strings.Index(lc, "https://")
 	}
 	if pos == -1 {
 		return "", false
 	}
+	count := 0
 	for i := pos; i < len(lc); i++ {
 		if lc[i] <= ' ' {
 			break

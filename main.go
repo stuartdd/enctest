@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -27,6 +28,7 @@ const (
 	LOAD_THREAD_INPW    = iota
 	LOAD_THREAD_DONE    = iota
 	LOAD_THREAD_REFRESH = iota
+	allowedCharsInName  = "*~@#$%^&*()_+=><?"
 	splitPrefName       = "split"
 	themeVarName        = "theme"
 	widthPrefName       = "width"
@@ -78,7 +80,7 @@ func main() {
 
 	newItem := fyne.NewMenu("New",
 		fyne.NewMenuItem("User", getNewUser),
-		fyne.NewMenuItem("PW Hint", func() { fmt.Println("Menu New->PW Hint") }),
+		fyne.NewMenuItem("PW Hint", addNewHint),
 		fyne.NewMenuItem("Note", addNewNote),
 	)
 	helpMenu := fyne.NewMenu("Help",
@@ -179,11 +181,14 @@ func main() {
 				loadThreadState = LOAD_THREAD_REFRESH
 			}
 			if loadThreadState == LOAD_THREAD_REFRESH {
-				fmt.Println("Refresh State")
+				uid := dataRoot.GetRootUidOrCurrent(currentSelection)
+				fmt.Println(dataRoot.ToJsonTreeMap())
+				fmt.Printf("Refresh State: uid %s\n", uid)
+
 				navTreeLHS = makeNavTree(setPageRHSFunc)
-				uid := dataRoot.GetRootUid(currentSelection)
-				navTreeLHS.Select(uid)
 				navTreeLHS.OpenBranch(currentUser)
+				navTreeLHS.Select(uid)
+
 				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
 				window.SetContent(splitContainer)
@@ -215,6 +220,7 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 		},
 		OnSelected: func(uid string) {
 			currentSelection = uid
+			fmt.Printf("Select %s\n", uid)
 			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap())
 			setPage(t)
 		},
@@ -242,7 +248,7 @@ func getNewUser() {
 		widget.NewFormItem("Password", entry),
 	), func(ok bool) {
 		if ok {
-			problem, ok := validateAndAdd(entry.Text, "user")
+			problem, ok := validateEntryAndAddKey(entry.Text, "user")
 			if !ok {
 				dialog.NewInformation("Add New User", "Error: "+problem, window).Show()
 			}
@@ -256,7 +262,7 @@ func addNewNote() {
 		widget.NewFormItem("Note Name", entry),
 	), func(ok bool) {
 		if ok {
-			problem, ok := validateAndAdd(entry.Text, "note")
+			problem, ok := validateEntryAndAddKey(entry.Text, "note")
 			if !ok {
 				dialog.NewInformation("Add New Note", "Error: "+problem, window).Show()
 			}
@@ -264,12 +270,37 @@ func addNewNote() {
 	}, window)
 }
 
-func validateAndAdd(entry, addType string) (string, bool) {
+func addNewHint() {
+	entry := widget.NewEntry()
+	dialog.ShowCustomConfirm(fmt.Sprintf("Enter the name of the new hint for user '%s'", currentUser), "Confirm", "Cancel", widget.NewForm(
+		widget.NewFormItem("Hint Name", entry),
+	), func(ok bool) {
+		if ok {
+			problem, ok := validateEntryAndAddKey(entry.Text, "hint")
+			if !ok {
+				dialog.NewInformation("Add New Hint", "Error: "+problem, window).Show()
+			}
+		}
+	}, window)
+}
+
+func validateEntryAndAddKey(entry, addType string) (string, bool) {
 	if len(entry) == 0 {
 		return "Input is undefined", false
 	}
 	if len(entry) < 2 {
 		return "Input is too short", false
+	}
+	lcEntry := strings.ToLower(entry)
+	for _, c := range lcEntry {
+		if c < ' ' {
+			return "Input must not contain control characters", false
+		}
+		if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (strings.ContainsRune(allowedCharsInName, c)) {
+			continue
+		}
+		return fmt.Sprintf("Input must not contain character '%c'. Only 0..9, a..z, A..Z and %s chars are allowed", c, allowedCharsInName), false
+
 	}
 	var err error = nil
 	var path string = ""
@@ -279,8 +310,8 @@ func validateAndAdd(entry, addType string) (string, bool) {
 		name, err = dataRoot.AddUser(entry)
 	case "note":
 		path, err = dataRoot.AddNote(currentUser, entry, "note")
-	case "app":
-		err = dataRoot.AddApplication(currentUser, entry)
+	case "hint":
+		path, err = dataRoot.AddApplication(currentUser, entry)
 	}
 	loadThreadState = LOAD_THREAD_REFRESH
 	if err != nil {
