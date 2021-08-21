@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -23,52 +24,68 @@ var (
 	preferedOrderReversed = []string{"notes", "positional", "post", "pre", "link", "userId"}
 )
 
-func GetWelcomePage() DetailPage {
-	return DetailPage{"id", "", welcomeTitle, welcomeScreen, nil}
+func GetWelcomePage() *DetailPage {
+	return NewDetailPage("id", "", welcomeTitle, welcomeScreen, welcomeControls, nil)
 }
 
-func GetDetailPage(id string, dataRootMap *map[string]interface{}) DetailPage {
+func GetDetailPage(id string, dataRootMap *map[string]interface{}) *DetailPage {
 	nodes := strings.Split(id, ".")
 	switch len(nodes) {
 	case 1:
-		return DetailPage{id, id, "", welcomeScreen, dataRootMap}
+		return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, dataRootMap)
 	case 2:
 		if nodes[1] == idPwDetails {
-			return DetailPage{id, "Hints", nodes[0], welcomeScreen, dataRootMap}
+			return NewDetailPage(id, "Hints", nodes[0], welcomeScreen, welcomeControls, dataRootMap)
 		}
 		if nodes[1] == idNotes {
-			return DetailPage{id, "Notes", nodes[0], notesScreen, dataRootMap}
+			return NewDetailPage(id, "Notes", nodes[0], notesScreen, notesControls, dataRootMap)
 		}
-		return DetailPage{id, "Unknown", nodes[0], welcomeScreen, dataRootMap}
+		return NewDetailPage(id, "Unknown", nodes[0], welcomeScreen, welcomeControls, dataRootMap)
 	case 3:
 		if nodes[1] == idPwDetails {
-			return DetailPage{id, nodes[2], nodes[0], hintsScreen, dataRootMap}
+			return NewDetailPage(id, nodes[2], nodes[0], hintsScreen, hintsControls, dataRootMap)
 		}
 		if nodes[1] == idNotes {
-			return DetailPage{id, nodes[2], nodes[0], notesScreen, dataRootMap}
+			return NewDetailPage(id, nodes[2], nodes[0], notesScreen, notesControls, dataRootMap)
 		}
-		return DetailPage{id, "Unknown", "", welcomeScreen, dataRootMap}
+		return NewDetailPage(id, "Unknown", "", welcomeScreen, welcomeControls, dataRootMap)
 	}
-	return DetailPage{id, id, "", welcomeScreen, dataRootMap}
+	return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, dataRootMap)
+}
+
+func welcomeControls(_ fyne.Window, details DetailPage) fyne.CanvasObject {
+	cObj := make([]fyne.CanvasObject, 0)
+	cObj = append(cObj, widget.NewLabel(details.Name))
+	return container.NewHBox(cObj...)
 }
 
 func welcomeScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 	logo := canvas.NewImageFromFile("background.png")
 	logo.FillMode = canvas.ImageFillContain
 	logo.SetMinSize(fyne.NewSize(228, 167))
-	return container.NewCenter(container.NewVBox(
-		widget.NewLabelWithStyle(appDesc, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		logo,
-		container.NewCenter(
-			container.NewHBox(
-				widget.NewHyperlink("fyne.io", parseURL("https://fyne.io/")),
-				widget.NewLabel("-"),
-				widget.NewHyperlink("SDD", parseURL("https://github.com/stuartdd")),
-				widget.NewLabel("-"),
-				widget.NewHyperlink("go", parseURL("https://golang.org/")),
+
+	return container.NewVBox(
+		widget.NewSeparator(),
+		container.NewCenter(container.NewVBox(
+			widget.NewLabelWithStyle(appDesc, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+			logo,
+			container.NewCenter(
+				container.NewHBox(
+					widget.NewHyperlink("fyne.io", parseURL("https://fyne.io/")),
+					widget.NewLabel("-"),
+					widget.NewHyperlink("SDD", parseURL("https://github.com/stuartdd")),
+					widget.NewLabel("-"),
+					widget.NewHyperlink("go", parseURL("https://golang.org/")),
+				),
 			),
-		),
-	))
+		)))
+
+}
+
+func notesControls(_ fyne.Window, details DetailPage) fyne.CanvasObject {
+	cObj := make([]fyne.CanvasObject, 0)
+	cObj = append(cObj, widget.NewLabel(details.Name))
+	return container.NewHBox(cObj...)
 }
 
 func notesScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
@@ -91,6 +108,13 @@ func notesScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcbl, fcl), fcbr, e.Wid))
 	}
 	return container.NewVBox(cObj...)
+}
+
+func hintsControls(_ fyne.Window, details DetailPage) fyne.CanvasObject {
+	cObj := make([]fyne.CanvasObject, 0)
+	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), nil))
+	cObj = append(cObj, widget.NewLabel(details.Name))
+	return container.NewHBox(cObj...)
 }
 
 func hintsScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
@@ -118,7 +142,7 @@ func hintsScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 
 func listOfNonDupeInOrderKeys(m map[string]interface{}, ordered []string) []string {
 	keys := make([]string, 0)
-	for k, _ := range m {
+	for k := range m {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)

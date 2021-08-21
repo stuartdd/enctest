@@ -88,6 +88,10 @@ func (r *FileData) GetContent() []byte {
 	return r.content
 }
 
+func (r *FileData) GetContentString() string {
+	return string(r.content)
+}
+
 func (r *FileData) IsEmpty() bool {
 	return r.isEmpty
 }

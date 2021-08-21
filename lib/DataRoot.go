@@ -54,7 +54,7 @@ func (p *DataRoot) AddUser(userName string) (string, error) {
 	groups := rootMap["groups"].(map[string]interface{})
 
 	newUser := make(map[string]interface{})
-	addApplication("application", userName, newUser)
+	addHint("application", userName, newUser)
 	addNote(userName, "note", "note for user "+userName, newUser)
 
 	groups[userName] = newUser
@@ -73,7 +73,7 @@ func (p *DataRoot) AddNote(userName, noteName, content string) (string, error) {
 	return addNote(userName, noteName, content, *user)
 }
 
-func (p *DataRoot) AddApplication(userName, appName string) (string, error) {
+func (p *DataRoot) AddHint(userName, appName string) (string, error) {
 	user := GetMapForUid(userName, &p.dataMap)
 	if user == nil {
 		return "", fmt.Errorf("user name '%s' does not exists", userName)
@@ -81,7 +81,7 @@ func (p *DataRoot) AddApplication(userName, appName string) (string, error) {
 	defer func() {
 		p.navIndex = createNavIndex(p.dataMap)
 	}()
-	return addApplication(appName, userName, *user)
+	return addHint(appName, userName, *user)
 }
 
 func addNote(userName, noteName, content string, user map[string]interface{}) (string, error) {
@@ -99,24 +99,24 @@ func addNote(userName, noteName, content string, user map[string]interface{}) (s
 	return "", fmt.Errorf("note '%s' already exists", noteName)
 }
 
-func addApplication(appName, userName string, user map[string]interface{}) (string, error) {
+func addHint(hintName, userName string, user map[string]interface{}) (string, error) {
 	_, ok := user["pwHints"]
 	if !ok {
 		user["pwHints"] = make(map[string]interface{})
 	}
 	pwHints := user["pwHints"].(map[string]interface{})
-	_, ok = pwHints[appName]
+	_, ok = pwHints[hintName]
 	if !ok {
-		pwHints[appName] = make(map[string]interface{})
-		application := pwHints[appName].(map[string]interface{})
-		application["userId"] = ""
-		application["pre"] = ""
-		application["post"] = ""
-		application["notes"] = ""
-		application["positional"] = "12345"
-		return fmt.Sprintf("%s.pwHints.%s", userName, appName), nil
+		pwHints[hintName] = make(map[string]interface{})
+		hint := pwHints[hintName].(map[string]interface{})
+		hint["userId"] = ""
+		hint["pre"] = ""
+		hint["post"] = ""
+		hint["notes"] = ""
+		hint["positional"] = "12345"
+		return fmt.Sprintf("%s.pwHints.%s", userName, hintName), nil
 	}
-	return "", fmt.Errorf("application '%s' already exists", appName)
+	return "", fmt.Errorf("application '%s' already exists", hintName)
 }
 
 func (p *DataRoot) GetRootUidOrCurrent(current string) string {
@@ -124,7 +124,7 @@ func (p *DataRoot) GetRootUidOrCurrent(current string) string {
 		return current
 	}
 	l := make([]string, 0)
-	for k, _ := range p.navIndex {
+	for k := range p.navIndex {
 		if k != "" {
 			l = append(l, k)
 		}
@@ -235,7 +235,7 @@ func createNavIndexDetail(id string, uids map[string][]string, m map[string]inte
 func keysToList(id string, m map[string]interface{}) ([]string, []string) {
 	l := make([]string, 0)
 	ll := make([]string, 0)
-	for k, _ := range m {
+	for k := range m {
 		l = append(l, k)
 		if id == "" {
 			ll = append(ll, k)

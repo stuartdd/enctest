@@ -28,7 +28,7 @@ const (
 	LOAD_THREAD_INPW    = iota
 	LOAD_THREAD_DONE    = iota
 	LOAD_THREAD_REFRESH = iota
-	allowedCharsInName  = "*~@#$%^&*()_+=><?"
+	allowedCharsInName  = " *~@#$%^&*()_+=><?"
 	splitPrefName       = "split"
 	themeVarName        = "theme"
 	widthPrefName       = "width"
@@ -36,16 +36,17 @@ const (
 )
 
 var (
-	window             fyne.Window
-	fileData           *lib.FileData
-	dataRoot           *lib.DataRoot
-	navTreeLHS         *widget.Tree
-	splitContainer     *container.Split // So we can save the divider position to preferences.
-	currentSelection   = ""
-	currentUser        = ""
-	loadThreadFileName = ""
-	shouldCloseLock    = false
-	loadThreadState    = 0
+	window                fyne.Window
+	fileData              *lib.FileData
+	dataRoot              *lib.DataRoot
+	navTreeLHS            *widget.Tree
+	splitContainer        *container.Split // So we can save the divider position to preferences.
+	currentSelection      = ""
+	currentUser           = ""
+	loadThreadFileName    = ""
+	shouldCloseLock       = false
+	loadThreadState       = 0
+	countStructureChanges = 0
 )
 
 func main() {
@@ -79,8 +80,8 @@ func main() {
 	saveUnEncItem := fyne.NewMenuItem("Save Un-Encrypted", func() { commitAndSaveData(SAVE_UN_ENCRYPTED, false) })
 
 	newItem := fyne.NewMenu("New",
-		fyne.NewMenuItem("User", getNewUser),
-		fyne.NewMenuItem("PW Hint", addNewHint),
+		fyne.NewMenuItem("User", addNewUser),
+		fyne.NewMenuItem("Hint", addNewHint),
 		fyne.NewMenuItem("Note", addNewNote),
 	)
 	helpMenu := fyne.NewMenu("Help",
@@ -104,13 +105,13 @@ func main() {
 		helpMenu,
 	)
 	window.SetMainMenu(mainMenu)
-
 	window.SetMaster()
 
-	title := widget.NewLabel("")
+	wp := gui.GetWelcomePage()
+	title := container.NewHBox()
+	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp)}
 	contentRHS := container.NewMax()
-	layoutRHS := container.NewBorder(
-		container.NewVBox(title, widget.NewSeparator()), nil, nil, nil, contentRHS)
+	layoutRHS := container.NewBorder(title, nil, nil, nil, contentRHS)
 
 	/*
 		function called when a selection is made in the LHS tree.
@@ -119,13 +120,13 @@ func main() {
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
 		if detailPage.User == "" {
 			currentUser = detailPage.Title
-			title.SetText(detailPage.Title)
 		} else {
 			currentUser = detailPage.User
-			title.SetText(fmt.Sprintf("%s: %s", detailPage.User, detailPage.Title))
 		}
 		navTreeLHS.OpenBranch(detailPage.Uid)
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentSelection))
+		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage)}
+		title.Refresh()
 		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage)}
 		contentRHS.Refresh()
 	}
@@ -222,7 +223,7 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 			currentSelection = uid
 			fmt.Printf("Select %s\n", uid)
 			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap())
-			setPage(t)
+			setPage(*t)
 		},
 	}
 }
@@ -232,17 +233,17 @@ func makeThemeButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject
 		widget.NewButton("Dark", func() {
 			setThemeById("dark")
 			t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap())
-			setPage(t)
+			setPage(*t)
 		}),
 		widget.NewButton("Light", func() {
 			setThemeById("light")
 			t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap())
-			setPage(t)
+			setPage(*t)
 		}),
 	)
 }
 
-func getNewUser() {
+func addNewUser() {
 	entry := widget.NewEntry()
 	dialog.ShowCustomConfirm("Enter the name of the user", "Confirm", "Cancel", widget.NewForm(
 		widget.NewFormItem("Password", entry),
@@ -299,8 +300,7 @@ func validateEntryAndAddKey(entry, addType string) (string, bool) {
 		if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (strings.ContainsRune(allowedCharsInName, c)) {
 			continue
 		}
-		return fmt.Sprintf("Input must not contain character '%c'. Only 0..9, a..z, A..Z and %s chars are allowed", c, allowedCharsInName), false
-
+		return fmt.Sprintf("Input must not contain character '%c'. Only '0..9', 'a..z', 'A..Z' and '%s' chars are allowed", c, allowedCharsInName), false
 	}
 	var err error = nil
 	var path string = ""
@@ -311,9 +311,10 @@ func validateEntryAndAddKey(entry, addType string) (string, bool) {
 	case "note":
 		path, err = dataRoot.AddNote(currentUser, entry, "note")
 	case "hint":
-		path, err = dataRoot.AddApplication(currentUser, entry)
+		path, err = dataRoot.AddHint(currentUser, entry)
 	}
 	loadThreadState = LOAD_THREAD_REFRESH
+	countStructureChanges++
 	if err != nil {
 		return err.Error(), false
 	}
@@ -368,6 +369,8 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 					err = fileData.StoreContentEncrypted([]byte(pass.Text))
 					if err != nil {
 						dialog.NewInformation("Save Encrypted File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
+					} else {
+						countStructureChanges = 0
 					}
 				} else {
 					dialog.NewInformation("Save Encrypted File Error:", "Error Message:\n\n-- Password not provided --\n\nFile was not saved!\nPress OK to continue", window).Show()
@@ -387,7 +390,7 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 			if err != nil {
 				dialog.NewInformation("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
 			} else {
-				dialog.NewInformation("File Saved OK:", fmt.Sprintf("%d item(s) were saved", count), window).Show()
+				countStructureChanges = 0
 			}
 		}
 	}
@@ -410,7 +413,7 @@ func shouldClose() {
 }
 
 func countChangedItems() int {
-	count := 0
+	count := countStructureChanges
 	for _, v := range gui.EditEntryList {
 		if v.IsChanged() {
 			count++

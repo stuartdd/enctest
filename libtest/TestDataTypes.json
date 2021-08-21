@@ -1,5 +1,19 @@
 {
     "groups": {
+        "Stuart": {
+            "notes": {
+                "note": " Stuart"
+            },
+            "pwHints": {
+                "application": {
+                    "notes": "",
+                    "positional": "12345",
+                    "post": "",
+                    "pre": "",
+                    "userId": ""
+                }
+            }
+        },
         "UserA": {
             "notes": {
                 "dsdfsdfs": "note",
