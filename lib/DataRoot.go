@@ -88,6 +88,8 @@ func searchLeafNodes(addPath func(string), tag, needle, user, name string, m map
 				if strings.Contains(s.(string), needle) {
 					addPath(user + tag + name)
 				}
+			} else {
+				searchLeafNodes(addPath, name, needle, user, k, s.(map[string]interface{}))
 			}
 		}
 	}

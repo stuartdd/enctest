@@ -289,9 +289,7 @@ func search(s string) {
 				searchWindow = nil
 			}
 		}
-		go showNewWindow(200, 300, list)
-		// dialog.ShowCustom("Search results", "Select",
-		// 	container.New(gui.NewBoxLayout(window.Canvas().Size().Width/2, window.Canvas().Size().Height/2), list), window)
+		go showNewWindow(window.Canvas().Size().Width/3, window.Canvas().Size().Height/2, list)
 	}
 }
 
