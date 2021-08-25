@@ -29,7 +29,7 @@ func NewFileData(fName string) (*FileData, error) {
 
 func (r *FileData) DecryptContents(encKey []byte) error {
 	if r.isEmpty {
-		return errors.New("Cannot decrypt empty content data")
+		return errors.New("cannot decrypt empty content data")
 	}
 	cont, err := decrypt(encKey, r.content)
 	if err != nil {
@@ -74,10 +74,7 @@ func (r *FileData) IsRawJson() bool {
 }
 
 func (r *FileData) HasEncData() bool {
-	if len(r.key) == 0 {
-		return false
-	}
-	return true
+	return len(r.key) != 0
 }
 
 func (r *FileData) GetFileName() string {

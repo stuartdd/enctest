@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"stuartdd.com/gui"
 	"stuartdd.com/lib"
@@ -20,27 +22,30 @@ import (
 )
 
 const (
-	SAVE_AS_IS          = iota
-	SAVE_ENCRYPTED      = iota
-	SAVE_UN_ENCRYPTED   = iota
-	LOAD_THREAD_LOAD    = iota
-	LOAD_THREAD_LOADING = iota
-	LOAD_THREAD_INPW    = iota
-	LOAD_THREAD_DONE    = iota
-	LOAD_THREAD_REFRESH = iota
-	allowedCharsInName  = " *~@#$%^&*()_+=><?"
-	splitPrefName       = "split"
-	themeVarName        = "theme"
-	widthPrefName       = "width"
-	heightPrefName      = "height"
+	SAVE_AS_IS             = iota
+	SAVE_ENCRYPTED         = iota
+	SAVE_UN_ENCRYPTED      = iota
+	LOAD_THREAD_LOAD       = iota
+	LOAD_THREAD_LOADING    = iota
+	LOAD_THREAD_INPW       = iota
+	LOAD_THREAD_DONE       = iota
+	LOAD_THREAD_REFRESH    = iota
+	allowedCharsInName     = " *~@#$%^&*()_+=><?"
+	splitPrefName          = "split"
+	themeVarName           = "theme"
+	widthPrefName          = "width"
+	heightPrefName         = "height"
+	lastGoodSearchPrefName = "lgs"
 )
 
 var (
 	window                fyne.Window
+	searchWindow          fyne.Window
 	fileData              *lib.FileData
 	dataRoot              *lib.DataRoot
 	navTreeLHS            *widget.Tree
 	splitContainer        *container.Split // So we can save the divider position to preferences.
+	findSelection         = ""
 	currentSelection      = ""
 	currentUser           = ""
 	loadThreadFileName    = ""
@@ -183,17 +188,24 @@ func main() {
 			}
 			if loadThreadState == LOAD_THREAD_REFRESH {
 				uid := dataRoot.GetRootUidOrCurrent(currentSelection)
-				fmt.Println(dataRoot.ToJsonTreeMap())
-				fmt.Printf("Refresh State: uid %s\n", uid)
+				//				fmt.Println(dataRoot.ToJsonTreeMap())
+				// fmt.Printf("Refresh State: uid %s %s\n", uid, lib.GetParentId(uid))
 
 				navTreeLHS = makeNavTree(setPageRHSFunc)
 				navTreeLHS.OpenBranch(currentUser)
+				navTreeLHS.OpenBranch(lib.GetParentId(uid))
 				navTreeLHS.Select(uid)
 
 				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
 				window.SetContent(splitContainer)
 				loadThreadState = LOAD_THREAD_DONE
+			}
+			if findSelection != "" {
+				uid := findSelection
+				findSelection = ""
+				navTreeLHS.OpenBranch(lib.GetParentId(uid))
+				navTreeLHS.Select(uid)
 			}
 		}
 	}()
@@ -229,7 +241,10 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 }
 
 func makeThemeButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
-	return container.New(layout.NewGridLayout(2),
+	searchEntry := widget.NewEntry()
+	searchEntry.SetText(fyne.CurrentApp().Preferences().StringWithFallback(lastGoodSearchPrefName, "?"))
+	c := container.New(layout.NewFormLayout(), widget.NewButtonWithIcon("", theme.SearchIcon(), func() { search(searchEntry.Text) }), searchEntry)
+	b := container.New(layout.NewGridLayout(2),
 		widget.NewButton("Dark", func() {
 			setThemeById("dark")
 			t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap())
@@ -241,6 +256,51 @@ func makeThemeButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject
 			setPage(*t)
 		}),
 	)
+	return container.NewVBox(c, b)
+}
+
+func search(s string) {
+	mapPaths := make(map[string]bool, 0)
+	dataRoot.Search(func(s string) {
+		fmt.Printf("Path: %s\n", s)
+		mapPaths[s] = true
+	}, s)
+	paths := make([]string, 0)
+	for k, _ := range mapPaths {
+		paths = append(paths, k)
+	}
+	sort.Strings(paths)
+
+	if len(paths) > 0 {
+		fyne.CurrentApp().Preferences().SetString(lastGoodSearchPrefName, s)
+		list := widget.NewList(
+			func() int { return len(paths) },
+			func() fyne.CanvasObject {
+				return widget.NewLabel("")
+			},
+			func(lii widget.ListItemID, co fyne.CanvasObject) {
+				co.(*widget.Label).SetText(paths[lii])
+			},
+		)
+		list.OnSelected = func(id widget.ListItemID) {
+			findSelection = paths[id]
+			if searchWindow != nil {
+				searchWindow.Close()
+				searchWindow = nil
+			}
+		}
+		go showNewWindow(200, 300, list)
+		// dialog.ShowCustom("Search results", "Select",
+		// 	container.New(gui.NewBoxLayout(window.Canvas().Size().Width/2, window.Canvas().Size().Height/2), list), window)
+	}
+}
+
+func showNewWindow(w float32, h float32, list *widget.List) {
+	c := container.NewScroll(list)
+	searchWindow = fyne.CurrentApp().NewWindow("Search List")
+	searchWindow.SetContent(c)
+	searchWindow.Resize(fyne.NewSize(w, h))
+	searchWindow.Show()
 }
 
 func addNewUser() {
@@ -399,7 +459,8 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 func shouldClose() {
 	if !shouldCloseLock {
 		shouldCloseLock = true
-		savePreferences()
+		go savePreferences()
+		time.Sleep(500 * time.Millisecond)
 		count := countChangedItems()
 		if count > 0 {
 			fmt.Println("Nope!")

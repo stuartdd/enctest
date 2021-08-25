@@ -55,7 +55,7 @@ func GetDetailPage(id string, dataRootMap *map[string]interface{}) *DetailPage {
 
 func welcomeControls(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, widget.NewLabel(details.Name))
+	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
 
@@ -84,7 +84,7 @@ func welcomeScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 
 func notesControls(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, widget.NewLabel(details.Name))
+	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
 
@@ -113,7 +113,7 @@ func notesScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 func hintsControls(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), nil))
-	cObj = append(cObj, widget.NewLabel(details.Name))
+	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
 

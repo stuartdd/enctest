@@ -2,12 +2,18 @@ package lib
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"sort"
 	"strings"
 	"time"
+)
+
+const (
+	hintStr      = "pwHint"
+	noteStr      = "notes"
+	groupsStr    = "groups"
+	timeStampStr = "timeStamp"
 )
 
 var (
@@ -25,24 +31,66 @@ func NewDataRoot(j []byte) (*DataRoot, error) {
 	if err != nil {
 		return nil, err
 	}
-	ts, ok := m["timeStamp"]
+	ts, ok := m[timeStampStr]
 	if !ok {
-		return nil, errors.New("'timeStamp' does not exist in data root")
+		return nil, fmt.Errorf("'%s' does not exist in data root", timeStampStr)
 	}
 	if reflect.ValueOf(ts).Kind() != reflect.String {
-		return nil, errors.New("'timeStamp' is not a string")
+		return nil, fmt.Errorf("'%s' is not a string", timeStampStr)
 	}
 	tim, err := parseTime(fmt.Sprintf("%v", ts))
 	if err != nil {
-		return nil, errors.New("'timeStamp' could not be parsed")
+		return nil, fmt.Errorf("'%s' could not be parsed", timeStampStr)
 	}
-	_, ok = m["groups"]
+	_, ok = m[groupsStr]
 	if !ok {
-		return nil, errors.New("'groups' does not exist in data root")
+		return nil, fmt.Errorf("'%s' does not exist in data root", groupsStr)
 	}
 
 	dr := &DataRoot{timeStamp: tim, dataMap: m, navIndex: createNavIndex(m)}
 	return dr, nil
+}
+
+func (p *DataRoot) Search(addPath func(string), needle string) {
+	rootMap := p.dataMap
+	groups := rootMap[groupsStr].(map[string]interface{})
+	for user, v := range groups {
+		searchUsers(addPath, needle, user, v.(map[string]interface{}))
+	}
+}
+
+func searchUsers(addPath func(string), needle, user string, m map[string]interface{}) {
+	for k, v := range m {
+		if k == hintStr {
+			for k1, v1 := range v.(map[string]interface{}) {
+				searchLeafNodes(addPath, hintStr, needle, user, k1, v1.(map[string]interface{}))
+			}
+		} else {
+			searchLeafNodes(addPath, "", needle, user, k, v.(map[string]interface{}))
+		}
+	}
+}
+
+func searchLeafNodes(addPath func(string), tag, needle, user, name string, m map[string]interface{}) {
+	if tag != "" {
+		tag = "." + tag + "."
+	} else {
+		tag = "."
+	}
+	if strings.Contains(name, needle) {
+		addPath(user + tag + name)
+	}
+	for k, s := range m {
+		if strings.Contains(k, needle) {
+			addPath(user + tag + name)
+		} else {
+			if reflect.ValueOf(s).Kind() == reflect.String {
+				if strings.Contains(s.(string), needle) {
+					addPath(user + tag + name)
+				}
+			}
+		}
+	}
 }
 
 func (p *DataRoot) AddUser(userName string) (string, error) {
@@ -51,7 +99,7 @@ func (p *DataRoot) AddUser(userName string) (string, error) {
 		return "", fmt.Errorf("user name '%s' already exists", userName)
 	}
 	rootMap := p.dataMap
-	groups := rootMap["groups"].(map[string]interface{})
+	groups := rootMap[groupsStr].(map[string]interface{})
 
 	newUser := make(map[string]interface{})
 	addHint("application", userName, newUser)
@@ -65,7 +113,7 @@ func (p *DataRoot) AddUser(userName string) (string, error) {
 func (p *DataRoot) AddNote(userName, noteName, content string) (string, error) {
 	user := GetMapForUid(userName, &p.dataMap)
 	if user == nil {
-		return "", fmt.Errorf("user name '%s' doen not exists", userName)
+		return "", fmt.Errorf("user name '%s' does not exists", userName)
 	}
 	defer func() {
 		p.navIndex = createNavIndex(p.dataMap)
@@ -85,26 +133,26 @@ func (p *DataRoot) AddHint(userName, appName string) (string, error) {
 }
 
 func addNote(userName, noteName, content string, user map[string]interface{}) (string, error) {
-	_, ok := user["notes"]
+	_, ok := user[noteStr]
 	if !ok {
-		user["notes"] = make(map[string]interface{})
+		user[noteStr] = make(map[string]interface{})
 	}
-	notes := user["notes"].(map[string]interface{})
+	notes := user[noteStr].(map[string]interface{})
 
 	_, ok = notes[noteName]
 	if !ok {
 		notes[noteName] = content
-		return fmt.Sprintf("%s.notes", userName), nil
+		return fmt.Sprintf("%s.%s", userName, noteStr), nil
 	}
 	return "", fmt.Errorf("note '%s' already exists", noteName)
 }
 
 func addHint(hintName, userName string, user map[string]interface{}) (string, error) {
-	_, ok := user["pwHints"]
+	_, ok := user[hintStr]
 	if !ok {
-		user["pwHints"] = make(map[string]interface{})
+		user[hintStr] = make(map[string]interface{})
 	}
-	pwHints := user["pwHints"].(map[string]interface{})
+	pwHints := user[hintStr].(map[string]interface{})
 	_, ok = pwHints[hintName]
 	if !ok {
 		pwHints[hintName] = make(map[string]interface{})
@@ -114,9 +162,23 @@ func addHint(hintName, userName string, user map[string]interface{}) (string, er
 		hint["post"] = ""
 		hint["notes"] = ""
 		hint["positional"] = "12345"
-		return fmt.Sprintf("%s.pwHints.%s", userName, hintName), nil
+		return fmt.Sprintf("%s.%s.%s", userName, hintStr, hintName), nil
 	}
 	return "", fmt.Errorf("application '%s' already exists", hintName)
+}
+func GetParentId(uid string) string {
+	if uid == "" {
+		return uid
+	}
+	p := strings.LastIndexByte(uid, '.')
+	switch p {
+	case -1:
+		return uid
+	case 0:
+		return ""
+	default:
+		return uid[0:p]
+	}
 }
 
 func (p *DataRoot) GetRootUidOrCurrent(current string) string {
@@ -174,7 +236,7 @@ func (r *DataRoot) ToStruct() string {
 func GetMapForUid(uid string, m *map[string]interface{}) *map[string]interface{} {
 	nodes := strings.Split(uid, ".")
 	n := *m
-	x := n["groups"]
+	x := n[groupsStr]
 	for _, v := range nodes {
 		y := x.(map[string]interface{})[v]
 		if y == nil {

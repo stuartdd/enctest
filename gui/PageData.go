@@ -28,10 +28,10 @@ type EditEntry struct {
 }
 
 type DetailPage struct {
-	Uid, Name, Title, User string
-	ViewFunc               func(w fyne.Window, details DetailPage) fyne.CanvasObject
-	CntlFunc               func(w fyne.Window, details DetailPage) fyne.CanvasObject
-	DataRootMap            *map[string]interface{}
+	Uid, Heading, Title, User string
+	ViewFunc                  func(w fyne.Window, details DetailPage) fyne.CanvasObject
+	CntlFunc                  func(w fyne.Window, details DetailPage) fyne.CanvasObject
+	DataRootMap               *map[string]interface{}
 }
 
 func NewEditEntry(path string, title string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), linkFunc func(path string)) *EditEntry {
@@ -133,11 +133,11 @@ func (p *EditEntry) GetCurrentText() string {
 }
 
 func NewDetailPage(uid string, title string, user string, viewFunc func(w fyne.Window, details DetailPage) fyne.CanvasObject, cntlFunc func(w fyne.Window, details DetailPage) fyne.CanvasObject, dataRootMap *map[string]interface{}) *DetailPage {
-	name := title
+	heading := fmt.Sprintf("User:  %s", title)
 	if user != "" {
-		name = fmt.Sprintf("%s - %s", user, title)
+		heading = fmt.Sprintf("User:  %s:  %s", user, title)
 	}
-	return &DetailPage{Uid: uid, Name: name, Title: title, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, DataRootMap: dataRootMap}
+	return &DetailPage{Uid: uid, Heading: heading, Title: title, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, DataRootMap: dataRootMap}
 }
 
 func (p *DetailPage) GetMapForUid() *map[string]interface{} {
