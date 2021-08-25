@@ -46,6 +46,7 @@ var (
 	navTreeLHS            *widget.Tree
 	splitContainer        *container.Split // So we can save the divider position to preferences.
 	findSelection         = ""
+	findCaseSensitive     = false
 	currentSelection      = ""
 	currentUser           = ""
 	loadThreadFileName    = ""
@@ -243,7 +244,14 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 func makeThemeButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	searchEntry := widget.NewEntry()
 	searchEntry.SetText(fyne.CurrentApp().Preferences().StringWithFallback(lastGoodSearchPrefName, "?"))
-	c := container.New(layout.NewFormLayout(), widget.NewButtonWithIcon("", theme.SearchIcon(), func() { search(searchEntry.Text) }), searchEntry)
+	c := container.New(
+		layout.NewFormLayout(),
+		widget.NewButtonWithIcon("", theme2.CaseIcon(), func() { search(searchEntry.Text) }),
+		searchEntry)
+	c2 := container.New(
+		layout.NewFormLayout(),
+		widget.NewButtonWithIcon("", theme.SearchIcon(), func() { search(searchEntry.Text) }),
+		c)
 	b := container.New(layout.NewGridLayout(2),
 		widget.NewButton("Dark", func() {
 			setThemeById("dark")
@@ -256,7 +264,7 @@ func makeThemeButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject
 			setPage(*t)
 		}),
 	)
-	return container.NewVBox(c, b)
+	return container.NewVBox(c2, b)
 }
 
 func search(s string) {
@@ -290,6 +298,8 @@ func search(s string) {
 			}
 		}
 		go showNewWindow(window.Canvas().Size().Width/3, window.Canvas().Size().Height/2, list)
+	} else {
+		dialog.NewInformation("Search results", fmt.Sprintf("Nothing found for search '%s'", s), window).Show()
 	}
 }
 
