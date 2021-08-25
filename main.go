@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
@@ -35,7 +36,8 @@ const (
 	themeVarName           = "theme"
 	widthPrefName          = "width"
 	heightPrefName         = "height"
-	lastGoodSearchPrefName = "lgs"
+	lastGoodSearchPrefName = "lastSearch"
+	searchCasePrefName     = "searchCase"
 )
 
 var (
@@ -46,7 +48,7 @@ var (
 	navTreeLHS            *widget.Tree
 	splitContainer        *container.Split // So we can save the divider position to preferences.
 	findSelection         = ""
-	findCaseSensitive     = false
+	findCaseSensitive     = binding.NewBool()
 	currentSelection      = ""
 	currentUser           = ""
 	loadThreadFileName    = ""
@@ -77,7 +79,13 @@ func main() {
 			}
 		}
 	}()
-
+	findCaseSensitive.Set(a.Preferences().BoolWithFallback(searchCasePrefName, true))
+	findCaseSensitive.AddListener(binding.NewDataListener(func() {
+		b, err := findCaseSensitive.Get()
+		if err == nil {
+			a.Preferences().SetBool(searchCasePrefName, b)
+		}
+	}))
 	/*
 		Create the menus
 	*/
@@ -145,10 +153,10 @@ func main() {
 	*/
 	go func() {
 		for {
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(800 * time.Millisecond)
 			if loadThreadState == LOAD_THREAD_LOAD {
-				loadThreadState = LOAD_THREAD_LOADING
 				fmt.Println("Load State")
+				loadThreadState = LOAD_THREAD_LOADING
 				fd, err := lib.NewFileData(loadThreadFileName)
 				if err != nil {
 					fmt.Printf("Failed to load data file %s\n", loadThreadFileName)
@@ -187,22 +195,22 @@ func main() {
 				dataRoot = dr
 				loadThreadState = LOAD_THREAD_REFRESH
 			}
-			if loadThreadState == LOAD_THREAD_REFRESH {
-				uid := dataRoot.GetRootUidOrCurrent(currentSelection)
-				//				fmt.Println(dataRoot.ToJsonTreeMap())
-				// fmt.Printf("Refresh State: uid %s %s\n", uid, lib.GetParentId(uid))
 
+			if loadThreadState == LOAD_THREAD_REFRESH {
+				fmt.Println("Refresh State")
+				uid := dataRoot.GetRootUidOrCurrent(currentSelection)
 				navTreeLHS = makeNavTree(setPageRHSFunc)
 				navTreeLHS.OpenBranch(currentUser)
 				navTreeLHS.OpenBranch(lib.GetParentId(uid))
 				navTreeLHS.Select(uid)
-
 				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
 				window.SetContent(splitContainer)
 				loadThreadState = LOAD_THREAD_DONE
 			}
+
 			if findSelection != "" {
+				fmt.Println("Search select")
 				uid := findSelection
 				findSelection = ""
 				navTreeLHS.OpenBranch(lib.GetParentId(uid))
@@ -244,14 +252,15 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 func makeThemeButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	searchEntry := widget.NewEntry()
 	searchEntry.SetText(fyne.CurrentApp().Preferences().StringWithFallback(lastGoodSearchPrefName, "?"))
-	c := container.New(
-		layout.NewFormLayout(),
-		widget.NewButtonWithIcon("", theme2.CaseIcon(), func() { search(searchEntry.Text) }),
-		searchEntry)
 	c2 := container.New(
-		layout.NewFormLayout(),
-		widget.NewButtonWithIcon("", theme.SearchIcon(), func() { search(searchEntry.Text) }),
-		c)
+		layout.NewHBoxLayout(),
+		widget.NewCheckWithData("Match Case", findCaseSensitive),
+		widget.NewButtonWithIcon("", theme.SearchIcon(), func() { search(searchEntry.Text) }))
+
+	c := container.New(
+		layout.NewVBoxLayout(),
+		c2,
+		searchEntry)
 	b := container.New(layout.NewGridLayout(2),
 		widget.NewButton("Dark", func() {
 			setThemeById("dark")
@@ -264,15 +273,16 @@ func makeThemeButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject
 			setPage(*t)
 		}),
 	)
-	return container.NewVBox(c2, b)
+	return container.NewVBox(widget.NewSeparator(), c, b)
 }
 
 func search(s string) {
-	mapPaths := make(map[string]bool, 0)
+	matchCase, _ := findCaseSensitive.Get()
+	fmt.Printf("matchCase: %t\n", matchCase)
+	mapPaths := make(map[string]bool)
 	dataRoot.Search(func(s string) {
-		fmt.Printf("Path: %s\n", s)
 		mapPaths[s] = true
-	}, s)
+	}, s, matchCase)
 	paths := make([]string, 0)
 	for k, _ := range mapPaths {
 		paths = append(paths, k)
@@ -292,10 +302,6 @@ func search(s string) {
 		)
 		list.OnSelected = func(id widget.ListItemID) {
 			findSelection = paths[id]
-			if searchWindow != nil {
-				searchWindow.Close()
-				searchWindow = nil
-			}
 		}
 		go showNewWindow(window.Canvas().Size().Width/3, window.Canvas().Size().Height/2, list)
 	} else {
@@ -304,6 +310,10 @@ func search(s string) {
 }
 
 func showNewWindow(w float32, h float32, list *widget.List) {
+	if searchWindow != nil {
+		searchWindow.Close()
+		searchWindow = nil
+	}
 	c := container.NewScroll(list)
 	searchWindow = fyne.CurrentApp().NewWindow("Search List")
 	searchWindow.SetContent(c)
@@ -469,6 +479,9 @@ func shouldClose() {
 		shouldCloseLock = true
 		go savePreferences()
 		time.Sleep(500 * time.Millisecond)
+		if searchWindow != nil {
+			searchWindow.Close()
+		}
 		count := countChangedItems()
 		if count > 0 {
 			fmt.Println("Nope!")

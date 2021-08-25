@@ -25,32 +25,36 @@ var (
 )
 
 func GetWelcomePage() *DetailPage {
-	return NewDetailPage("id", "", welcomeTitle, welcomeScreen, welcomeControls, nil)
+	return NewDetailPage("id", "", welcomeTitle, welcomeScreen, welcomeControls, nil, nil)
 }
 
 func GetDetailPage(id string, dataRootMap *map[string]interface{}) *DetailPage {
 	nodes := strings.Split(id, ".")
 	switch len(nodes) {
 	case 1:
-		return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, dataRootMap)
+		return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, nil, dataRootMap)
 	case 2:
 		if nodes[1] == idPwDetails {
-			return NewDetailPage(id, "Hints", nodes[0], welcomeScreen, welcomeControls, dataRootMap)
+			return NewDetailPage(id, "Hints", nodes[0], welcomeScreen, welcomeControls, nil, dataRootMap)
 		}
 		if nodes[1] == idNotes {
-			return NewDetailPage(id, "Notes", nodes[0], notesScreen, notesControls, dataRootMap)
+			return NewDetailPage(id, "Notes", nodes[0], notesScreen, notesControls, actionFunc, dataRootMap)
 		}
-		return NewDetailPage(id, "Unknown", nodes[0], welcomeScreen, welcomeControls, dataRootMap)
+		return NewDetailPage(id, "Unknown", nodes[0], welcomeScreen, welcomeControls, nil, dataRootMap)
 	case 3:
 		if nodes[1] == idPwDetails {
-			return NewDetailPage(id, nodes[2], nodes[0], hintsScreen, hintsControls, dataRootMap)
+			return NewDetailPage(id, nodes[2], nodes[0], hintsScreen, hintsControls, actionFunc, dataRootMap)
 		}
 		if nodes[1] == idNotes {
-			return NewDetailPage(id, nodes[2], nodes[0], notesScreen, notesControls, dataRootMap)
+			return NewDetailPage(id, nodes[2], nodes[0], notesScreen, notesControls, actionFunc, dataRootMap)
 		}
-		return NewDetailPage(id, "Unknown", "", welcomeScreen, welcomeControls, dataRootMap)
+		return NewDetailPage(id, "Unknown", "", welcomeScreen, welcomeControls, nil, dataRootMap)
 	}
-	return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, dataRootMap)
+	return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, nil, dataRootMap)
+}
+
+func actionFunc(action string, uid string) {
+	fmt.Printf("Action %s %s\n", action, uid)
 }
 
 func welcomeControls(_ fyne.Window, details DetailPage) fyne.CanvasObject {
@@ -79,7 +83,6 @@ func welcomeScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 				),
 			),
 		)))
-
 }
 
 func notesControls(_ fyne.Window, details DetailPage) fyne.CanvasObject {
@@ -97,22 +100,25 @@ func notesScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 		idd := details.Uid + "." + k
 		e, ok := EditEntryList[idd]
 		if !ok {
-			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), textChangedFunction, unDoFunction, goToLinkFunction)
+			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), textChangedFunction, unDoFunction, goToLinkFunction, removeItem)
 			EditEntryList[idd] = e
 		}
 		e.RefreshButtons()
 		fcl := container.New(&FixedLayout{100, 1}, e.Lab)
 		fcbl := container.New(&FixedLayout{10, 5}, e.Link)
 		fcbr := container.New(&FixedLayout{10, 5}, e.UnDo)
+		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
 		cObj = append(cObj, widget.NewSeparator())
-		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcbl, fcl), fcbr, e.Wid))
+		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcbl, fcl), fcbr, e.Wid))
 	}
 	return container.NewVBox(cObj...)
 }
 
 func hintsControls(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), nil))
+	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
+		actionFunc("remove", details.Uid)
+	}))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
@@ -126,15 +132,16 @@ func hintsScreen(_ fyne.Window, details DetailPage) fyne.CanvasObject {
 		idd := details.Uid + "." + k
 		e, ok := EditEntryList[idd]
 		if !ok {
-			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), textChangedFunction, unDoFunction, goToLinkFunction)
+			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), textChangedFunction, unDoFunction, goToLinkFunction, removeItem)
 			EditEntryList[idd] = e
 		}
 		e.RefreshButtons()
 		fcl := container.New(&FixedLayout{100, 1}, e.Lab)
 		fcbl := container.New(&FixedLayout{10, 5}, e.Link)
 		fcbr := container.New(&FixedLayout{10, 5}, e.UnDo)
+		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
 		cObj = append(cObj, widget.NewSeparator())
-		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcbl, fcl), fcbr, e.Wid))
+		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcbl, fcl), fcbr, e.Wid))
 
 	}
 	return container.NewVBox(cObj...)
@@ -164,7 +171,6 @@ func contains(s []string, str string) (int, bool) {
 			return i, true
 		}
 	}
-
 	return 0, false
 }
 
@@ -173,6 +179,10 @@ func textChangedFunction(s string, path string) {
 	if ee != nil {
 		ee.SetNew(s)
 	}
+}
+
+func removeItem(path string) {
+	fmt.Printf("Remove %s\n", path)
 }
 
 func unDoFunction(path string) {

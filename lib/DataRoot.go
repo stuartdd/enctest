@@ -51,47 +51,56 @@ func NewDataRoot(j []byte) (*DataRoot, error) {
 	return dr, nil
 }
 
-func (p *DataRoot) Search(addPath func(string), needle string) {
+func (p *DataRoot) Search(addPath func(string), needle string, matchCase bool) {
 	rootMap := p.dataMap
 	groups := rootMap[groupsStr].(map[string]interface{})
 	for user, v := range groups {
-		searchUsers(addPath, needle, user, v.(map[string]interface{}))
+		searchUsers(addPath, needle, user, v.(map[string]interface{}), matchCase)
 	}
 }
 
-func searchUsers(addPath func(string), needle, user string, m map[string]interface{}) {
+func searchUsers(addPath func(string), needle, user string, m map[string]interface{}, matchCase bool) {
 	for k, v := range m {
 		if k == hintStr {
 			for k1, v1 := range v.(map[string]interface{}) {
-				searchLeafNodes(addPath, hintStr, needle, user, k1, v1.(map[string]interface{}))
+				searchLeafNodes(addPath, hintStr, needle, user, k1, v1.(map[string]interface{}), matchCase)
 			}
 		} else {
-			searchLeafNodes(addPath, "", needle, user, k, v.(map[string]interface{}))
+			searchLeafNodes(addPath, "", needle, user, k, v.(map[string]interface{}), matchCase)
 		}
 	}
 }
 
-func searchLeafNodes(addPath func(string), tag, needle, user, name string, m map[string]interface{}) {
+func searchLeafNodes(addPath func(string), tag, needle, user, name string, m map[string]interface{}, matchCase bool) {
 	if tag != "" {
 		tag = "." + tag + "."
 	} else {
 		tag = "."
 	}
-	if strings.Contains(name, needle) {
+	if containsWithCase(name, needle, matchCase) {
 		addPath(user + tag + name)
 	}
 	for k, s := range m {
-		if strings.Contains(k, needle) {
+		if containsWithCase(k, needle, matchCase) {
 			addPath(user + tag + name)
-		} else {
-			if reflect.ValueOf(s).Kind() == reflect.String {
-				if strings.Contains(s.(string), needle) {
-					addPath(user + tag + name)
-				}
-			} else {
-				searchLeafNodes(addPath, name, needle, user, k, s.(map[string]interface{}))
-			}
 		}
+		if reflect.ValueOf(s).Kind() == reflect.String {
+			if containsWithCase(s.(string), needle, matchCase) {
+				addPath(user + tag + name)
+			}
+		} else {
+			searchLeafNodes(addPath, name, needle, user, k, s.(map[string]interface{}), matchCase)
+		}
+	}
+}
+
+func containsWithCase(haystack, needle string, matchCase bool) bool {
+	if matchCase {
+		return strings.Contains(haystack, needle)
+	} else {
+		h := strings.ToLower(haystack)
+		n := strings.ToLower(needle)
+		return strings.Contains(h, n)
 	}
 }
 

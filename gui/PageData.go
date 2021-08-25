@@ -22,19 +22,22 @@ type EditEntry struct {
 	Lab          *widget.Label
 	UnDo         *widget.Button
 	Link         *widget.Button
+	Remove       *widget.Button
 	OnChangeFunc func(input string, path string)
 	UnDoFunc     func(path string)
 	LinkFunc     func(path string)
+	RemoveFunc   func(path string)
 }
 
 type DetailPage struct {
 	Uid, Heading, Title, User string
 	ViewFunc                  func(w fyne.Window, details DetailPage) fyne.CanvasObject
 	CntlFunc                  func(w fyne.Window, details DetailPage) fyne.CanvasObject
+	ActionFunc                func(action string, uid string)
 	DataRootMap               *map[string]interface{}
 }
 
-func NewEditEntry(path string, title string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), linkFunc func(path string)) *EditEntry {
+func NewEditEntry(path string, title string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), linkFunc func(path string), removeFunc func(path string)) *EditEntry {
 	var w *widget.Entry
 	if strings.Contains(strings.ToLower(title), "note") {
 		w = widget.NewMultiLineEntry()
@@ -52,9 +55,12 @@ func NewEditEntry(path string, title string, old string, onChangeFunc func(s str
 	n := widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
 		linkFunc(path)
 	})
+	r := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
+		removeFunc(path)
+	})
 	u.Disable()
 	n.Disable()
-	return &EditEntry{Path: path, Title: title, Wid: w, Lab: l, UnDo: u, Link: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, LinkFunc: linkFunc}
+	return &EditEntry{Path: path, Title: title, Wid: w, Lab: l, UnDo: u, Link: n, Remove: r, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, LinkFunc: linkFunc, RemoveFunc: removeFunc}
 }
 
 func (p *EditEntry) RefreshButtons() {
@@ -132,12 +138,12 @@ func (p *EditEntry) GetCurrentText() string {
 	}
 }
 
-func NewDetailPage(uid string, title string, user string, viewFunc func(w fyne.Window, details DetailPage) fyne.CanvasObject, cntlFunc func(w fyne.Window, details DetailPage) fyne.CanvasObject, dataRootMap *map[string]interface{}) *DetailPage {
+func NewDetailPage(uid string, title string, user string, viewFunc func(w fyne.Window, details DetailPage) fyne.CanvasObject, cntlFunc func(w fyne.Window, details DetailPage) fyne.CanvasObject, actionFunc func(string, string), dataRootMap *map[string]interface{}) *DetailPage {
 	heading := fmt.Sprintf("User:  %s", title)
 	if user != "" {
 		heading = fmt.Sprintf("User:  %s:  %s", user, title)
 	}
-	return &DetailPage{Uid: uid, Heading: heading, Title: title, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, DataRootMap: dataRootMap}
+	return &DetailPage{Uid: uid, Heading: heading, Title: title, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, ActionFunc: actionFunc, DataRootMap: dataRootMap}
 }
 
 func (p *DetailPage) GetMapForUid() *map[string]interface{} {
