@@ -29,6 +29,7 @@ const (
 	LOAD_THREAD_LOAD        = iota
 	LOAD_THREAD_LOADING     = iota
 	LOAD_THREAD_INPW        = iota
+	LOAD_THREAD_DECRYPTED   = iota
 	LOAD_THREAD_IDLE        = iota
 	LOAD_THREAD_RELOAD_TREE = iota
 	LOAD_THREAD_SELECT      = iota
@@ -174,13 +175,13 @@ func main() {
 						loadThreadState = LOAD_THREAD_INPW
 						getPasswordAndDecrypt(fd, func() {
 							// SUCCESS
-							loadThreadState = LOAD_THREAD_IDLE
+							loadThreadState = LOAD_THREAD_DECRYPTED
 						}, func() {
 							// FAIL
 							loadThreadState = LOAD_THREAD_LOADING
 						})
 					}
-					if loadThreadState != LOAD_THREAD_IDLE {
+					if loadThreadState != LOAD_THREAD_DECRYPTED {
 						time.Sleep(1000 * time.Millisecond)
 					}
 				}
@@ -204,7 +205,7 @@ func main() {
 				uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
 				fmt.Printf("Refresh current:%s ", uid)
 				selectTreeElement(uid)
-				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
+				splitContainer = container.NewHSplit(container.NewBorder(nil, makeLHSButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
 				window.SetContent(splitContainer)
 				loadThreadState = LOAD_THREAD_IDLE
@@ -264,7 +265,7 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 	}
 }
 
-func makeThemeButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
+func makeLHSButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	searchEntry := widget.NewEntry()
 	searchEntry.SetText(fyne.CurrentApp().Preferences().StringWithFallback(lastGoodSearchPrefName, "?"))
 	c2 := container.New(
@@ -299,7 +300,7 @@ func search(s string) {
 		mapPaths[s] = true
 	}, s, matchCase)
 	paths := make([]string, 0)
-	for k, _ := range mapPaths {
+	for k := range mapPaths {
 		paths = append(paths, k)
 	}
 	sort.Strings(paths)
