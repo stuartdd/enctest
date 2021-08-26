@@ -256,7 +256,7 @@ func GetUserFromPath(path string) string {
 }
 
 func GetFirstPathElements(path string, count int) string {
-	if count == 0 {
+	if count <= 0 {
 		return ""
 	}
 	var sb strings.Builder
@@ -276,7 +276,7 @@ func GetFirstPathElements(path string, count int) string {
 func GetPathElementAt(path string, index int) string {
 	elements := strings.Split(path, ".")
 	l := len(elements)
-	if l == 0 || index < 0 {
+	if l == 0 || index < 0 || index >= l {
 		return ""
 	}
 	if index < l {
@@ -287,6 +287,9 @@ func GetPathElementAt(path string, index int) string {
 
 func GetMapForUid(uid string, m *map[string]interface{}) *map[string]interface{} {
 	nodes := strings.Split(uid, ".")
+	if len(nodes) == 1 && nodes[0] == "" {
+		return m
+	}
 	n := *m
 	x := n[groupsStr]
 	for _, v := range nodes {
