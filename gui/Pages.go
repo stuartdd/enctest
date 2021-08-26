@@ -24,8 +24,8 @@ var (
 	preferedOrderReversed = []string{"notes", "positional", "post", "pre", "link", "userId"}
 )
 
-func GetWelcomePage() *DetailPage {
-	return NewDetailPage("id", "", welcomeTitle, welcomeScreen, welcomeControls, nil, nil)
+func GetWelcomePage(id string) *DetailPage {
+	return NewDetailPage(id, "", welcomeTitle, welcomeScreen, welcomeControls, nil, nil)
 }
 
 func GetDetailPage(id string, dataRootMap *map[string]interface{}) *DetailPage {

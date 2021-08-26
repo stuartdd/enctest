@@ -23,14 +23,20 @@ import (
 )
 
 const (
-	SAVE_AS_IS             = iota
-	SAVE_ENCRYPTED         = iota
-	SAVE_UN_ENCRYPTED      = iota
-	LOAD_THREAD_LOAD       = iota
-	LOAD_THREAD_LOADING    = iota
-	LOAD_THREAD_INPW       = iota
-	LOAD_THREAD_DONE       = iota
-	LOAD_THREAD_REFRESH    = iota
+	SAVE_AS_IS              = iota
+	SAVE_ENCRYPTED          = iota
+	SAVE_UN_ENCRYPTED       = iota
+	LOAD_THREAD_LOAD        = iota
+	LOAD_THREAD_LOADING     = iota
+	LOAD_THREAD_INPW        = iota
+	LOAD_THREAD_IDLE        = iota
+	LOAD_THREAD_RELOAD_TREE = iota
+	LOAD_THREAD_SELECT      = iota
+
+	ADD_TYPE_USER = iota
+	ADD_TYPE_HINT = iota
+	ADD_TYPE_NOTE = iota
+
 	allowedCharsInName     = " *~@#$%^&*()_+=><?"
 	splitPrefName          = "split"
 	themeVarName           = "theme"
@@ -47,8 +53,8 @@ var (
 	dataRoot              *lib.DataRoot
 	navTreeLHS            *widget.Tree
 	splitContainer        *container.Split // So we can save the divider position to preferences.
-	findSelection         = ""
 	findCaseSensitive     = binding.NewBool()
+	pendingSelection      = ""
 	currentSelection      = ""
 	currentUser           = ""
 	loadThreadFileName    = ""
@@ -121,7 +127,7 @@ func main() {
 	window.SetMainMenu(mainMenu)
 	window.SetMaster()
 
-	wp := gui.GetWelcomePage()
+	wp := gui.GetWelcomePage("")
 	title := container.NewHBox()
 	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp)}
 	contentRHS := container.NewMax()
@@ -132,13 +138,10 @@ func main() {
 		This updates the contentRHS which is the RHS page for editing data
 	*/
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
-		if detailPage.User == "" {
-			currentUser = detailPage.Title
-		} else {
-			currentUser = detailPage.User
-		}
-		navTreeLHS.OpenBranch(detailPage.Uid)
-		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentSelection))
+		currentSelection = detailPage.Uid
+		currentUser = lib.GetUserFromPath(currentSelection)
+		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentUser))
+		navTreeLHS.OpenBranch(currentSelection)
 		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage)}
 		title.Refresh()
 		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage)}
@@ -146,14 +149,14 @@ func main() {
 	}
 
 	/*
-		Load thread keeps running in background
+		Thread keeps running in background
 		To Trigger it:
 			set loadThreadFileName = filename
 			set loadThreadState = LOAD_THREAD_LOAD
 	*/
 	go func() {
 		for {
-			time.Sleep(800 * time.Millisecond)
+			time.Sleep(1000 * time.Millisecond)
 			if loadThreadState == LOAD_THREAD_LOAD {
 				fmt.Println("Load State")
 				loadThreadState = LOAD_THREAD_LOADING
@@ -171,13 +174,13 @@ func main() {
 						loadThreadState = LOAD_THREAD_INPW
 						getPasswordAndDecrypt(fd, func() {
 							// SUCCESS
-							loadThreadState = LOAD_THREAD_DONE
+							loadThreadState = LOAD_THREAD_IDLE
 						}, func() {
 							// FAIL
 							loadThreadState = LOAD_THREAD_LOADING
 						})
 					}
-					if loadThreadState != LOAD_THREAD_DONE {
+					if loadThreadState != LOAD_THREAD_IDLE {
 						time.Sleep(1000 * time.Millisecond)
 					}
 				}
@@ -186,41 +189,55 @@ func main() {
 						update the navigation tree
 						select the root element
 				*/
-				dr, err := lib.NewDataRoot(fd.GetContent())
+				dr, err := lib.NewDataRoot(fd.GetContent(), dataMapUpdated)
 				if err != nil {
 					fmt.Printf("ERROR: Cannot process data. %s\n", err)
 					os.Exit(1)
 				}
 				fileData = fd
 				dataRoot = dr
-				loadThreadState = LOAD_THREAD_REFRESH
+				loadThreadState = LOAD_THREAD_RELOAD_TREE
 			}
 
-			if loadThreadState == LOAD_THREAD_REFRESH {
-				fmt.Println("Refresh State")
-				uid := dataRoot.GetRootUidOrCurrent(currentSelection)
+			if loadThreadState == LOAD_THREAD_RELOAD_TREE {
 				navTreeLHS = makeNavTree(setPageRHSFunc)
-				navTreeLHS.OpenBranch(currentUser)
-				navTreeLHS.OpenBranch(lib.GetParentId(uid))
-				navTreeLHS.Select(uid)
+				uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
+				fmt.Printf("Refresh current:%s ", uid)
+				selectTreeElement(uid)
 				splitContainer = container.NewHSplit(container.NewBorder(nil, makeThemeButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
 				window.SetContent(splitContainer)
-				loadThreadState = LOAD_THREAD_DONE
+				loadThreadState = LOAD_THREAD_IDLE
 			}
 
-			if findSelection != "" {
-				fmt.Println("Search select")
-				uid := findSelection
-				findSelection = ""
-				navTreeLHS.OpenBranch(lib.GetParentId(uid))
-				navTreeLHS.Select(uid)
+			if loadThreadState == LOAD_THREAD_SELECT {
+				fmt.Printf("Select pending:%s ", pendingSelection)
+				selectTreeElement(pendingSelection)
+				loadThreadState = LOAD_THREAD_IDLE
 			}
 		}
 	}()
 
 	window.Resize(fyne.NewSize(float32(a.Preferences().FloatWithFallback(widthPrefName, 640)), float32(a.Preferences().FloatWithFallback(heightPrefName, 460))))
 	window.ShowAndRun()
+}
+
+func selectTreeElement(uid string) {
+	user := lib.GetUserFromPath(uid)
+	parent := lib.GetParentId(uid)
+	fmt.Printf("user:%s parent:%s uid:%s\n", user, parent, uid)
+	navTreeLHS.OpenBranch(user)
+	navTreeLHS.OpenBranch(parent)
+	navTreeLHS.Select(uid)
+}
+
+func dataMapUpdated(desc, user, path string, err error) {
+	if err == nil {
+		fmt.Printf("Updated: %s User: %s Path:%s\n", desc, user, path)
+		currentSelection = path
+		countStructureChanges++
+	}
+	loadThreadState = LOAD_THREAD_RELOAD_TREE
 }
 
 func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
@@ -241,8 +258,6 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
-			currentSelection = uid
-			fmt.Printf("Select %s\n", uid)
 			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap())
 			setPage(*t)
 		},
@@ -301,15 +316,16 @@ func search(s string) {
 			},
 		)
 		list.OnSelected = func(id widget.ListItemID) {
-			findSelection = paths[id]
+			pendingSelection = paths[id]
+			loadThreadState = LOAD_THREAD_SELECT
 		}
-		go showNewWindow(window.Canvas().Size().Width/3, window.Canvas().Size().Height/2, list)
+		go showSearchResultsWindow(window.Canvas().Size().Width/3, window.Canvas().Size().Height/2, list)
 	} else {
 		dialog.NewInformation("Search results", fmt.Sprintf("Nothing found for search '%s'", s), window).Show()
 	}
 }
 
-func showNewWindow(w float32, h float32, list *widget.List) {
+func showSearchResultsWindow(w float32, h float32, list *widget.List) {
 	if searchWindow != nil {
 		searchWindow.Close()
 		searchWindow = nil
@@ -322,87 +338,57 @@ func showNewWindow(w float32, h float32, list *widget.List) {
 }
 
 func addNewUser() {
-	entry := widget.NewEntry()
-	dialog.ShowCustomConfirm("Enter the name of the user", "Confirm", "Cancel", widget.NewForm(
-		widget.NewFormItem("Password", entry),
-	), func(ok bool) {
-		if ok {
-			problem, ok := validateEntryAndAddKey(entry.Text, "user")
-			if !ok {
-				dialog.NewInformation("Add New User", "Error: "+problem, window).Show()
-			}
-		}
-	}, window)
+	addNewEntity("User", "User", ADD_TYPE_USER)
 }
-
-func addNewNote() {
-	entry := widget.NewEntry()
-	dialog.ShowCustomConfirm(fmt.Sprintf("Enter the name of the new note for user '%s'", currentUser), "Confirm", "Cancel", widget.NewForm(
-		widget.NewFormItem("Note Name", entry),
-	), func(ok bool) {
-		if ok {
-			problem, ok := validateEntryAndAddKey(entry.Text, "note")
-			if !ok {
-				dialog.NewInformation("Add New Note", "Error: "+problem, window).Show()
-			}
-		}
-	}, window)
-}
-
 func addNewHint() {
+	addNewEntity("Hint for "+currentUser, "Hint", ADD_TYPE_HINT)
+}
+func addNewNote() {
+	addNewEntity("Note for "+currentUser, "Note", ADD_TYPE_NOTE)
+}
+
+func addNewEntity(head string, name string, addType int) {
 	entry := widget.NewEntry()
-	dialog.ShowCustomConfirm(fmt.Sprintf("Enter the name of the new hint for user '%s'", currentUser), "Confirm", "Cancel", widget.NewForm(
-		widget.NewFormItem("Hint Name", entry),
+	dialog.ShowCustomConfirm("Enter the name of the new "+head, "Confirm", "Cancel", widget.NewForm(
+		widget.NewFormItem(name+":", entry),
 	), func(ok bool) {
 		if ok {
-			problem, ok := validateEntryAndAddKey(entry.Text, "hint")
-			if !ok {
-				dialog.NewInformation("Add New Hint", "Error: "+problem, window).Show()
+			err := validateEntityName(entry.Text, addType)
+			if err == nil {
+				switch addType {
+				case ADD_TYPE_USER:
+					err = dataRoot.AddUser(entry.Text)
+				case ADD_TYPE_NOTE:
+					err = dataRoot.AddNote(currentUser, entry.Text)
+				case ADD_TYPE_HINT:
+					err = dataRoot.AddHint(currentUser, entry.Text)
+				}
+			}
+			if err != nil {
+				dialog.NewInformation("Add New "+name, "Error: "+err.Error(), window).Show()
 			}
 		}
 	}, window)
 }
 
-func validateEntryAndAddKey(entry, addType string) (string, bool) {
+func validateEntityName(entry string, addType int) error {
 	if len(entry) == 0 {
-		return "Input is undefined", false
+		return fmt.Errorf("input is undefined")
 	}
 	if len(entry) < 2 {
-		return "Input is too short", false
+		return fmt.Errorf("input '%s' is too short. Must be longer that 1 char", entry)
 	}
 	lcEntry := strings.ToLower(entry)
 	for _, c := range lcEntry {
 		if c < ' ' {
-			return "Input must not contain control characters", false
+			return fmt.Errorf("input must not contain control characters")
 		}
 		if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (strings.ContainsRune(allowedCharsInName, c)) {
 			continue
 		}
-		return fmt.Sprintf("Input must not contain character '%c'. Only '0..9', 'a..z', 'A..Z' and '%s' chars are allowed", c, allowedCharsInName), false
+		return fmt.Errorf("input must not contain character '%c'. Only '0..9', 'a..z', 'A..Z' and '%s' chars are allowed", c, allowedCharsInName)
 	}
-	var err error = nil
-	var path string = ""
-	var name string = ""
-	switch addType {
-	case "user":
-		name, err = dataRoot.AddUser(entry)
-	case "note":
-		path, err = dataRoot.AddNote(currentUser, entry, "note")
-	case "hint":
-		path, err = dataRoot.AddHint(currentUser, entry)
-	}
-	loadThreadState = LOAD_THREAD_REFRESH
-	countStructureChanges++
-	if err != nil {
-		return err.Error(), false
-	}
-	if path != "" {
-		currentSelection = path
-	}
-	if name != "" {
-		currentUser = name
-	}
-	return "", true
+	return nil
 }
 
 func getPasswordAndDecrypt(fd *lib.FileData, success func(), fail func()) {

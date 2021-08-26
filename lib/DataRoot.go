@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	hintStr      = "pwHint"
+	hintStr      = "pwHints"
 	noteStr      = "notes"
 	groupsStr    = "groups"
 	timeStampStr = "timeStamp"
@@ -21,12 +21,13 @@ var (
 )
 
 type DataRoot struct {
-	timeStamp time.Time
-	dataMap   map[string]interface{}
-	navIndex  map[string][]string
+	timeStamp      time.Time
+	dataMap        map[string]interface{}
+	navIndex       map[string][]string
+	dataMapUpdated func(string, string, string, error)
 }
 
-func NewDataRoot(j []byte) (*DataRoot, error) {
+func NewDataRoot(j []byte, dataMapUpdated func(string, string, string, error)) (*DataRoot, error) {
 	m, err := parseJson(j)
 	if err != nil {
 		return nil, err
@@ -47,7 +48,7 @@ func NewDataRoot(j []byte) (*DataRoot, error) {
 		return nil, fmt.Errorf("'%s' does not exist in data root", groupsStr)
 	}
 
-	dr := &DataRoot{timeStamp: tim, dataMap: m, navIndex: createNavIndex(m)}
+	dr := &DataRoot{timeStamp: tim, dataMap: m, navIndex: createNavIndex(m), dataMapUpdated: dataMapUpdated}
 	return dr, nil
 }
 
@@ -104,55 +105,55 @@ func containsWithCase(haystack, needle string, matchCase bool) bool {
 	}
 }
 
-func (p *DataRoot) AddUser(userName string) (string, error) {
+func (p *DataRoot) AddUser(userName string) error {
 	m := GetMapForUid(userName, &p.dataMap)
 	if m != nil {
-		return "", fmt.Errorf("user name '%s' already exists", userName)
+		return fmt.Errorf("user name '%s' already exists", userName)
 	}
 	rootMap := p.dataMap
 	groups := rootMap[groupsStr].(map[string]interface{})
 
 	newUser := make(map[string]interface{})
 	addHint("application", userName, newUser)
-	addNote(userName, "note", "note for user "+userName, newUser)
+	addNote(userName, "note", newUser)
 
 	groups[userName] = newUser
 	p.navIndex = createNavIndex(p.dataMap)
-	return userName, nil
+	p.dataMapUpdated("Added user:", userName, userName, nil)
+	return nil
 }
 
-func (p *DataRoot) AddNote(userName, noteName, content string) (string, error) {
+func (p *DataRoot) AddNote(userName, noteName string) error {
 	user := GetMapForUid(userName, &p.dataMap)
 	if user == nil {
-		return "", fmt.Errorf("user name '%s' does not exists", userName)
+		return fmt.Errorf("user name '%s' does not exists", userName)
 	}
-	defer func() {
-		p.navIndex = createNavIndex(p.dataMap)
-	}()
-	return addNote(userName, noteName, content, *user)
+	path, err := addNote(userName, noteName, *user)
+	p.navIndex = createNavIndex(p.dataMap)
+	p.dataMapUpdated("Added note:", userName, path, err)
+	return err
 }
 
-func (p *DataRoot) AddHint(userName, appName string) (string, error) {
+func (p *DataRoot) AddHint(userName, appName string) error {
 	user := GetMapForUid(userName, &p.dataMap)
 	if user == nil {
-		return "", fmt.Errorf("user name '%s' does not exists", userName)
+		return fmt.Errorf("user name '%s' does not exists", userName)
 	}
-	defer func() {
-		p.navIndex = createNavIndex(p.dataMap)
-	}()
-	return addHint(appName, userName, *user)
+	path, err := addHint(appName, userName, *user)
+	p.navIndex = createNavIndex(p.dataMap)
+	p.dataMapUpdated("Added hint:", userName, path, err)
+	return err
 }
 
-func addNote(userName, noteName, content string, user map[string]interface{}) (string, error) {
+func addNote(userName, noteName string, user map[string]interface{}) (string, error) {
 	_, ok := user[noteStr]
 	if !ok {
 		user[noteStr] = make(map[string]interface{})
 	}
 	notes := user[noteStr].(map[string]interface{})
-
 	_, ok = notes[noteName]
 	if !ok {
-		notes[noteName] = content
+		notes[noteName] = ""
 		return fmt.Sprintf("%s.%s", userName, noteStr), nil
 	}
 	return "", fmt.Errorf("note '%s' already exists", noteName)
@@ -163,11 +164,11 @@ func addHint(hintName, userName string, user map[string]interface{}) (string, er
 	if !ok {
 		user[hintStr] = make(map[string]interface{})
 	}
-	pwHints := user[hintStr].(map[string]interface{})
-	_, ok = pwHints[hintName]
+	hints := user[hintStr].(map[string]interface{})
+	_, ok = hints[hintName]
 	if !ok {
-		pwHints[hintName] = make(map[string]interface{})
-		hint := pwHints[hintName].(map[string]interface{})
+		hints[hintName] = make(map[string]interface{})
+		hint := hints[hintName].(map[string]interface{})
 		hint["userId"] = ""
 		hint["pre"] = ""
 		hint["post"] = ""
@@ -175,26 +176,18 @@ func addHint(hintName, userName string, user map[string]interface{}) (string, er
 		hint["positional"] = "12345"
 		return fmt.Sprintf("%s.%s.%s", userName, hintStr, hintName), nil
 	}
-	return "", fmt.Errorf("application '%s' already exists", hintName)
-}
-func GetParentId(uid string) string {
-	if uid == "" {
-		return uid
-	}
-	p := strings.LastIndexByte(uid, '.')
-	switch p {
-	case -1:
-		return uid
-	case 0:
-		return ""
-	default:
-		return uid[0:p]
-	}
+	return "", fmt.Errorf("hint '%s' already exists", hintName)
 }
 
-func (p *DataRoot) GetRootUidOrCurrent(current string) string {
-	if current != "" {
-		return current
+func (p *DataRoot) GetRootUidOrCurrentUid(currentUid string) string {
+	if currentUid != "" {
+		for i := 4; i > 0; i-- {
+			x := GetFirstPathElements(currentUid, i)
+			_, ok := p.navIndex[x]
+			if ok {
+				return currentUid
+			}
+		}
 	}
 	l := make([]string, 0)
 	for k := range p.navIndex {
@@ -202,7 +195,6 @@ func (p *DataRoot) GetRootUidOrCurrent(current string) string {
 			l = append(l, k)
 		}
 	}
-
 	if len(l) > 0 {
 		sort.Strings(l)
 		return l[0]
@@ -242,6 +234,55 @@ func (r *DataRoot) ToStruct() string {
 	var sb strings.Builder
 	appendMapStruct(&sb, r.dataMap, 1)
 	return sb.String()
+}
+
+func GetParentId(uid string) string {
+	if uid == "" {
+		return uid
+	}
+	p := strings.LastIndexByte(uid, '.')
+	switch p {
+	case -1:
+		return uid
+	case 0:
+		return ""
+	default:
+		return uid[0:p]
+	}
+}
+
+func GetUserFromPath(path string) string {
+	return GetFirstPathElements(path, 1)
+}
+
+func GetFirstPathElements(path string, count int) string {
+	if count == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	dotCount := 0
+	for _, c := range path {
+		if c == '.' {
+			dotCount++
+		}
+		if dotCount == count {
+			return sb.String()
+		}
+		sb.WriteByte(byte(c))
+	}
+	return sb.String()
+}
+
+func GetPathElementAt(path string, index int) string {
+	elements := strings.Split(path, ".")
+	l := len(elements)
+	if l == 0 || index < 0 {
+		return ""
+	}
+	if index < l {
+		return elements[index]
+	}
+	return elements[l-1]
 }
 
 func GetMapForUid(uid string, m *map[string]interface{}) *map[string]interface{} {
