@@ -52,7 +52,7 @@ func NewDataRoot(j []byte, dataMapUpdated func(string, string, string, error)) (
 	return dr, nil
 }
 
-func (p *DataRoot) Search(addPath func(string), needle string, matchCase bool) {
+func (p *DataRoot) Search(addPath func(string, string), needle string, matchCase bool) {
 	rootMap := p.dataMap
 	groups := rootMap[groupsStr].(map[string]interface{})
 	for user, v := range groups {
@@ -60,39 +60,51 @@ func (p *DataRoot) Search(addPath func(string), needle string, matchCase bool) {
 	}
 }
 
-func searchUsers(addPath func(string), needle, user string, m map[string]interface{}, matchCase bool) {
+func searchUsers(addPath func(string, string), needle, user string, m map[string]interface{}, matchCase bool) {
 	for k, v := range m {
 		if k == hintStr {
 			for k1, v1 := range v.(map[string]interface{}) {
-				searchLeafNodes(addPath, hintStr, needle, user, k1, v1.(map[string]interface{}), matchCase)
+				searchLeafNodes(addPath, true, needle, user, k1, v1.(map[string]interface{}), matchCase)
 			}
 		} else {
-			searchLeafNodes(addPath, "", needle, user, k, v.(map[string]interface{}), matchCase)
+			searchLeafNodes(addPath, false, needle, user, k, v.(map[string]interface{}), matchCase)
 		}
 	}
 }
 
-func searchLeafNodes(addPath func(string), tag, needle, user, name string, m map[string]interface{}, matchCase bool) {
-	if tag != "" {
-		tag = "." + tag + "."
-	} else {
-		tag = "."
+func searchLeafNodes(addPath func(string, string), isHint bool, needle, user, name string, m map[string]interface{}, matchCase bool) {
+	tag1 := "."
+	if isHint {
+		tag1 = "." + hintStr + "."
 	}
 	if containsWithCase(name, needle, matchCase) {
-		addPath(user + tag + name)
+		addPath(user+tag1+name, searchDeriveText(user, isHint, name, "LHS Tree", ""))
 	}
 	for k, s := range m {
 		if containsWithCase(k, needle, matchCase) {
-			addPath(user + tag + name)
+			addPath(user+tag1+name, searchDeriveText(user, isHint, name, "Field Name", k))
 		}
 		if reflect.ValueOf(s).Kind() == reflect.String {
 			if containsWithCase(s.(string), needle, matchCase) {
-				addPath(user + tag + name)
+				addPath(user+tag1+name, searchDeriveText(user, isHint, name, "In Text", k))
 			}
 		} else {
-			searchLeafNodes(addPath, name, needle, user, k, s.(map[string]interface{}), matchCase)
+			searchLeafNodes(addPath, isHint, needle, user, k, s.(map[string]interface{}), matchCase)
 		}
 	}
+}
+
+func searchDeriveText(user string, isHint bool, name, desc, key string) string {
+	if key != "" {
+		key = "'" + key + "'"
+	}
+	if isHint {
+		return user + " [Hint] " + name + ":  " + desc + ": " + key
+	}
+	if name == "notes" {
+		return user + " [Notes] :  " + desc + ": " + key
+	}
+	return user + " " + name + ":  " + desc + ": " + key
 }
 
 func containsWithCase(haystack, needle string, matchCase bool) bool {

@@ -302,11 +302,11 @@ func makeLHSButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 
 func search(s string) {
 	matchCase, _ := findCaseSensitive.Get()
-	fmt.Printf("matchCase: %t\n", matchCase)
-	mapPaths := make(map[string]bool)
-	dataRoot.Search(func(s string) {
-		mapPaths[s] = true
+	mapPaths := make(map[string]string)
+	dataRoot.Search(func(path, desc string) {
+		mapPaths[desc] = path
 	}, s, matchCase)
+
 	paths := make([]string, 0)
 	for k := range mapPaths {
 		paths = append(paths, k)
@@ -325,10 +325,10 @@ func search(s string) {
 			},
 		)
 		list.OnSelected = func(id widget.ListItemID) {
-			pendingSelection = paths[id]
+			pendingSelection = mapPaths[paths[id]]
 			loadThreadState = LOAD_THREAD_SELECT
 		}
-		go showSearchResultsWindow(window.Canvas().Size().Width/3, window.Canvas().Size().Height/2, list)
+		go showSearchResultsWindow(window.Canvas().Size().Width/2, window.Canvas().Size().Height/2, list)
 	} else {
 		dialog.NewInformation("Search results", fmt.Sprintf("Nothing found for search '%s'", s), window).Show()
 	}
