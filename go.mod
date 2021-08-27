@@ -8,6 +8,8 @@ replace stuartdd.com/gui => ./gui
 
 replace stuartdd.com/theme2 => ./theme2
 
+// replace fyne.io/fyne/v2 => github.com/andydotxyz/fyne/v2 07e8477c8
+
 require (
 	fyne.io/fyne/v2 v2.0.4
 	github.com/go-gl/gl v0.0.0-20210501111010-69f74958bac0 // indirect

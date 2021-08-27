@@ -64,6 +64,14 @@ var (
 	countStructureChanges = 0
 )
 
+func controlActionFunction(action string, uid string) {
+	fmt.Printf("Control Action %s %s\n", action, uid)
+}
+
+func viewActionFunction(action string, uid string) {
+	fmt.Printf("View Action %s %s\n", action, uid)
+}
+
 func main() {
 	if len(os.Args) == 1 {
 		fmt.Println("ERROR: File name not provided")
@@ -130,7 +138,7 @@ func main() {
 
 	wp := gui.GetWelcomePage("")
 	title := container.NewHBox()
-	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp)}
+	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil)}
 	contentRHS := container.NewMax()
 	layoutRHS := container.NewBorder(title, nil, nil, nil, contentRHS)
 
@@ -143,9 +151,9 @@ func main() {
 		currentUser = lib.GetUserFromPath(currentSelection)
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentUser))
 		navTreeLHS.OpenBranch(currentSelection)
-		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage)}
+		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction)}
 		title.Refresh()
-		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage)}
+		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage, viewActionFunction)}
 		contentRHS.Refresh()
 	}
 
