@@ -18,6 +18,10 @@ const (
 	appDesc      = "Welcome to Valt"
 	idNotes      = "notes"
 	idPwDetails  = "pwHints"
+
+	ACTION_REMOVE = "remove"
+	ACTION_EDIT   = "edit"
+	ACTION_LINK   = "link"
 )
 
 var (
@@ -35,12 +39,12 @@ func GetDetailPage(id string, dataRootMap *map[string]interface{}) *DetailPage {
 		return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, dataRootMap)
 	case 2:
 		if nodes[1] == idPwDetails {
-			return NewDetailPage(id, "Hints", nodes[0], welcomeScreen, welcomeControls, dataRootMap)
+			return NewDetailPage(id, "Hints", nodes[0], welcomeScreen, notesControls, dataRootMap)
 		}
 		if nodes[1] == idNotes {
 			return NewDetailPage(id, "Notes", nodes[0], notesScreen, notesControls, dataRootMap)
 		}
-		return NewDetailPage(id, "Unknown", nodes[0], welcomeScreen, welcomeControls, dataRootMap)
+		return NewDetailPage(id, "Unknown", nodes[0], welcomeScreen, notesControls, dataRootMap)
 	case 3:
 		if nodes[1] == idPwDetails {
 			return NewDetailPage(id, nodes[2], nodes[0], hintsScreen, hintsControls, dataRootMap)
@@ -48,9 +52,9 @@ func GetDetailPage(id string, dataRootMap *map[string]interface{}) *DetailPage {
 		if nodes[1] == idNotes {
 			return NewDetailPage(id, nodes[2], nodes[0], notesScreen, notesControls, dataRootMap)
 		}
-		return NewDetailPage(id, "Unknown", "", welcomeScreen, welcomeControls, dataRootMap)
+		return NewDetailPage(id, "Unknown", "", welcomeScreen, notesControls, dataRootMap)
 	}
-	return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, dataRootMap)
+	return NewDetailPage(id, id, "", welcomeScreen, notesControls, dataRootMap)
 }
 
 func entryChangedFunction(s string, path string) {
@@ -63,7 +67,7 @@ func entryChangedFunction(s string, path string) {
 func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		actionFunc("Welcome remove", details.Uid)
+		actionFunc(ACTION_REMOVE, details.Uid)
 	}))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
@@ -106,7 +110,7 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		idd := details.Uid + "." + k
 		e, ok := EditEntryList[idd]
 		if !ok {
-			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), entryChangedFunction, unDoFunction, goToLinkFunction, actionFunc)
+			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), entryChangedFunction, unDoFunction, actionFunc)
 			EditEntryList[idd] = e
 		}
 		e.RefreshButtons()
@@ -123,7 +127,7 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(action string, uid string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		actionFunc("Hint remove", details.Uid)
+		actionFunc(ACTION_REMOVE, details.Uid)
 	}))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
@@ -138,7 +142,7 @@ func hintsScreen(_ fyne.Window, details DetailPage, actionFunc func(action strin
 		idd := details.Uid + "." + k
 		e, ok := EditEntryList[idd]
 		if !ok {
-			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), entryChangedFunction, unDoFunction, goToLinkFunction, actionFunc)
+			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), entryChangedFunction, unDoFunction, actionFunc)
 			EditEntryList[idd] = e
 		}
 		e.RefreshButtons()
@@ -187,15 +191,15 @@ func unDoFunction(path string) {
 	}
 }
 
-func goToLinkFunction(path string) {
-	ee := EditEntryList[path]
-	if ee != nil {
-		link, ok := ee.HasLink()
-		if ok {
-			fmt.Printf("This is the link [%s]", link)
-		}
-	}
-}
+// func goToLinkFunction(path string) {
+// 	ee := EditEntryList[path]
+// 	if ee != nil {
+// 		link, ok := ee.HasLink()
+// 		if ok {
+// 			fmt.Printf("This is the link [%s]", link)
+// 		}
+// 	}
+// }
 
 func parseURL(urlStr string) *url.URL {
 	link, err := url.Parse(urlStr)

@@ -65,11 +65,19 @@ var (
 )
 
 func controlActionFunction(action string, uid string) {
-	fmt.Printf("Control Action %s %s\n", action, uid)
+	fmt.Printf("Control %s %s\n", action, uid)
 }
 
 func viewActionFunction(action string, uid string) {
-	fmt.Printf("View Action %s %s\n", action, uid)
+	m, s := dataRoot.GetDataForUid(uid)
+	if s != "" {
+		fmt.Printf("String: %s\n", s)
+	} else {
+		if m != nil {
+			fmt.Printf("MAP:: %s\n", m)
+		}
+	}
+	fmt.Printf("View %s %s\n", action, uid)
 }
 
 func main() {

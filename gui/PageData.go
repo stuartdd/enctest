@@ -25,7 +25,6 @@ type EditEntry struct {
 	Remove       *widget.Button
 	OnChangeFunc func(input string, path string)
 	UnDoFunc     func(path string)
-	LinkFunc     func(path string)
 	ActionFunc   func(action string, path string)
 }
 
@@ -36,7 +35,7 @@ type DetailPage struct {
 	DataRootMap               *map[string]interface{}
 }
 
-func NewEditEntry(path string, title string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), linkFunc func(path string), actionFunc func(action string, uid string)) *EditEntry {
+func NewEditEntry(path string, title string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string)) *EditEntry {
 	var w *widget.Entry
 	if strings.Contains(strings.ToLower(title), "note") {
 		w = widget.NewMultiLineEntry()
@@ -52,14 +51,14 @@ func NewEditEntry(path string, title string, old string, onChangeFunc func(s str
 		unDoFunc(path)
 	})
 	n := widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
-		linkFunc(path)
+		actionFunc(ACTION_LINK, path)
 	})
 	r := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		actionFunc("Entry remove", path)
+		actionFunc(ACTION_REMOVE, path)
 	})
 	u.Disable()
 	n.Disable()
-	return &EditEntry{Path: path, Title: title, Wid: w, Lab: l, UnDo: u, Link: n, Remove: r, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, LinkFunc: linkFunc, ActionFunc: actionFunc}
+	return &EditEntry{Path: path, Title: title, Wid: w, Lab: l, UnDo: u, Link: n, Remove: r, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
 }
 
 func (p *EditEntry) RefreshButtons() {
@@ -67,7 +66,7 @@ func (p *EditEntry) RefreshButtons() {
 		p.UnDoFunc(p.Path)
 	})
 	p.Link = widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
-		p.LinkFunc(p.Path)
+		p.ActionFunc(ACTION_LINK, p.Path)
 	})
 	p.updateButtons()
 }
@@ -82,7 +81,7 @@ func (p *EditEntry) SetNew(s string) {
 }
 
 func (p *EditEntry) CommitEdit(data *map[string]interface{}) bool {
-	m := lib.GetMapForUid(p.Path, data)
+	m, _ := lib.GetMapForUid(p.Path, data)
 	if m != nil {
 		n := *m
 		n[p.Title] = p.New
@@ -146,7 +145,8 @@ func NewDetailPage(uid string, title string, user string, viewFunc func(w fyne.W
 }
 
 func (p *DetailPage) GetMapForUid() *map[string]interface{} {
-	return lib.GetMapForUid(p.Uid, p.DataRootMap)
+	m, _ := lib.GetMapForUid(p.Uid, p.DataRootMap)
+	return m
 }
 
 func parseStringForLink(s string) (string, bool) {

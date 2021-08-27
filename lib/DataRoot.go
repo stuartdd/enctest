@@ -118,7 +118,7 @@ func containsWithCase(haystack, needle string, matchCase bool) bool {
 }
 
 func (p *DataRoot) AddUser(userName string) error {
-	m := GetMapForUid(userName, &p.dataMap)
+	m, _ := GetMapForUid(userName, &p.dataMap)
 	if m != nil {
 		return fmt.Errorf("user name '%s' already exists", userName)
 	}
@@ -136,7 +136,7 @@ func (p *DataRoot) AddUser(userName string) error {
 }
 
 func (p *DataRoot) AddNote(userName, noteName string) error {
-	user := GetMapForUid(userName, &p.dataMap)
+	user, _ := GetMapForUid(userName, &p.dataMap)
 	if user == nil {
 		return fmt.Errorf("user name '%s' does not exists", userName)
 	}
@@ -147,7 +147,7 @@ func (p *DataRoot) AddNote(userName, noteName string) error {
 }
 
 func (p *DataRoot) AddHint(userName, appName string) error {
-	user := GetMapForUid(userName, &p.dataMap)
+	user, _ := GetMapForUid(userName, &p.dataMap)
 	if user == nil {
 		return fmt.Errorf("user name '%s' does not exists", userName)
 	}
@@ -212,6 +212,10 @@ func (p *DataRoot) GetRootUidOrCurrentUid(currentUid string) string {
 		return l[0]
 	}
 	return ""
+}
+
+func (r *DataRoot) GetDataForUid(uid string) (*map[string]interface{}, string) {
+	return GetMapForUid(uid, &r.dataMap)
 }
 
 func (r *DataRoot) GetDataRootMap() *map[string]interface{} {
@@ -297,24 +301,26 @@ func GetPathElementAt(path string, index int) string {
 	return elements[l-1]
 }
 
-func GetMapForUid(uid string, m *map[string]interface{}) *map[string]interface{} {
+func GetMapForUid(uid string, m *map[string]interface{}) (*map[string]interface{}, string) {
 	nodes := strings.Split(uid, ".")
 	if len(nodes) == 1 && nodes[0] == "" {
-		return m
+		return m, ""
 	}
 	n := *m
 	x := n[groupsStr]
 	for _, v := range nodes {
 		y := x.(map[string]interface{})[v]
 		if y == nil {
-			return nil
+			return nil, ""
 		}
 		if reflect.ValueOf(y).Kind() != reflect.String {
 			x = y
+		} else {
+			return nil, y.(string)
 		}
 	}
 	o := x.(map[string]interface{})
-	return &o
+	return &o, ""
 }
 
 func appendMapStruct(sb *strings.Builder, m map[string]interface{}, ind int) {
