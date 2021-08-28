@@ -46,31 +46,74 @@ func assertMapData(id, val string) {
 		log.Fatalf("Nav Map id:%s != %s. It is %s. file:%s\n", id, val, mapData.GetNavIndex(id), dataFileName)
 	}
 }
+func TestGetLastId(t *testing.T) {
+	s := lib.GetLastId("")
+	if s != "" {
+		log.Fatal("1. GetLastId fail. should return empty string")
+	}
+	s = lib.GetLastId("abc")
+	if s != "abc" {
+		log.Fatal("1. GetLastId fail. should return 'abc'")
+	}
+	s = lib.GetLastId(".abc")
+	if s != "abc" {
+		log.Fatal("1. GetLastId fail. should return 'abc'")
+	}
+	s = lib.GetLastId(".abc.")
+	if s != "" {
+		log.Fatal("1. GetLastId fail. should return empty string")
+	}
+	s = lib.GetLastId(".abc.x")
+	if s != "x" {
+		log.Fatal("1. GetLastId fail. should 'x'")
+	}
+	s = lib.GetLastId(".abc. x")
+	if s != " x" {
+		log.Fatal("1. GetLastId fail. should ' x'")
+	}
+}
 
 func TestGetMapForMapId(t *testing.T) {
 	loadDataMap(dataFileName)
-	m := lib.GetMapForUid("", mapData.GetDataRootMap())
+	m, s := lib.GetMapForUid("", mapData.GetDataRootMap())
 	if !strings.HasPrefix(toJson(m), "{\"groups\":{\"UserA\":{\"notes\":{\"dsdfsdfs\":\"") {
 		log.Fatal("1. GetMapForUid fail. should return whole json")
 	}
+	if s != "" {
+		log.Fatal("1. GetMapForUid fail. String value should be empty")
+	}
 
-	m = lib.GetMapForUid("UserB.pwHints.GMail B", mapData.GetDataRootMap())
+	m, s = lib.GetMapForUid("UserB.pwHints.GMail B", mapData.GetDataRootMap())
 	if !strings.HasPrefix(toJson(m), "{\"notes\":\"a note to User B\",\"positional\":\"1234567890") {
 		log.Fatal("2. GetMapForUid fail. should return 'a note to User B'")
 	}
+	if s != "" {
+		log.Fatal("2. GetMapForUid fail. String value should be empty")
+	}
 
-	m = lib.GetMapForUid("UserX.pwHints.GMail B", mapData.GetDataRootMap())
+	m, s = lib.GetMapForUid("UserX.pwHints.GMail B", mapData.GetDataRootMap())
 	if !strings.HasPrefix(toJson(m), "null") {
 		log.Fatal("3. GetMapForUid fail. should return 'null'")
 	}
-
-	m = lib.GetMapForUid("UserA.notes", mapData.GetDataRootMap())
-	if !strings.HasPrefix(toJson(m), "{\"dsdfsdfs\":\"note\",\"note\":\"An amazing A note (dont panic) fdf\"}") {
-		log.Fatal("2. GetMapForUid fail. should return 'a note to User A'")
+	if s != "" {
+		log.Fatal("3. GetMapForUid fail. String value should be empty")
 	}
 
-	// s := toJson(m)
-	// fmt.Println(s)
+	m, s = lib.GetMapForUid("UserA.notes", mapData.GetDataRootMap())
+	if !strings.HasPrefix(toJson(m), "{\"dsdfsdfs\":\"note\",\"note\":\"An amazing A note (dont panic) fdf\"}") {
+		log.Fatal("4. GetMapForUid fail. should return 'a note to User A'")
+	}
+	if s != "" {
+		log.Fatal("4. GetMapForUid fail. String value should be empty")
+	}
+
+	m, s = lib.GetMapForUid("UserB.notes.link", mapData.GetDataRootMap())
+	if m != nil {
+		log.Fatal("5. GetMapForUid fail. should return 'a note to User A'")
+	}
+	if !strings.HasPrefix(s, "https://") {
+		log.Fatal("5. GetMapForUid fail. S should start 'https://'")
+	}
 }
 
 func TestGetParentId(t *testing.T) {

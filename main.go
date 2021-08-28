@@ -69,15 +69,28 @@ func controlActionFunction(action string, uid string) {
 }
 
 func viewActionFunction(action string, uid string) {
-	m, s := dataRoot.GetDataForUid(uid)
-	if s != "" {
-		fmt.Printf("String: %s\n", s)
-	} else {
-		if m != nil {
-			fmt.Printf("MAP:: %s\n", m)
-		}
+	switch action {
+	case gui.ACTION_REMOVE:
+		removeAction(uid)
+	case gui.ACTION_EDIT:
+		editAction(uid)
+	case gui.ACTION_LINK:
+		linkAction(uid)
 	}
-	fmt.Printf("View %s %s\n", action, uid)
+}
+
+func removeAction(uid string) {
+	dialog.NewConfirm("Delete entry", fmt.Sprintf("%s\nAre you sure?", uid), func(b bool) {
+		dataRoot.Remove(uid)
+	}, window).Show()
+}
+
+func editAction(uid string) {
+
+}
+
+func linkAction(uid string) {
+
 }
 
 func main() {

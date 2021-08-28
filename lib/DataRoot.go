@@ -116,6 +116,12 @@ func containsWithCase(haystack, needle string, matchCase bool) bool {
 		return strings.Contains(h, n)
 	}
 }
+func (p *DataRoot) Remove(uid string) {
+	parent := GetParentId(uid)
+	id := GetLastId(uid)
+	m, _ := p.GetDataForUid(parent)
+	fmt.Printf("M:%s %s", m, id)
+}
 
 func (p *DataRoot) AddUser(userName string) error {
 	m, _ := GetMapForUid(userName, &p.dataMap)
@@ -264,6 +270,21 @@ func GetParentId(uid string) string {
 		return ""
 	default:
 		return uid[0:p]
+	}
+}
+
+func GetLastId(uid string) string {
+	if uid == "" {
+		return uid
+	}
+	p := strings.LastIndexByte(uid, '.')
+	switch p {
+	case -1:
+		return uid
+	case 0:
+		return uid[1:]
+	default:
+		return uid[p+1:]
 	}
 }
 
