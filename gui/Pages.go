@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"stuartdd.com/theme2"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 	idPwDetails  = "pwHints"
 
 	ACTION_REMOVE = "remove"
-	ACTION_EDIT   = "edit"
+	ACTION_RENAME = "rename"
 	ACTION_LINK   = "link"
 )
 
@@ -128,6 +129,9 @@ func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(action str
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, details.Uid)
+	}))
+	cObj = append(cObj, widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
+		actionFunc(ACTION_RENAME, details.Uid)
 	}))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)

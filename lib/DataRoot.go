@@ -116,11 +116,35 @@ func containsWithCase(haystack, needle string, matchCase bool) bool {
 		return strings.Contains(h, n)
 	}
 }
-func (p *DataRoot) Remove(uid string) {
+
+func (p *DataRoot) Rename(uid, to string) error {
 	parent := GetParentId(uid)
+
 	id := GetLastId(uid)
 	m, _ := p.GetDataForUid(parent)
-	fmt.Printf("M:%s %s", m, id)
+	x := (*m)[id]
+	(*m)[to] = x
+	delete(*m, id)
+	p.navIndex = createNavIndex(p.dataMap)
+	p.dataMapUpdated("Removed", GetUserFromPath(uid), parent, nil)
+	return nil
+}
+
+func (p *DataRoot) Remove(uid string, min int) error {
+	parent := GetParentId(uid)
+	id := GetLastId(uid)
+	if parent == id {
+		parent = groupsStr
+	}
+	m, _ := p.GetDataForUid(parent)
+	count := countElementsInMapRoot(m)
+	if count <= min {
+		return fmt.Errorf("there must be at least %d element(s) remaining in this item", min)
+	}
+	delete(*m, id)
+	p.navIndex = createNavIndex(p.dataMap)
+	p.dataMapUpdated("Removed", GetUserFromPath(uid), parent, nil)
+	return nil
 }
 
 func (p *DataRoot) AddUser(userName string) error {
@@ -329,6 +353,10 @@ func GetMapForUid(uid string, m *map[string]interface{}) (*map[string]interface{
 	}
 	n := *m
 	x := n[groupsStr]
+	if uid == groupsStr {
+		y := x.(map[string]interface{})
+		return &y, ""
+	}
 	for _, v := range nodes {
 		y := x.(map[string]interface{})[v]
 		if y == nil {
@@ -353,6 +381,15 @@ func appendMapStruct(sb *strings.Builder, m map[string]interface{}, ind int) {
 			sb.WriteString(fmt.Sprintf("%d:%s-%s = %s\n", ind, tabdata[:ind*2], k, v))
 		}
 	}
+}
+func countElementsInMapRoot(m *map[string]interface{}) int {
+	count := 0
+	for k, _ := range *m {
+		if k != "" {
+			count++
+		}
+	}
+	return count
 }
 
 func createNavIndex(m map[string]interface{}) map[string][]string {

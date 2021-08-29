@@ -38,7 +38,7 @@ const (
 	ADD_TYPE_HINT = iota
 	ADD_TYPE_NOTE = iota
 
-	allowedCharsInName     = " *~@#$%^&*()_+=><?"
+	allowedCharsInName     = " *@#$%^&*()_+=?"
 	splitPrefName          = "split"
 	themeVarName           = "theme"
 	widthPrefName          = "width"
@@ -66,27 +66,52 @@ var (
 
 func controlActionFunction(action string, uid string) {
 	fmt.Printf("Control %s %s\n", action, uid)
+	viewActionFunction(action, uid)
 }
 
 func viewActionFunction(action string, uid string) {
 	switch action {
 	case gui.ACTION_REMOVE:
 		removeAction(uid)
-	case gui.ACTION_EDIT:
-		editAction(uid)
+	case gui.ACTION_RENAME:
+		renameAction(uid)
 	case gui.ACTION_LINK:
 		linkAction(uid)
 	}
 }
 
 func removeAction(uid string) {
-	dialog.NewConfirm("Delete entry", fmt.Sprintf("%s\nAre you sure?", uid), func(b bool) {
-		dataRoot.Remove(uid)
+	dialog.NewConfirm("Remove entry", fmt.Sprintf("%s\nAre you sure?", uid), func(b bool) {
+		err := dataRoot.Remove(uid, 1)
+		if err != nil {
+			dialog.NewInformation("Remove item error", err.Error(), window).Show()
+		}
 	}, window).Show()
 }
 
-func editAction(uid string) {
-
+func renameAction(uid string) {
+	m, _ := dataRoot.GetDataForUid(uid)
+	if m != nil {
+		fromName := lib.GetLastId(uid)
+		e := widget.NewEntry()
+		f := make([]*widget.FormItem, 0)
+		f = append(f, widget.NewFormItem("New name", e))
+		dialog.NewForm(fmt.Sprintf("Rename entry '%s' ", fromName), "OK", "Cancel", f, func(b bool) {
+			err := validateEntityName(e.Text)
+			if err != nil {
+				dialog.NewInformation("Name validation error", err.Error(), window).Show()
+			} else {
+				if fromName == e.Text {
+					dialog.NewInformation("Rename item error", "Rename to the same name", window).Show()
+				} else {
+					err := dataRoot.Rename(uid, e.Text)
+					if err != nil {
+						dialog.NewInformation("Rename item error", err.Error(), window).Show()
+					}
+				}
+			}
+		}, window).Show()
+	}
 }
 
 func linkAction(uid string) {
@@ -383,7 +408,7 @@ func addNewEntity(head string, name string, addType int) {
 		widget.NewFormItem(name+":", entry),
 	), func(ok bool) {
 		if ok {
-			err := validateEntityName(entry.Text, addType)
+			err := validateEntityName(entry.Text)
 			if err == nil {
 				switch addType {
 				case ADD_TYPE_USER:
@@ -401,7 +426,7 @@ func addNewEntity(head string, name string, addType int) {
 	}, window)
 }
 
-func validateEntityName(entry string, addType int) error {
+func validateEntityName(entry string) error {
 	if len(entry) == 0 {
 		return fmt.Errorf("input is undefined")
 	}

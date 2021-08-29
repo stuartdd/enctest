@@ -23,6 +23,7 @@ type AppTheme struct {
 }
 
 const (
+	IconNameEdit      fyne.ThemeIconName = "edit"
 	IconNameLinkToWeb fyne.ThemeIconName = "linkToWeb"
 	LN                string             = "Light"
 	DN                string             = "Dark"
@@ -36,6 +37,8 @@ var (
 		string(theme.IconNameContentUndo) + DN: resourceRevertDarkSvg,
 		string(IconNameLinkToWeb) + LN:         resourceLinkLightSvg,
 		string(IconNameLinkToWeb) + DN:         resourceLinkDarkSvg,
+		string(IconNameEdit) + LN:              resourceEditLightSvg,
+		string(IconNameEdit) + DN:              resourceEditDarkSvg,
 	}
 
 	colorPalette = map[string]color.Color{
@@ -50,6 +53,10 @@ var (
 
 func LinkToWebIcon() fyne.Resource {
 	return safeLookupViaTheme(IconNameLinkToWeb)
+}
+
+func EditIcon() fyne.Resource {
+	return safeLookupViaTheme(IconNameEdit)
 }
 
 func AppLogo() fyne.Resource {
