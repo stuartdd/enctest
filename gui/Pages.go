@@ -119,8 +119,9 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		fcbl := container.New(&FixedLayout{10, 5}, e.Link)
 		fcbr := container.New(&FixedLayout{10, 5}, e.UnDo)
 		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
+		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
 		cObj = append(cObj, widget.NewSeparator())
-		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcbl, fcl), fcbr, e.Wid))
+		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Wid))
 	}
 	return container.NewVBox(cObj...)
 }
@@ -154,8 +155,9 @@ func hintsScreen(_ fyne.Window, details DetailPage, actionFunc func(action strin
 		fcbl := container.New(&FixedLayout{10, 5}, e.Link)
 		fcbr := container.New(&FixedLayout{10, 5}, e.UnDo)
 		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
+		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
 		cObj = append(cObj, widget.NewSeparator())
-		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcbl, fcl), fcbr, e.Wid))
+		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Wid))
 
 	}
 	return container.NewVBox(cObj...)

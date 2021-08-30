@@ -23,6 +23,7 @@ type EditEntry struct {
 	UnDo         *widget.Button
 	Link         *widget.Button
 	Remove       *widget.Button
+	Rename       *widget.Button
 	OnChangeFunc func(input string, path string)
 	UnDoFunc     func(path string)
 	ActionFunc   func(action string, path string)
@@ -50,15 +51,18 @@ func NewEditEntry(path string, title string, old string, onChangeFunc func(s str
 	u := widget.NewButtonWithIcon("", theme.ContentUndoIcon(), func() {
 		unDoFunc(path)
 	})
-	n := widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
+	i := widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
 		actionFunc(ACTION_LINK, path)
 	})
 	r := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, path)
 	})
+	n := widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
+		actionFunc(ACTION_RENAME, path)
+	})
 	u.Disable()
-	n.Disable()
-	return &EditEntry{Path: path, Title: title, Wid: w, Lab: l, UnDo: u, Link: n, Remove: r, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
+	i.Disable()
+	return &EditEntry{Path: path, Title: title, Wid: w, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
 }
 
 func (p *EditEntry) RefreshButtons() {
@@ -67,6 +71,12 @@ func (p *EditEntry) RefreshButtons() {
 	})
 	p.Link = widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
 		p.ActionFunc(ACTION_LINK, p.Path)
+	})
+	p.Remove = widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
+		p.ActionFunc(ACTION_REMOVE, p.Path)
+	})
+	p.Rename = widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
+		p.ActionFunc(ACTION_RENAME, p.Path)
 	})
 	p.updateButtons()
 }

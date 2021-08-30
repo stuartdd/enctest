@@ -365,7 +365,8 @@ func GetMapForUid(uid string, m *map[string]interface{}) (*map[string]interface{
 		if reflect.ValueOf(y).Kind() != reflect.String {
 			x = y
 		} else {
-			return nil, y.(string)
+			o := x.(map[string]interface{})
+			return &o, y.(string)
 		}
 	}
 	o := x.(map[string]interface{})
