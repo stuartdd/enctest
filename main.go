@@ -153,13 +153,25 @@ func main() {
 		Thread keeps running in background
 		To Trigger it:
 			set loadThreadFileName = filename
-			set loadThreadState = MAIN_THREAD_LOAD
+			requestMainThreadIn(1000, MAIN_THREAD_LOAD)
 	*/
 	go func() {
+		/*
+			--- MAIN LOOP ---
+			mainThreadNextRunMs is 0 for never run the main loop
+			mainThreadNextRunMs is current milliseconds + an offset.
+				This will then run the Main loop at that time
+			mainThreadNextRunMs is always reset to 0 when the main loop starts.
+
+			mainThreadNextState is the action performed by the main loop
+				Each action should leave the state as MAIN_THREAD_IDLE unless a follow on action is required
+		*/
 		for {
 			if mainThreadNextRunMs > 0 && time.Now().UnixMilli() > mainThreadNextRunMs {
 				mainThreadNextRunMs = 0
 				if mainThreadNextState == MAIN_THREAD_LOAD {
+
+					// Load the file and decrypt it if required
 					fmt.Println("Load State")
 					fd, err := lib.NewFileData(loadThreadFileName)
 					if err != nil {
@@ -191,20 +203,27 @@ func main() {
 					}
 					fileData = fd
 					dataRoot = dr
+
+					// Follow on action to rebuild the Tree and re-display it
 					requestMainThreadIn(500, MAIN_THREAD_RELOAD_TREE)
 				}
 
 				if mainThreadNextState == MAIN_THREAD_RELOAD_TREE {
+					// Re-build the main tree view.
+					// Select the root of currentUser if defined.
+					// Init the devider (split)
+					// Populate the window and we are done!
 					navTreeLHS = makeNavTree(setPageRHSFunc)
 					uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
 					fmt.Printf("Refresh current:%s ", uid)
 					selectTreeElement(uid)
-					splitContainer = container.NewHSplit(container.NewBorder(nil, makeLHSButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
+					splitContainer = container.NewHSplit(container.NewBorder(nil, makeLHSButtonsAndSearch(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
 					splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
 					window.SetContent(splitContainer)
 					requestMainThreadIn(0, MAIN_THREAD_IDLE)
 				}
 
+				// Select the tree element defined in pendingSelection
 				if mainThreadNextState == MAIN_THREAD_SELECT {
 					fmt.Printf("Select pending:%s ", pendingSelection)
 					selectTreeElement(pendingSelection)
@@ -220,15 +239,22 @@ func main() {
 	window.ShowAndRun()
 }
 
+/**
+Select a tree element.
+We need to open the parent branches or we will never see the selected element
+*/
 func selectTreeElement(uid string) {
 	user := lib.GetUserFromPath(uid)
 	parent := lib.GetParentId(uid)
-	fmt.Printf("user:%s parent:%s uid:%s\n", user, parent, uid)
 	navTreeLHS.OpenBranch(user)
 	navTreeLHS.OpenBranch(parent)
 	navTreeLHS.Select(uid)
 }
 
+/**
+Use the navigation index (map in DataRoot) to construct the Tree.
+Calls setPage with the selected page, defined by the uid (path) and Pages (gui) api
+*/
 func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 	return &widget.Tree{
 		ChildUIDs: func(uid string) []string {
@@ -253,7 +279,10 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 	}
 }
 
-func makeLHSButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
+/**
+Section below the tree with Search details and Light and Dark theme buttons
+*/
+func makeLHSButtonsAndSearch(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	searchEntry := widget.NewEntry()
 	searchEntry.SetText(fyne.CurrentApp().Preferences().StringWithFallback(lastGoodSearchPrefName, "?"))
 	c2 := container.New(
@@ -280,6 +309,9 @@ func makeLHSButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	return container.NewVBox(widget.NewSeparator(), c, b)
 }
 
+/**
+Request that the main loop is started in n milliseconds with a specific state.
+*/
 func requestMainThreadIn(ms int64, reqState int) {
 	if reqState == MAIN_THREAD_IDLE {
 		mainThreadNextRunMs = 0
