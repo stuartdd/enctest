@@ -54,14 +54,15 @@ var (
 	dataRoot              *lib.DataRoot
 	navTreeLHS            *widget.Tree
 	splitContainer        *container.Split // So we can save the divider position to preferences.
-	findCaseSensitive     = binding.NewBool()
-	pendingSelection      = ""
-	currentSelection      = ""
-	currentUser           = ""
-	loadThreadFileName    = ""
-	shouldCloseLock       = false
-	loadThreadState       = 0
-	countStructureChanges = 0
+	findCaseSensitive                      = binding.NewBool()
+	pendingSelection                       = ""
+	currentSelection                       = ""
+	currentUser                            = ""
+	shouldCloseLock                        = false
+	loadThreadNextState                    = 0
+	loadThreadNextRunMs   int64            = 0
+	loadThreadFileName                     = ""
+	countStructureChanges                  = 0
 )
 
 func controlActionFunction(action string, uid string) {
@@ -133,8 +134,10 @@ func main() {
 		fmt.Println("ERROR: File name not provided")
 		os.Exit(1)
 	}
+
 	loadThreadFileName = os.Args[1]
-	loadThreadState = LOAD_THREAD_IDLE
+	loadThreadNextState = LOAD_THREAD_IDLE
+	loadThreadNextRunMs = 0
 
 	a := app.NewWithID("stuartdd.enctest")
 	a.Settings().SetTheme(theme2.NewAppTheme(a.Preferences().StringWithFallback(themeVarName, "dark")))
@@ -221,72 +224,97 @@ func main() {
 	*/
 	go func() {
 		for {
-			time.Sleep(1000 * time.Millisecond)
-			if loadThreadState == LOAD_THREAD_LOAD {
-				fmt.Println("Load State")
-				loadThreadState = LOAD_THREAD_LOADING
-				fd, err := lib.NewFileData(loadThreadFileName)
-				if err != nil {
-					fmt.Printf("Failed to load data file %s\n", loadThreadFileName)
-					os.Exit(1)
-				}
-				/*
-					While file is ENCRYPTED
-						Get PW and decrypt
-				*/
-				for !fd.IsRawJson() {
-					if !(loadThreadState == LOAD_THREAD_INPW) {
-						loadThreadState = LOAD_THREAD_INPW
-						getPasswordAndDecrypt(fd, func() {
-							// SUCCESS
-							loadThreadState = LOAD_THREAD_DECRYPTED
-						}, func() {
-							// FAIL
-							loadThreadState = LOAD_THREAD_LOADING
-						})
+			if loadThreadNextRunMs > 0 && time.Now().UnixMilli() > loadThreadNextRunMs {
+				loadThreadNextRunMs = 0
+				if loadThreadNextState == LOAD_THREAD_LOAD {
+					fmt.Println("Load State")
+					loadThreadNextState = LOAD_THREAD_LOADING
+					fd, err := lib.NewFileData(loadThreadFileName)
+					if err != nil {
+						fmt.Printf("Failed to load data file %s\n", loadThreadFileName)
+						os.Exit(1)
 					}
-					if loadThreadState != LOAD_THREAD_DECRYPTED {
-						time.Sleep(1000 * time.Millisecond)
+					/*
+						While file is ENCRYPTED
+							Get PW and decrypt
+					*/
+					for !fd.IsRawJson() {
+						if !(loadThreadNextState == LOAD_THREAD_INPW) {
+							loadThreadNextState = LOAD_THREAD_INPW
+							getPasswordAndDecrypt(fd, func() {
+								// SUCCESS
+								loadThreadNextState = LOAD_THREAD_DECRYPTED
+							}, func() {
+								// FAIL
+								loadThreadNextState = LOAD_THREAD_LOADING
+							})
+						}
+						if loadThreadNextState != LOAD_THREAD_DECRYPTED {
+							time.Sleep(1000 * time.Millisecond)
+						}
 					}
+					/*
+						Data is decrypted so process the JSON so
+							update the navigation tree
+							select the root element
+					*/
+					dr, err := lib.NewDataRoot(fd.GetContent(), dataMapUpdated)
+					if err != nil {
+						fmt.Printf("ERROR: Cannot process data. %s\n", err)
+						os.Exit(1)
+					}
+					fileData = fd
+					dataRoot = dr
+					requestLoadThreadIn(500, LOAD_THREAD_RELOAD_TREE)
 				}
-				/*
-					Data is decrypted so process the JSON so
-						update the navigation tree
-						select the root element
-				*/
-				dr, err := lib.NewDataRoot(fd.GetContent(), dataMapUpdated)
-				if err != nil {
-					fmt.Printf("ERROR: Cannot process data. %s\n", err)
-					os.Exit(1)
+
+				if loadThreadNextState == LOAD_THREAD_RELOAD_TREE {
+					navTreeLHS = makeNavTree(setPageRHSFunc)
+					uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
+					fmt.Printf("Refresh current:%s ", uid)
+					selectTreeElement(uid)
+					splitContainer = container.NewHSplit(container.NewBorder(nil, makeLHSButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
+					splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
+					window.SetContent(splitContainer)
+					requestLoadThreadIn(0, LOAD_THREAD_IDLE)
 				}
-				fileData = fd
-				dataRoot = dr
-				loadThreadState = LOAD_THREAD_RELOAD_TREE
-			}
 
-			if loadThreadState == LOAD_THREAD_RELOAD_TREE {
-				navTreeLHS = makeNavTree(setPageRHSFunc)
-				uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
-				fmt.Printf("Refresh current:%s ", uid)
-				selectTreeElement(uid)
-				splitContainer = container.NewHSplit(container.NewBorder(nil, makeLHSButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
-				splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
-				window.SetContent(splitContainer)
-				loadThreadState = LOAD_THREAD_IDLE
+				if loadThreadNextState == LOAD_THREAD_SELECT {
+					fmt.Printf("Select pending:%s ", pendingSelection)
+					selectTreeElement(pendingSelection)
+					requestLoadThreadIn(0, LOAD_THREAD_IDLE)
+				}
 			}
-
-			if loadThreadState == LOAD_THREAD_SELECT {
-				fmt.Printf("Select pending:%s ", pendingSelection)
-				selectTreeElement(pendingSelection)
-				loadThreadState = LOAD_THREAD_IDLE
-			}
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
 	window.Resize(fyne.NewSize(float32(a.Preferences().FloatWithFallback(widthPrefName, 640)), float32(a.Preferences().FloatWithFallback(heightPrefName, 460))))
-	loadThreadState = LOAD_THREAD_LOAD
+	requestLoadThreadIn(1000, LOAD_THREAD_LOAD)
 	window.ShowAndRun()
 }
+
+func requestLoadThreadIn(ms int64, reqState int) {
+	if reqState == LOAD_THREAD_IDLE {
+		loadThreadNextRunMs = 0
+	} else {
+		loadThreadNextRunMs = time.Now().UnixMilli() + ms
+	}
+	loadThreadNextState = reqState
+}
+
+// func showLoadState(s string) {
+// 	switch loadThreadNextState {
+// 	case LOAD_THREAD_LOAD:
+// 		fmt.Printf("%s state LOAD, ms %d\n", s, loadThreadNextRunMs)
+// 	case LOAD_THREAD_IDLE:
+// 		fmt.Printf("%s state IDLE, ms %d\n", s, loadThreadNextRunMs)
+// 	case LOAD_THREAD_RELOAD_TREE:
+// 		fmt.Printf("%s state RELOAD TREE, ms %d\n", s, loadThreadNextRunMs)
+// 	default:
+// 		fmt.Printf("%s state %d, ms %d", s, loadThreadNextState, loadThreadNextRunMs)
+// 	}
+// }
 
 func selectTreeElement(uid string) {
 	user := lib.GetUserFromPath(uid)
@@ -303,7 +331,7 @@ func dataMapUpdated(desc, user, path string, err error) {
 		currentSelection = path
 		countStructureChanges++
 	}
-	loadThreadState = LOAD_THREAD_RELOAD_TREE
+	requestLoadThreadIn(100, LOAD_THREAD_RELOAD_TREE)
 }
 
 func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
@@ -383,7 +411,7 @@ func search(s string) {
 		)
 		list.OnSelected = func(id widget.ListItemID) {
 			pendingSelection = mapPaths[paths[id]]
-			loadThreadState = LOAD_THREAD_SELECT
+			requestLoadThreadIn(100, LOAD_THREAD_SELECT)
 		}
 		go showSearchResultsWindow(window.Canvas().Size().Width/2, window.Canvas().Size().Height/2, list)
 	} else {
@@ -500,52 +528,6 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 					}
 				}
 			})
-		} else {
-			_, err := commitChangedItems()
-			if err != nil {
-				dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
-				return
-			}
-			if enc == SAVE_AS_IS {
-				err = fileData.StoreContentAsIs()
-			} else {
-				err = fileData.StoreContentUnEncrypted()
-			}
-			if err != nil {
-				dialog.NewInformation("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
-			} else {
-				countStructureChanges = 0
-			}
-		}
-	}
-}
-
-func xxx(enc int, mustBeChanged bool) {
-	count := countChangedItems()
-	if count == 0 && mustBeChanged {
-		dialog.NewInformation("File Save", "There were no items to save!\n\nPress OK to continue", window).Show()
-	} else {
-		if enc == SAVE_ENCRYPTED {
-			pass := widget.NewPasswordEntry()
-			dialog.ShowCustomConfirm("Enter the password to ENCRYPT the file", "Confirm", "Cancel", widget.NewForm(
-				widget.NewFormItem("Password", pass),
-			), func(ok bool) {
-				if ok && pass.Text != "" {
-					_, err := commitChangedItems()
-					if err != nil {
-						dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
-						return
-					}
-					err = fileData.StoreContentEncrypted([]byte(pass.Text))
-					if err != nil {
-						dialog.NewInformation("Save Encrypted File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
-					} else {
-						countStructureChanges = 0
-					}
-				} else {
-					dialog.NewInformation("Save Encrypted File Error:", "Error Message:\n\n-- Password not provided --\n\nFile was not saved!\nPress OK to continue", window).Show()
-				}
-			}, window)
 		} else {
 			_, err := commitChangedItems()
 			if err != nil {
