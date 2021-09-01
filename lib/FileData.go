@@ -63,6 +63,10 @@ func (r *FileData) StoreContentAsIs() error {
 	}
 }
 
+func (r *FileData) RequiresDecryption() bool {
+	return !r.IsRawJson()
+}
+
 func (r *FileData) IsRawJson() bool {
 	p := 0
 	for p = 0; p < (len(r.content) - 1); p++ {

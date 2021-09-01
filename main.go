@@ -27,9 +27,6 @@ const (
 	SAVE_ENCRYPTED          = iota
 	SAVE_UN_ENCRYPTED       = iota
 	MAIN_THREAD_LOAD        = iota
-	MAIN_THREAD_LOADING     = iota
-	MAIN_THREAD_INPW        = iota
-	MAIN_THREAD_DECRYPTED   = iota
 	MAIN_THREAD_IDLE        = iota
 	MAIN_THREAD_RELOAD_TREE = iota
 	MAIN_THREAD_SELECT      = iota
@@ -64,70 +61,6 @@ var (
 	loadThreadFileName                     = ""
 	countStructureChanges                  = 0
 )
-
-func controlActionFunction(action string, uid string) {
-	fmt.Printf("Control %s %s\n", action, uid)
-	viewActionFunction(action, uid)
-}
-
-func viewActionFunction(action string, uid string) {
-	switch action {
-	case gui.ACTION_REMOVE:
-		removeAction(uid)
-	case gui.ACTION_RENAME:
-		renameAction(uid)
-	case gui.ACTION_LINK:
-		linkAction(uid)
-	}
-}
-
-func removeAction(uid string) {
-	dialog.NewConfirm("Remove entry", fmt.Sprintf("%s\nAre you sure?", uid), func(b bool) {
-		err := dataRoot.Remove(uid, 1)
-		if err != nil {
-			dialog.NewInformation("Remove item error", err.Error(), window).Show()
-		}
-	}, window).Show()
-}
-
-func renameAction(uid string) {
-	m, _ := dataRoot.GetDataForUid(uid)
-	if m != nil {
-		fromName := lib.GetLastId(uid)
-		e := widget.NewEntry()
-		f := make([]*widget.FormItem, 0)
-		f = append(f, widget.NewFormItem("New name", e))
-		dialog.NewForm(fmt.Sprintf("Rename entry '%s' ", fromName), "OK", "Cancel", f, func(b bool) {
-			err := validateEntityName(e.Text)
-			if err != nil {
-				dialog.NewInformation("Name validation error", err.Error(), window).Show()
-			} else {
-				if fromName == e.Text {
-					dialog.NewInformation("Rename item error", "Rename to the same name", window).Show()
-				} else {
-					err := dataRoot.Rename(uid, e.Text)
-					if err != nil {
-						dialog.NewInformation("Rename item error", err.Error(), window).Show()
-					}
-				}
-			}
-		}, window).Show()
-	}
-}
-
-func linkAction(s string) {
-	if s != "" {
-		s, err := url.Parse(s)
-		if err != nil {
-			dialog.NewInformation("Link is invalid", err.Error(), window).Show()
-		} else {
-			err = fyne.CurrentApp().OpenURL(s)
-			if err != nil {
-				dialog.NewInformation("ink could not be opened", err.Error(), window).Show()
-			}
-		}
-	}
-}
 
 func main() {
 	if len(os.Args) == 1 {
@@ -236,21 +169,15 @@ func main() {
 					/*
 						While file is ENCRYPTED
 							Get PW and decrypt
+							if Decryption is cancelled the application exits
 					*/
-					for !fd.IsRawJson() {
-						if !(mainThreadNextState == MAIN_THREAD_INPW) {
-							requestMainThreadIn(0, MAIN_THREAD_INPW)
-							getPasswordAndDecrypt(fd, func() {
-								// SUCCESS
-								requestMainThreadIn(0, MAIN_THREAD_DECRYPTED)
-							}, func() {
-								// FAIL
-								requestMainThreadIn(0, MAIN_THREAD_LOADING)
-							})
-						}
-						if mainThreadNextState != MAIN_THREAD_DECRYPTED {
+					message := ""
+					for fd.RequiresDecryption() {
+						getPasswordAndDecrypt(fd, message, func(s string) {
+							// FAIL
+							message = "Error: " + strings.TrimSpace(s) + ". Please try again"
 							time.Sleep(1000 * time.Millisecond)
-						}
+						})
 					}
 					/*
 						Data is decrypted so process the JSON so
@@ -293,34 +220,6 @@ func main() {
 	window.ShowAndRun()
 }
 
-func requestMainThreadIn(ms int64, reqState int) {
-	if reqState == MAIN_THREAD_IDLE {
-		mainThreadNextRunMs = 0
-		mainThreadNextState = MAIN_THREAD_IDLE
-	} else {
-		if ms == 0 {
-			mainThreadNextRunMs = 0
-		} else {
-			mainThreadNextRunMs = time.Now().UnixMilli() + ms
-		}
-		mainThreadNextState = reqState
-	}
-
-}
-
-// func showLoadState(s string) {
-// 	switch mainThreadNextState {
-// 	case MAIN_THREAD_LOAD:
-// 		fmt.Printf("%s state LOAD, ms %d\n", s, mainThreadNextRunMs)
-// 	case MAIN_THREAD_IDLE:
-// 		fmt.Printf("%s state IDLE, ms %d\n", s, mainThreadNextRunMs)
-// 	case MAIN_THREAD_RELOAD_TREE:
-// 		fmt.Printf("%s state RELOAD TREE, ms %d\n", s, mainThreadNextRunMs)
-// 	default:
-// 		fmt.Printf("%s state %d, ms %d", s, mainThreadNextState, mainThreadNextRunMs)
-// 	}
-// }
-
 func selectTreeElement(uid string) {
 	user := lib.GetUserFromPath(uid)
 	parent := lib.GetParentId(uid)
@@ -328,15 +227,6 @@ func selectTreeElement(uid string) {
 	navTreeLHS.OpenBranch(user)
 	navTreeLHS.OpenBranch(parent)
 	navTreeLHS.Select(uid)
-}
-
-func dataMapUpdated(desc, user, path string, err error) {
-	if err == nil {
-		fmt.Printf("Updated: %s User: %s Path:%s\n", desc, user, path)
-		currentSelection = path
-		countStructureChanges++
-	}
-	requestMainThreadIn(100, MAIN_THREAD_RELOAD_TREE)
 }
 
 func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
@@ -390,19 +280,137 @@ func makeLHSButtons(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	return container.NewVBox(widget.NewSeparator(), c, b)
 }
 
+func requestMainThreadIn(ms int64, reqState int) {
+	if reqState == MAIN_THREAD_IDLE {
+		mainThreadNextRunMs = 0
+		mainThreadNextState = MAIN_THREAD_IDLE
+	} else {
+		if ms == 0 {
+			mainThreadNextRunMs = 0
+		} else {
+			mainThreadNextRunMs = time.Now().UnixMilli() + ms
+		}
+		mainThreadNextState = reqState
+	}
+
+}
+
+/**
+This is called when a heading button is pressed of the RH page
+*/
+func controlActionFunction(action string, uid string) {
+	fmt.Printf("Control %s %s\n", action, uid)
+	viewActionFunction(action, uid)
+}
+
+/**
+This is called when a detail button is pressed of the RH page
+*/
+func viewActionFunction(action string, uid string) {
+	switch action {
+	case gui.ACTION_REMOVE:
+		removeAction(uid)
+	case gui.ACTION_RENAME:
+		renameAction(uid)
+	case gui.ACTION_LINK:
+		linkAction(uid)
+	}
+}
+
+/**
+Called if there is a structural change in the model
+*/
+func dataMapUpdated(desc, user, path string, err error) {
+	if err == nil {
+		fmt.Printf("Updated: %s User: %s Path:%s\n", desc, user, path)
+		currentSelection = path
+		countStructureChanges++
+	}
+	requestMainThreadIn(100, MAIN_THREAD_RELOAD_TREE)
+}
+
+/**
+Remove a node from the main data (model) and update the tree view
+dataMapUpdated id called if a change is made to the model
+*/
+func removeAction(uid string) {
+	dialog.NewConfirm("Remove entry", fmt.Sprintf("%s\nAre you sure?", uid), func(b bool) {
+		err := dataRoot.Remove(uid, 1)
+		if err != nil {
+			dialog.NewInformation("Remove item error", err.Error(), window).Show()
+		}
+	}, window).Show()
+}
+
+/**
+Rename a node from the main data (model) and update the tree view
+dataMapUpdated id called if a change is made to the model
+*/
+func renameAction(uid string) {
+	m, _ := dataRoot.GetDataForUid(uid)
+	if m != nil {
+		fromName := lib.GetLastId(uid)
+		e := widget.NewEntry()
+		f := make([]*widget.FormItem, 0)
+		f = append(f, widget.NewFormItem("New name", e))
+		dialog.NewForm(fmt.Sprintf("Rename entry '%s' ", fromName), "OK", "Cancel", f, func(b bool) {
+			err := validateEntityName(e.Text)
+			if err != nil {
+				dialog.NewInformation("Name validation error", err.Error(), window).Show()
+			} else {
+				if fromName == e.Text {
+					dialog.NewInformation("Rename item error", "Rename to the same name", window).Show()
+				} else {
+					err := dataRoot.Rename(uid, e.Text)
+					if err != nil {
+						dialog.NewInformation("Rename item error", err.Error(), window).Show()
+					}
+				}
+			}
+		}, window).Show()
+	}
+}
+
+/**
+Activate a link in a browser if it is contained in a note of hint
+*/
+func linkAction(s string) {
+	if s != "" {
+		s, err := url.Parse(s)
+		if err != nil {
+			dialog.NewInformation("Link is invalid", err.Error(), window).Show()
+		} else {
+			err = fyne.CurrentApp().OpenURL(s)
+			if err != nil {
+				dialog.NewInformation("ink could not be opened", err.Error(), window).Show()
+			}
+		}
+	}
+}
+
+/*
+The search button has been pressed
+*/
 func search(s string) {
 	matchCase, _ := findCaseSensitive.Get()
+
+	// Do the search. The map contains the returned search entries
+	// This ensures no duplicates are displayed
+	// The map key is the human readable results e.g. 'User [Hint] app: noteName'
+	// The values are paths within the model! user.pwHints.app.noteName
 	mapPaths := make(map[string]string)
 	dataRoot.Search(func(path, desc string) {
 		mapPaths[desc] = path
 	}, s, matchCase)
 
+	// Fine all the keys and sort them
 	paths := make([]string, 0)
 	for k := range mapPaths {
 		paths = append(paths, k)
 	}
 	sort.Strings(paths)
 
+	// Use the sorted keys to populate the result window
 	if len(paths) > 0 {
 		fyne.CurrentApp().Preferences().SetString(lastGoodSearchPrefName, s)
 		list := widget.NewList(
@@ -414,6 +422,8 @@ func search(s string) {
 				co.(*widget.Label).SetText(paths[lii])
 			},
 		)
+		// When an item is selected, start the main thread to select it in the main tree
+		// pendingSelection is the path to the selected item
 		list.OnSelected = func(id widget.ListItemID) {
 			pendingSelection = mapPaths[paths[id]]
 			requestMainThreadIn(100, MAIN_THREAD_SELECT)
@@ -424,6 +434,9 @@ func search(s string) {
 	}
 }
 
+/**
+Display the search results in a NON modal window
+*/
 func showSearchResultsWindow(w float32, h float32, list *widget.List) {
 	if searchWindow != nil {
 		searchWindow.Close()
@@ -437,16 +450,31 @@ func showSearchResultsWindow(w float32, h float32, list *widget.List) {
 	searchWindow.Show()
 }
 
+/**
+Selecting the menu to add a user
+*/
 func addNewUser() {
 	addNewEntity("User", "User", ADD_TYPE_USER)
 }
+
+/**
+Selecting the menu to add a hint
+*/
 func addNewHint() {
 	addNewEntity("Hint for "+currentUser, "Hint", ADD_TYPE_HINT)
 }
+
+/**
+Selecting the menu to add a note
+*/
 func addNewNote() {
 	addNewEntity("Note for "+currentUser, "Note", ADD_TYPE_NOTE)
 }
 
+/**
+Add an entity to the model.
+Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
+*/
 func addNewEntity(head string, name string, addType int) {
 	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", func(accept bool, s string) {
 		if accept {
@@ -468,6 +496,10 @@ func addNewEntity(head string, name string, addType int) {
 	})
 }
 
+/**
+Validate the names of entities. These result in JSON entity names so require
+some restrictions.
+*/
 func validateEntityName(entry string) error {
 	if len(entry) == 0 {
 		return fmt.Errorf("input is undefined")
@@ -488,26 +520,49 @@ func validateEntityName(entry string) error {
 	return nil
 }
 
-func getPasswordAndDecrypt(fd *lib.FileData, success func(), fail func()) {
-	gui.NewModalPasswordDialog(window, "Enter the password to DECRYPT the file", "", func(ok bool, value string) {
+/**
+Get the password to decrypt the loaded data contained in FileData
+*/
+func getPasswordAndDecrypt(fd *lib.FileData, message string, fail func(string)) {
+	if message == "" {
+		message = "Enter the password to DECRYPT the file"
+	}
+	running := true
+	gui.NewModalPasswordDialog(window, message, "", func(ok bool, value string) {
 		if ok {
 			if value == "" {
-				fail()
+				fail("password is empty")
 			} else {
 				err := fd.DecryptContents([]byte(value))
 				if err != nil {
-					fail()
-				} else {
-					success()
+					// Encryption failed so sanitise the error message and pass it back so we can try again
+					s := err.Error()
+					p := strings.Index(s, ":")
+					if p > 0 {
+						fail(s[p+1:])
+					} else {
+						fail(s)
+					}
 				}
 			}
+			running = false
 		} else {
 			fmt.Printf("Failed to decrypt data file %s. password was not provided\n", fd.GetFileName())
 			os.Exit(1)
 		}
 	})
+	// This method must not end until OK or Cancel are pressed
+	for running {
+		time.Sleep(500 * time.Millisecond)
+	}
 }
 
+/**
+Commit changes to the model and save it to file.
+If we are saving encrypted then capture a password and encrypt the file
+Otherwise save it as it was loaded!
+commitChangedItems writes any un-doable entries to the model. Nothing structural!
+*/
 func commitAndSaveData(enc int, mustBeChanged bool) {
 	count := countChangedItems()
 	if count == 0 && mustBeChanged {
