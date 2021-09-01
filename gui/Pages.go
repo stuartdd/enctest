@@ -177,7 +177,6 @@ func hintsScreen(_ fyne.Window, details DetailPage, actionFunc func(action strin
 		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
 		cObj = append(cObj, widget.NewSeparator())
 		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Wid))
-
 	}
 	return container.NewVBox(cObj...)
 }

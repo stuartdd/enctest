@@ -17,9 +17,14 @@ type FileData struct {
 	isEmpty  bool
 }
 
+/**
+Changing any of this will prevent previous encryptions from being decrypted.
+More encIterations will produce slower encryption and decryption times
+Note that encIterations is multiplied by 1024
+*/
 var (
-	encIterations = 64
-	encSalt       = []byte("SQhMXVt8rQED2MxHTHxmuZLMxdJz5DQI")
+	encIterations = 64                                         // Keep as power of 2.
+	encSalt       = []byte("SQhMXVt8rQED2MxHTHxmuZLMxdJz5DQI") // Keep as 32 randomly generated chars
 )
 
 func NewFileData(fName string) (*FileData, error) {
