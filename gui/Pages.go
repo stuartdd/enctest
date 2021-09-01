@@ -31,7 +31,11 @@ var (
 )
 
 func NewModalEntryDialog(w fyne.Window, heading, txt string, accept func(bool, string)) (modal *widget.PopUp) {
-	return runModalEntryPopup(w, heading, txt, accept)
+	return runModalEntryPopup(w, heading, txt, false, accept)
+}
+
+func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool, string)) (modal *widget.PopUp) {
+	return runModalEntryPopup(w, heading, txt, true, accept)
 }
 
 func GetWelcomePage(id string) *DetailPage {
@@ -221,8 +225,8 @@ func parseURL(urlStr string) *url.URL {
 	return link
 }
 
-func runModalEntryPopup(w fyne.Window, heading, txt string, accept func(bool, string)) (modal *widget.PopUp) {
-	acceptInternal := func(s string) {
+func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, accept func(bool, string)) (modal *widget.PopUp) {
+	submitInternal := func(s string) {
 		modal.Hide()
 		if s != txt {
 			accept(true, s)
@@ -230,25 +234,29 @@ func runModalEntryPopup(w fyne.Window, heading, txt string, accept func(bool, st
 			accept(false, s)
 		}
 	}
-	entry := &widget.Entry{Text: txt, OnChanged: func(s string) {}, OnSubmitted: acceptInternal}
+	entry := &widget.Entry{Text: txt, Password: password, OnChanged: func(s string) {}, OnSubmitted: submitInternal}
 	modal = widget.NewModalPopUp(
 		container.NewVBox(
 			widget.NewLabel("   "+heading+"   "),
 			entry,
 			container.NewCenter(container.New(layout.NewHBoxLayout(), widget.NewButton("Cancel", func() {
-				acceptInternal("")
+				modal.Hide()
+				accept(false, entry.Text)
 			}), widget.NewButton("OK", func() {
-				acceptInternal(entry.Text)
+				modal.Hide()
+				accept(true, entry.Text)
 			}),
 			))),
 		w.Canvas(),
 	)
 	w.Canvas().SetOnTypedKey(func(ke *fyne.KeyEvent) {
 		if ke.Name == "Return" {
-			acceptInternal(entry.Text)
+			modal.Hide()
+			accept(true, entry.Text)
 		} else {
 			if ke.Name == "Escape" {
-				acceptInternal("")
+				modal.Hide()
+				accept(false, entry.Text)
 			}
 		}
 	})

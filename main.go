@@ -455,15 +455,12 @@ func validateEntityName(entry string) error {
 }
 
 func getPasswordAndDecrypt(fd *lib.FileData, success func(), fail func()) {
-	pass := widget.NewPasswordEntry()
-	dialog.ShowCustomConfirm("Enter the password to DECRYPT the file", "Confirm", "Exit Application", widget.NewForm(
-		widget.NewFormItem("Password", pass),
-	), func(ok bool) {
+	gui.NewModalPasswordDialog(window, "Enter the password to DECRYPT the file", "", func(ok bool, value string) {
 		if ok {
-			if pass.Text == "" {
+			if value == "" {
 				fail()
 			} else {
-				err := fd.DecryptContents([]byte(pass.Text))
+				err := fd.DecryptContents([]byte(value))
 				if err != nil {
 					fail()
 				} else {
@@ -474,10 +471,57 @@ func getPasswordAndDecrypt(fd *lib.FileData, success func(), fail func()) {
 			fmt.Printf("Failed to decrypt data file %s. password was not provided\n", fd.GetFileName())
 			os.Exit(1)
 		}
-	}, window)
+	})
 }
 
 func commitAndSaveData(enc int, mustBeChanged bool) {
+	count := countChangedItems()
+	if count == 0 && mustBeChanged {
+		dialog.NewInformation("File Save", "There were no items to save!\n\nPress OK to continue", window).Show()
+	} else {
+		if enc == SAVE_ENCRYPTED {
+			gui.NewModalPasswordDialog(window, "Enter the password to DECRYPT the file", "", func(ok bool, value string) {
+				if ok {
+					if value != "" {
+						_, err := commitChangedItems()
+						if err != nil {
+							dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
+							return
+						}
+						err = fileData.StoreContentEncrypted([]byte(value))
+						if err != nil {
+							dialog.NewInformation("Save Encrypted File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
+						} else {
+							countStructureChanges = 0
+						}
+					} else {
+						dialog.NewInformation("Save Encrypted File Error:", "Error Message:\n\n-- Password not provided --\n\nFile was not saved!\nPress OK to continue", window).Show()
+					}
+				} else {
+					dialog.NewInformation("Save Encrypted File Error:", "Error Message:\n\n-- Password not provided --\n\nFile was not saved!\nPress OK to continue", window).Show()
+				}
+			})
+		} else {
+			_, err := commitChangedItems()
+			if err != nil {
+				dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
+				return
+			}
+			if enc == SAVE_AS_IS {
+				err = fileData.StoreContentAsIs()
+			} else {
+				err = fileData.StoreContentUnEncrypted()
+			}
+			if err != nil {
+				dialog.NewInformation("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
+			} else {
+				countStructureChanges = 0
+			}
+		}
+	}
+}
+
+func xxx(enc int, mustBeChanged bool) {
 	count := countChangedItems()
 	if count == 0 && mustBeChanged {
 		dialog.NewInformation("File Save", "There were no items to save!\n\nPress OK to continue", window).Show()
