@@ -26,13 +26,13 @@ const (
 	SAVE_AS_IS              = iota
 	SAVE_ENCRYPTED          = iota
 	SAVE_UN_ENCRYPTED       = iota
-	LOAD_THREAD_LOAD        = iota
-	LOAD_THREAD_LOADING     = iota
-	LOAD_THREAD_INPW        = iota
-	LOAD_THREAD_DECRYPTED   = iota
-	LOAD_THREAD_IDLE        = iota
-	LOAD_THREAD_RELOAD_TREE = iota
-	LOAD_THREAD_SELECT      = iota
+	MAIN_THREAD_LOAD        = iota
+	MAIN_THREAD_LOADING     = iota
+	MAIN_THREAD_INPW        = iota
+	MAIN_THREAD_DECRYPTED   = iota
+	MAIN_THREAD_IDLE        = iota
+	MAIN_THREAD_RELOAD_TREE = iota
+	MAIN_THREAD_SELECT      = iota
 
 	ADD_TYPE_USER = iota
 	ADD_TYPE_HINT = iota
@@ -59,8 +59,8 @@ var (
 	currentSelection                       = ""
 	currentUser                            = ""
 	shouldCloseLock                        = false
-	loadThreadNextState                    = 0
-	loadThreadNextRunMs   int64            = 0
+	mainThreadNextState                    = 0
+	mainThreadNextRunMs   int64            = 0
 	loadThreadFileName                     = ""
 	countStructureChanges                  = 0
 )
@@ -136,8 +136,8 @@ func main() {
 	}
 
 	loadThreadFileName = os.Args[1]
-	loadThreadNextState = LOAD_THREAD_IDLE
-	loadThreadNextRunMs = 0
+	mainThreadNextState = MAIN_THREAD_IDLE
+	mainThreadNextRunMs = 0
 
 	a := app.NewWithID("stuartdd.enctest")
 	a.Settings().SetTheme(theme2.NewAppTheme(a.Preferences().StringWithFallback(themeVarName, "dark")))
@@ -220,15 +220,14 @@ func main() {
 		Thread keeps running in background
 		To Trigger it:
 			set loadThreadFileName = filename
-			set loadThreadState = LOAD_THREAD_LOAD
+			set loadThreadState = MAIN_THREAD_LOAD
 	*/
 	go func() {
 		for {
-			if loadThreadNextRunMs > 0 && time.Now().UnixMilli() > loadThreadNextRunMs {
-				loadThreadNextRunMs = 0
-				if loadThreadNextState == LOAD_THREAD_LOAD {
+			if mainThreadNextRunMs > 0 && time.Now().UnixMilli() > mainThreadNextRunMs {
+				mainThreadNextRunMs = 0
+				if mainThreadNextState == MAIN_THREAD_LOAD {
 					fmt.Println("Load State")
-					loadThreadNextState = LOAD_THREAD_LOADING
 					fd, err := lib.NewFileData(loadThreadFileName)
 					if err != nil {
 						fmt.Printf("Failed to load data file %s\n", loadThreadFileName)
@@ -239,17 +238,17 @@ func main() {
 							Get PW and decrypt
 					*/
 					for !fd.IsRawJson() {
-						if !(loadThreadNextState == LOAD_THREAD_INPW) {
-							loadThreadNextState = LOAD_THREAD_INPW
+						if !(mainThreadNextState == MAIN_THREAD_INPW) {
+							requestMainThreadIn(0, MAIN_THREAD_INPW)
 							getPasswordAndDecrypt(fd, func() {
 								// SUCCESS
-								loadThreadNextState = LOAD_THREAD_DECRYPTED
+								requestMainThreadIn(0, MAIN_THREAD_DECRYPTED)
 							}, func() {
 								// FAIL
-								loadThreadNextState = LOAD_THREAD_LOADING
+								requestMainThreadIn(0, MAIN_THREAD_LOADING)
 							})
 						}
-						if loadThreadNextState != LOAD_THREAD_DECRYPTED {
+						if mainThreadNextState != MAIN_THREAD_DECRYPTED {
 							time.Sleep(1000 * time.Millisecond)
 						}
 					}
@@ -265,10 +264,10 @@ func main() {
 					}
 					fileData = fd
 					dataRoot = dr
-					requestLoadThreadIn(500, LOAD_THREAD_RELOAD_TREE)
+					requestMainThreadIn(500, MAIN_THREAD_RELOAD_TREE)
 				}
 
-				if loadThreadNextState == LOAD_THREAD_RELOAD_TREE {
+				if mainThreadNextState == MAIN_THREAD_RELOAD_TREE {
 					navTreeLHS = makeNavTree(setPageRHSFunc)
 					uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
 					fmt.Printf("Refresh current:%s ", uid)
@@ -276,13 +275,13 @@ func main() {
 					splitContainer = container.NewHSplit(container.NewBorder(nil, makeLHSButtons(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
 					splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
 					window.SetContent(splitContainer)
-					requestLoadThreadIn(0, LOAD_THREAD_IDLE)
+					requestMainThreadIn(0, MAIN_THREAD_IDLE)
 				}
 
-				if loadThreadNextState == LOAD_THREAD_SELECT {
+				if mainThreadNextState == MAIN_THREAD_SELECT {
 					fmt.Printf("Select pending:%s ", pendingSelection)
 					selectTreeElement(pendingSelection)
-					requestLoadThreadIn(0, LOAD_THREAD_IDLE)
+					requestMainThreadIn(0, MAIN_THREAD_IDLE)
 				}
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -290,29 +289,35 @@ func main() {
 	}()
 
 	window.Resize(fyne.NewSize(float32(a.Preferences().FloatWithFallback(widthPrefName, 640)), float32(a.Preferences().FloatWithFallback(heightPrefName, 460))))
-	requestLoadThreadIn(1000, LOAD_THREAD_LOAD)
+	requestMainThreadIn(1000, MAIN_THREAD_LOAD)
 	window.ShowAndRun()
 }
 
-func requestLoadThreadIn(ms int64, reqState int) {
-	if reqState == LOAD_THREAD_IDLE {
-		loadThreadNextRunMs = 0
+func requestMainThreadIn(ms int64, reqState int) {
+	if reqState == MAIN_THREAD_IDLE {
+		mainThreadNextRunMs = 0
+		mainThreadNextState = MAIN_THREAD_IDLE
 	} else {
-		loadThreadNextRunMs = time.Now().UnixMilli() + ms
+		if ms == 0 {
+			mainThreadNextRunMs = 0
+		} else {
+			mainThreadNextRunMs = time.Now().UnixMilli() + ms
+		}
+		mainThreadNextState = reqState
 	}
-	loadThreadNextState = reqState
+
 }
 
 // func showLoadState(s string) {
-// 	switch loadThreadNextState {
-// 	case LOAD_THREAD_LOAD:
-// 		fmt.Printf("%s state LOAD, ms %d\n", s, loadThreadNextRunMs)
-// 	case LOAD_THREAD_IDLE:
-// 		fmt.Printf("%s state IDLE, ms %d\n", s, loadThreadNextRunMs)
-// 	case LOAD_THREAD_RELOAD_TREE:
-// 		fmt.Printf("%s state RELOAD TREE, ms %d\n", s, loadThreadNextRunMs)
+// 	switch mainThreadNextState {
+// 	case MAIN_THREAD_LOAD:
+// 		fmt.Printf("%s state LOAD, ms %d\n", s, mainThreadNextRunMs)
+// 	case MAIN_THREAD_IDLE:
+// 		fmt.Printf("%s state IDLE, ms %d\n", s, mainThreadNextRunMs)
+// 	case MAIN_THREAD_RELOAD_TREE:
+// 		fmt.Printf("%s state RELOAD TREE, ms %d\n", s, mainThreadNextRunMs)
 // 	default:
-// 		fmt.Printf("%s state %d, ms %d", s, loadThreadNextState, loadThreadNextRunMs)
+// 		fmt.Printf("%s state %d, ms %d", s, mainThreadNextState, mainThreadNextRunMs)
 // 	}
 // }
 
@@ -331,7 +336,7 @@ func dataMapUpdated(desc, user, path string, err error) {
 		currentSelection = path
 		countStructureChanges++
 	}
-	requestLoadThreadIn(100, LOAD_THREAD_RELOAD_TREE)
+	requestMainThreadIn(100, MAIN_THREAD_RELOAD_TREE)
 }
 
 func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
@@ -411,7 +416,7 @@ func search(s string) {
 		)
 		list.OnSelected = func(id widget.ListItemID) {
 			pendingSelection = mapPaths[paths[id]]
-			requestLoadThreadIn(100, LOAD_THREAD_SELECT)
+			requestMainThreadIn(100, MAIN_THREAD_SELECT)
 		}
 		go showSearchResultsWindow(window.Canvas().Size().Width/2, window.Canvas().Size().Height/2, list)
 	} else {
