@@ -134,7 +134,7 @@ func main() {
 		os.Exit(1)
 	}
 	loadThreadFileName = os.Args[1]
-	loadThreadState = LOAD_THREAD_LOAD
+	loadThreadState = LOAD_THREAD_IDLE
 
 	a := app.NewWithID("stuartdd.enctest")
 	a.Settings().SetTheme(theme2.NewAppTheme(a.Preferences().StringWithFallback(themeVarName, "dark")))
@@ -284,6 +284,7 @@ func main() {
 	}()
 
 	window.Resize(fyne.NewSize(float32(a.Preferences().FloatWithFallback(widthPrefName, 640)), float32(a.Preferences().FloatWithFallback(heightPrefName, 460))))
+	loadThreadState = LOAD_THREAD_LOAD
 	window.ShowAndRun()
 }
 
@@ -497,8 +498,6 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 					} else {
 						dialog.NewInformation("Save Encrypted File Error:", "Error Message:\n\n-- Password not provided --\n\nFile was not saved!\nPress OK to continue", window).Show()
 					}
-				} else {
-					dialog.NewInformation("Save Encrypted File Error:", "Error Message:\n\n-- Password not provided --\n\nFile was not saved!\nPress OK to continue", window).Show()
 				}
 			})
 		} else {

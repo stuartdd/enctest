@@ -228,11 +228,7 @@ func parseURL(urlStr string) *url.URL {
 func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, accept func(bool, string)) (modal *widget.PopUp) {
 	submitInternal := func(s string) {
 		modal.Hide()
-		if s != txt {
-			accept(true, s)
-		} else {
-			accept(false, s)
-		}
+		accept(true, s)
 	}
 	entry := &widget.Entry{Text: txt, Password: password, OnChanged: func(s string) {}, OnSubmitted: submitInternal}
 	modal = widget.NewModalPopUp(
