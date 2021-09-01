@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"stuartdd.com/theme2"
@@ -28,6 +29,10 @@ const (
 var (
 	preferedOrderReversed = []string{"notes", "positional", "post", "pre", "link", "userId"}
 )
+
+func NewModalEntryDialog(w fyne.Window, heading, txt string, accept func(bool, string)) (modal *widget.PopUp) {
+	return runModalEntryPopup(w, heading, txt, accept)
+}
 
 func GetWelcomePage(id string) *DetailPage {
 	return NewDetailPage(id, "", welcomeTitle, welcomeScreen, welcomeControls, nil)
@@ -214,4 +219,39 @@ func parseURL(urlStr string) *url.URL {
 	}
 
 	return link
+}
+
+func runModalEntryPopup(w fyne.Window, heading, txt string, accept func(bool, string)) (modal *widget.PopUp) {
+	acceptInternal := func(s string) {
+		modal.Hide()
+		if s != txt {
+			accept(true, s)
+		} else {
+			accept(false, s)
+		}
+	}
+	entry := &widget.Entry{Text: txt, OnChanged: func(s string) {}, OnSubmitted: acceptInternal}
+	modal = widget.NewModalPopUp(
+		container.NewVBox(
+			widget.NewLabel("   "+heading+"   "),
+			entry,
+			container.NewCenter(container.New(layout.NewHBoxLayout(), widget.NewButton("Cancel", func() {
+				acceptInternal("")
+			}), widget.NewButton("OK", func() {
+				acceptInternal(entry.Text)
+			}),
+			))),
+		w.Canvas(),
+	)
+	w.Canvas().SetOnTypedKey(func(ke *fyne.KeyEvent) {
+		if ke.Name == "Return" {
+			acceptInternal(entry.Text)
+		} else {
+			if ke.Name == "Escape" {
+				acceptInternal("")
+			}
+		}
+	})
+	modal.Show()
+	return modal
 }

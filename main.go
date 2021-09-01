@@ -399,6 +399,7 @@ func showSearchResultsWindow(w float32, h float32, list *widget.List) {
 	searchWindow = fyne.CurrentApp().NewWindow("Search List")
 	searchWindow.SetContent(c)
 	searchWindow.Resize(fyne.NewSize(w, h))
+	searchWindow.SetFixedSize(true)
 	searchWindow.Show()
 }
 
@@ -413,27 +414,24 @@ func addNewNote() {
 }
 
 func addNewEntity(head string, name string, addType int) {
-	entry := widget.NewEntry()
-	dialog.ShowCustomConfirm("Enter the name of the new "+head, "Confirm", "Cancel", widget.NewForm(
-		widget.NewFormItem(name+":", entry),
-	), func(ok bool) {
-		if ok {
-			err := validateEntityName(entry.Text)
+	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", func(accept bool, s string) {
+		if accept {
+			err := validateEntityName(s)
 			if err == nil {
 				switch addType {
 				case ADD_TYPE_USER:
-					err = dataRoot.AddUser(entry.Text)
+					err = dataRoot.AddUser(s)
 				case ADD_TYPE_NOTE:
-					err = dataRoot.AddNote(currentUser, entry.Text)
+					err = dataRoot.AddNote(currentUser, s)
 				case ADD_TYPE_HINT:
-					err = dataRoot.AddHint(currentUser, entry.Text)
+					err = dataRoot.AddHint(currentUser, s)
 				}
 			}
 			if err != nil {
 				dialog.NewInformation("Add New "+name, "Error: "+err.Error(), window).Show()
 			}
 		}
-	}, window)
+	})
 }
 
 func validateEntityName(entry string) error {
