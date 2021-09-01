@@ -18,6 +18,7 @@ type EditEntry struct {
 	Title        string
 	Old          string
 	New          string
+	Url          string
 	Wid          *widget.Entry
 	Lab          *widget.Label
 	UnDo         *widget.Button
@@ -52,7 +53,7 @@ func NewEditEntry(path string, title string, old string, onChangeFunc func(s str
 		unDoFunc(path)
 	})
 	i := widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
-		actionFunc(ACTION_LINK, path)
+		actionFunc(ACTION_LINK, "")
 	})
 	r := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, path)
@@ -70,7 +71,7 @@ func (p *EditEntry) RefreshButtons() {
 		p.UnDoFunc(p.Path)
 	})
 	p.Link = widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
-		p.ActionFunc(ACTION_LINK, p.Path)
+		p.ActionFunc(ACTION_LINK, p.Url)
 	})
 	p.Remove = widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
 		p.ActionFunc(ACTION_REMOVE, p.Path)
@@ -125,10 +126,12 @@ func (p *EditEntry) HasLink() (string, bool) {
 }
 
 func (p *EditEntry) updateButtons() {
-	_, ok := p.HasLink()
+	l, ok := p.HasLink()
 	if ok {
+		p.Url = l
 		p.Link.Enable()
 	} else {
+		p.Url = ""
 		p.Link.Disable()
 	}
 	if p.IsChanged() {

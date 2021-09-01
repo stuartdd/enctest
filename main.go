@@ -114,8 +114,18 @@ func renameAction(uid string) {
 	}
 }
 
-func linkAction(uid string) {
-
+func linkAction(s string) {
+	if s != "" {
+		s, err := url.Parse(s)
+		if err != nil {
+			dialog.NewInformation("Link is invalid", err.Error(), window).Show()
+		} else {
+			err = fyne.CurrentApp().OpenURL(s)
+			if err != nil {
+				dialog.NewInformation("ink could not be opened", err.Error(), window).Show()
+			}
+		}
+	}
 }
 
 func main() {

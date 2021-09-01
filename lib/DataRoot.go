@@ -385,7 +385,7 @@ func appendMapStruct(sb *strings.Builder, m map[string]interface{}, ind int) {
 }
 func countElementsInMapRoot(m *map[string]interface{}) int {
 	count := 0
-	for k, _ := range *m {
+	for k := range *m {
 		if k != "" {
 			count++
 		}

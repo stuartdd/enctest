@@ -118,6 +118,11 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		fcl := container.New(&FixedLayout{100, 1}, e.Lab)
 		fcbl := container.New(&FixedLayout{10, 5}, e.Link)
 		fcbr := container.New(&FixedLayout{10, 5}, e.UnDo)
+		if len(keys) < 2 {
+			e.Remove.Disable()
+		} else {
+			e.Remove.Enable()
+		}
 		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
 		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
 		cObj = append(cObj, widget.NewSeparator())
@@ -154,6 +159,11 @@ func hintsScreen(_ fyne.Window, details DetailPage, actionFunc func(action strin
 		fcl := container.New(&FixedLayout{100, 1}, e.Lab)
 		fcbl := container.New(&FixedLayout{10, 5}, e.Link)
 		fcbr := container.New(&FixedLayout{10, 5}, e.UnDo)
+		if len(keys) < 2 {
+			e.Remove.Disable()
+		} else {
+			e.Remove.Enable()
+		}
 		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
 		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
 		cObj = append(cObj, widget.NewSeparator())
@@ -196,16 +206,6 @@ func unDoFunction(path string) {
 		ee.RevertEdit()
 	}
 }
-
-// func goToLinkFunction(path string) {
-// 	ee := EditEntryList[path]
-// 	if ee != nil {
-// 		link, ok := ee.HasLink()
-// 		if ok {
-// 			fmt.Printf("This is the link [%s]", link)
-// 		}
-// 	}
-// }
 
 func parseURL(urlStr string) *url.URL {
 	link, err := url.Parse(urlStr)
