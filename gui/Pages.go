@@ -74,6 +74,22 @@ func entryChangedFunction(s string, path string) {
 	}
 }
 
+func positional(s string) fyne.CanvasObject {
+	g1 := container.NewHBox()
+	g1.Add(widget.NewSeparator())
+	for i, c := range s {
+		v1 := container.NewVBox()
+		v1.Add(widget.NewSeparator())
+		v1.Add(container.New(NewFixedWHLayout(20, 15), widget.NewLabel(fmt.Sprintf("%d", i))))
+		v1.Add(widget.NewSeparator())
+		v1.Add(container.New(NewFixedWHLayout(20, 15), widget.NewLabel(string(c))))
+		v1.Add(widget.NewSeparator())
+		g1.Add(v1)
+		g1.Add(widget.NewSeparator())
+	}
+	return g1
+}
+
 func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
@@ -135,7 +151,11 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
 		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
 		cObj = append(cObj, widget.NewSeparator())
-		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Wid))
+		if strings.HasPrefix(strings.ToLower(e.Title), "posit") {
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(e.GetCurrentText())))
+		} else {
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Ent))
+		}
 	}
 	return container.NewVBox(cObj...)
 }
@@ -176,7 +196,7 @@ func hintsScreen(_ fyne.Window, details DetailPage, actionFunc func(action strin
 		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
 		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
 		cObj = append(cObj, widget.NewSeparator())
-		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Wid))
+		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Ent))
 	}
 	return container.NewVBox(cObj...)
 }

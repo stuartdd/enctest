@@ -1,35 +1,40 @@
 package gui
 
-import "fyne.io/fyne/v2"
+import (
+	"fyne.io/fyne/v2"
+)
 
 type FixedLayout struct {
 	w       float32
 	yOffset float32
 }
 
-type BoxLayout struct {
+type FixedWHLayout struct {
 	w float32
 	h float32
-}
-
-func NewBoxLayout(w float32, h float32) *BoxLayout {
-	return &BoxLayout{w: w, h: h}
 }
 
 func NewFixedLayout(w float32, yOffset float32) *FixedLayout {
 	return &FixedLayout{w: w, yOffset: yOffset}
 }
 
-func (d *BoxLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+func (d *FixedWHLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(d.w, d.h)
 }
 
-func (d *BoxLayout) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
-	pos := fyne.NewPos(0, 0)
+func (d *FixedWHLayout) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
+	pos := fyne.NewPos(-8, -(d.h/2 + 4))
 	for _, o := range objects {
-		o.Resize(containerSize)
+		size := fyne.NewSize(d.w, d.h)
+		o.Resize(size)
 		o.Move(pos)
+		pos = pos.Add(fyne.NewPos(size.Width, size.Height))
 	}
+
+}
+
+func NewFixedWHLayout(w float32, h float32) *FixedWHLayout {
+	return &FixedWHLayout{w: w, h: h}
 }
 
 func (d *FixedLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {

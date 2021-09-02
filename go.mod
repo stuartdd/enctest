@@ -8,6 +8,8 @@ replace stuartdd.com/gui => ./gui
 
 replace stuartdd.com/theme2 => ./theme2
 
+replace stuartdd.com/pref => ./pref
+
 // replace fyne.io/fyne/v2 => github.com/andydotxyz/fyne/v2 07e8477c8
 
 require (
@@ -23,5 +25,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	stuartdd.com/gui v0.0.0-00010101000000-000000000000
 	stuartdd.com/lib v0.0.0-00010101000000-000000000000
+	stuartdd.com/pref v0.0.0-00010101000000-000000000000
 	stuartdd.com/theme2 v0.0.0-00010101000000-000000000000
 )

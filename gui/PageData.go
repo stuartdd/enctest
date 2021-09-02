@@ -19,7 +19,7 @@ type EditEntry struct {
 	Old          string
 	New          string
 	Url          string
-	Wid          *widget.Entry
+	Ent          *widget.Entry
 	Lab          *widget.Label
 	UnDo         *widget.Button
 	Link         *widget.Button
@@ -63,7 +63,7 @@ func NewEditEntry(path string, title string, old string, onChangeFunc func(s str
 	})
 	u.Disable()
 	i.Disable()
-	return &EditEntry{Path: path, Title: title, Wid: w, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
+	return &EditEntry{Path: path, Title: title, Ent: w, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
 }
 
 func (p *EditEntry) RefreshButtons() {
@@ -105,7 +105,7 @@ func (p *EditEntry) CommitEdit(data *map[string]interface{}) bool {
 
 func (p *EditEntry) RevertEdit() {
 	p.SetNew(p.Old)
-	p.Wid.SetText(p.Old)
+	p.Ent.SetText(p.Old)
 }
 
 func (p *EditEntry) String() string {

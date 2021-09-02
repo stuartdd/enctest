@@ -42,24 +42,30 @@ const (
 	heightPrefName         = "height"
 	lastGoodSearchPrefName = "lastSearch"
 	searchCasePrefName     = "searchCase"
+	viewFuffScreenPrefName = "fullScreen"
 )
 
 var (
-	window                fyne.Window
-	searchWindow          fyne.Window
-	fileData              *lib.FileData
-	dataRoot              *lib.DataRoot
-	navTreeLHS            *widget.Tree
-	splitContainer        *container.Split // So we can save the divider position to preferences.
-	findCaseSensitive                      = binding.NewBool()
-	pendingSelection                       = ""
-	currentSelection                       = ""
-	currentUser                            = ""
-	shouldCloseLock                        = false
-	mainThreadNextState                    = 0
-	mainThreadNextRunMs   int64            = 0
-	loadThreadFileName                     = ""
-	countStructureChanges                  = 0
+	window                   fyne.Window
+	searchWindow             fyne.Window
+	fileData                 *lib.FileData
+	dataRoot                 *lib.DataRoot
+	navTreeLHS               *widget.Tree
+	splitContainer           *container.Split // So we can save the divider position to preferences.
+	splitContainerOffset     float64          = -1
+	splitContainerOffsetPref float64          = -1
+
+	findCaseSensitive           = binding.NewBool()
+	pendingSelection            = ""
+	currentSelection            = ""
+	currentUser                 = ""
+	shouldCloseLock             = false
+	mainThreadNextState         = 0
+	mainThreadNextRunMs   int64 = 0
+	loadThreadFileName          = ""
+	countStructureChanges       = 0
+	appIsFullScreenPref         = false
+	appScreenSize               = fyne.Size{Width: 640, Height: 480}
 )
 
 func main() {
@@ -67,7 +73,7 @@ func main() {
 		fmt.Println("ERROR: File name not provided")
 		os.Exit(1)
 	}
-
+	p := 
 	loadThreadFileName = os.Args[1]
 	mainThreadNextState = MAIN_THREAD_IDLE
 	mainThreadNextRunMs = 0
@@ -77,6 +83,23 @@ func main() {
 	a.SetIcon(theme2.AppLogo())
 
 	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", loadThreadFileName))
+
+	appIsFullScreenPref = a.Preferences().BoolWithFallback(viewFuffScreenPrefName, false)
+	sw := a.Preferences().FloatWithFallback(widthPrefName, float64(appScreenSize.Width))
+	sh := a.Preferences().FloatWithFallback(heightPrefName, float64(appScreenSize.Height))
+	appScreenSize = fyne.NewSize(float32(sw), float32(sh))
+
+	splitContainerOffsetPref = fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2)
+	splitContainerOffset = -1
+
+	findCaseSensitive.Set(a.Preferences().BoolWithFallback(searchCasePrefName, true))
+	findCaseSensitive.AddListener(binding.NewDataListener(func() {
+		b, err := findCaseSensitive.Get()
+		if err == nil {
+			a.Preferences().SetBool(searchCasePrefName, b)
+		}
+	}))
+
 	window.SetCloseIntercept(shouldClose)
 	go func() {
 		time.Sleep(2 * time.Second)
@@ -86,13 +109,7 @@ func main() {
 			}
 		}
 	}()
-	findCaseSensitive.Set(a.Preferences().BoolWithFallback(searchCasePrefName, true))
-	findCaseSensitive.AddListener(binding.NewDataListener(func() {
-		b, err := findCaseSensitive.Get()
-		if err == nil {
-			a.Preferences().SetBool(searchCasePrefName, b)
-		}
-	}))
+
 	/*
 		Create the menus
 	*/
@@ -104,6 +121,10 @@ func main() {
 		fyne.NewMenuItem("User", addNewUser),
 		fyne.NewMenuItem("Hint", addNewHint),
 		fyne.NewMenuItem("Note", addNewNote),
+	)
+	viewItem := fyne.NewMenu("View",
+		fyne.NewMenuItem("Full Screen", viewFullScreen),
+		fyne.NewMenuItem("Positional Data", addNewHint),
 	)
 	helpMenu := fyne.NewMenu("Help",
 		fyne.NewMenuItem("Documentation", func() {
@@ -123,6 +144,7 @@ func main() {
 		// a quit item will be appended to our first menu
 		fyne.NewMenu("File", saveItem, saveEncItem, saveUnEncItem, fyne.NewMenuItemSeparator()),
 		newItem,
+		viewItem,
 		helpMenu,
 	)
 	window.SetMainMenu(mainMenu)
@@ -217,8 +239,15 @@ func main() {
 					uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
 					fmt.Printf("Refresh current:%s ", uid)
 					selectTreeElement(uid)
+
+					if splitContainerOffset < 0 {
+						splitContainerOffset = splitContainerOffsetPref
+					} else {
+						splitContainerOffset = splitContainer.Offset
+					}
 					splitContainer = container.NewHSplit(container.NewBorder(nil, makeLHSButtonsAndSearch(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
-					splitContainer.SetOffset(fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2))
+					splitContainer.SetOffset(splitContainerOffset)
+
 					window.SetContent(splitContainer)
 					requestMainThreadIn(0, MAIN_THREAD_IDLE)
 				}
@@ -234,8 +263,14 @@ func main() {
 		}
 	}()
 
-	window.Resize(fyne.NewSize(float32(a.Preferences().FloatWithFallback(widthPrefName, 640)), float32(a.Preferences().FloatWithFallback(heightPrefName, 460))))
 	requestMainThreadIn(1000, MAIN_THREAD_LOAD)
+
+	if appIsFullScreenPref {
+		window.SetFullScreen(true)
+	} else {
+		window.SetFullScreen(false)
+		window.Resize(appScreenSize)
+	}
 	window.ShowAndRun()
 }
 
@@ -362,6 +397,20 @@ func dataMapUpdated(desc, user, path string, err error) {
 }
 
 /**
+flip the full screen flag and set the screen to full screen if required
+*/
+func viewFullScreen() {
+	appIsFullScreenPref = !appIsFullScreenPref
+	if appIsFullScreenPref {
+		appScreenSize = window.Canvas().Size()
+		window.SetFullScreen(true)
+	} else {
+		window.SetFullScreen(false)
+		window.Resize(appScreenSize)
+	}
+}
+
+/**
 Remove a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
@@ -382,24 +431,23 @@ func renameAction(uid string) {
 	m, _ := dataRoot.GetDataForUid(uid)
 	if m != nil {
 		fromName := lib.GetLastId(uid)
-		e := widget.NewEntry()
-		f := make([]*widget.FormItem, 0)
-		f = append(f, widget.NewFormItem("New name", e))
-		dialog.NewForm(fmt.Sprintf("Rename entry '%s' ", fromName), "OK", "Cancel", f, func(b bool) {
-			err := validateEntityName(e.Text)
-			if err != nil {
-				dialog.NewInformation("Name validation error", err.Error(), window).Show()
-			} else {
-				if fromName == e.Text {
-					dialog.NewInformation("Rename item error", "Rename to the same name", window).Show()
+		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", func(accept bool, s string) {
+			if accept {
+				err := validateEntityName(s)
+				if err != nil {
+					dialog.NewInformation("Name validation error", err.Error(), window).Show()
 				} else {
-					err := dataRoot.Rename(uid, e.Text)
-					if err != nil {
-						dialog.NewInformation("Rename item error", err.Error(), window).Show()
+					if fromName == s {
+						dialog.NewInformation("Rename item error", "Rename to the same name", window).Show()
+					} else {
+						err := dataRoot.Rename(uid, s)
+						if err != nil {
+							dialog.NewInformation("Rename item error", err.Error(), window).Show()
+						}
 					}
 				}
 			}
-		}, window).Show()
+		})
 	}
 }
 
@@ -641,10 +689,9 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 }
 
 func shouldClose() {
+	savePreferences()
 	if !shouldCloseLock {
 		shouldCloseLock = true
-		go savePreferences()
-		time.Sleep(500 * time.Millisecond)
 		if searchWindow != nil {
 			searchWindow.Close()
 		}
@@ -689,11 +736,15 @@ func commitChangedItems() (int, error) {
 
 func savePreferences() {
 	p := fyne.CurrentApp().Preferences()
+
 	if splitContainer != nil {
 		p.SetFloat(splitPrefName, splitContainer.Offset)
 	}
-	p.SetFloat(widthPrefName, float64(window.Canvas().Size().Width))
-	p.SetFloat(heightPrefName, float64(window.Canvas().Size().Height))
+
+	if !window.FullScreen() {
+		p.SetFloat(widthPrefName, float64(window.Canvas().Size().Width))
+		p.SetFloat(heightPrefName, float64(window.Canvas().Size().Height))
+	}
 }
 
 func setThemeById(varient string) {
