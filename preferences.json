@@ -1,8 +1,9 @@
 {
     "datafile": "libtest/TestDataTypes.json",
-    "height": 479.5238342285156,
-    "searchCase": true,
-    "split": 0.2,
+    "height": "588.095276",
+    "lastSearch": "123",
+    "searchCase": "true",
+    "split": "0.294866",
     "theme": "dark",
-    "width": 830.952392578125
+    "width": "1067.142944"
 }

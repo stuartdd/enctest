@@ -95,18 +95,19 @@ func main() {
 	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", loadThreadFileName))
 
 	appIsFullScreenPref = preferences.GetBoolWithFallback(viewFuffScreenPrefName, false)
-	sw := a.Preferences().FloatWithFallback(widthPrefName, float64(appScreenSize.Width))
-	sh := a.Preferences().FloatWithFallback(heightPrefName, float64(appScreenSize.Height))
+	sw := preferences.GetFloatWithFallback(widthPrefName, float64(appScreenSize.Width))
+	sh := preferences.GetFloatWithFallback(heightPrefName, float64(appScreenSize.Height))
 	appScreenSize = fyne.NewSize(float32(sw), float32(sh))
 
-	splitContainerOffsetPref = fyne.CurrentApp().Preferences().FloatWithFallback(splitPrefName, 0.2)
+	splitContainerOffsetPref = preferences.GetFloatWithFallback(splitPrefName, 0.2)
 	splitContainerOffset = -1
 
-	findCaseSensitive.Set(a.Preferences().BoolWithFallback(searchCasePrefName, true))
+	findCaseSensitive.Set(preferences.GetBoolWithFallback(searchCasePrefName, true))
 	findCaseSensitive.AddListener(binding.NewDataListener(func() {
 		b, err := findCaseSensitive.Get()
 		if err == nil {
-			a.Preferences().SetBool(searchCasePrefName, b)
+			preferences.PutRootBool(searchCasePrefName, b)
+			preferences.Save()
 		}
 	}))
 
@@ -329,7 +330,7 @@ Section below the tree with Search details and Light and Dark theme buttons
 */
 func makeLHSButtonsAndSearch(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	searchEntry := widget.NewEntry()
-	searchEntry.SetText(fyne.CurrentApp().Preferences().StringWithFallback(lastGoodSearchPrefName, "?"))
+	searchEntry.SetText(preferences.GetValueForPathWithFallback(lastGoodSearchPrefName, ""))
 	c2 := container.New(
 		layout.NewHBoxLayout(),
 		widget.NewCheckWithData("Match Case", findCaseSensitive),
@@ -502,7 +503,8 @@ func search(s string) {
 
 	// Use the sorted keys to populate the result window
 	if len(paths) > 0 {
-		fyne.CurrentApp().Preferences().SetString(lastGoodSearchPrefName, s)
+		preferences.PutRootString(lastGoodSearchPrefName, s)
+		preferences.Save()
 		list := widget.NewList(
 			func() int { return len(paths) },
 			func() fyne.CanvasObject {
@@ -745,16 +747,17 @@ func commitChangedItems() (int, error) {
 }
 
 func savePreferences() {
-	p := fyne.CurrentApp().Preferences()
 
 	if splitContainer != nil {
-		p.SetFloat(splitPrefName, splitContainer.Offset)
+		preferences.PutRootFloat(splitPrefName, splitContainer.Offset)
 	}
 
 	if !window.FullScreen() {
-		p.SetFloat(widthPrefName, float64(window.Canvas().Size().Width))
-		p.SetFloat(heightPrefName, float64(window.Canvas().Size().Height))
+		preferences.PutRootFloat(widthPrefName, float64(window.Canvas().Size().Width))
+		preferences.PutRootFloat(heightPrefName, float64(window.Canvas().Size().Height))
 	}
+
+	preferences.Save()
 }
 
 func setThemeById(varient string) {

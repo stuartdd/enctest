@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"io/ioutil"
@@ -70,13 +71,37 @@ func (p *PrefData) PutString(path, name, value string) error {
 	return nil
 }
 
+func (p *PrefData) PutRootBool(name string, value bool) error {
+	return p.PutBool("", name, value)
+}
+
+func (p *PrefData) PutBool(path, name string, value bool) error {
+	return p.PutString(path, name, fmt.Sprintf("%t", value))
+}
+
+func (p *PrefData) PutRootFloat(name string, value float64) error {
+	return p.PutFloat("", name, value)
+}
+
+func (p *PrefData) PutFloat(path, name string, value float64) error {
+	return p.PutString(path, name, fmt.Sprintf("%f", value))
+}
+
 func (p *PrefData) GetBoolWithFallback(name string, fb bool) bool {
-	s := p.GetValueForPathWithFallback(name, fmt.Sprintf("%t", fb))
-	s = strings.ToLower(s)
+	s := strings.ToLower(p.GetValueForPathWithFallback(name, fmt.Sprintf("%t", fb)))
 	if strings.HasPrefix(s, "tr") {
 		return true
 	}
 	return false
+}
+
+func (p *PrefData) GetFloatWithFallback(name string, fb float64) float64 {
+	s := strings.ToLower(p.GetValueForPathWithFallback(name, fmt.Sprintf("%f", fb)))
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return fb
+	}
+	return f
 }
 
 func (p *PrefData) GetValueForPathWithFallback(path, fb string) string {
