@@ -49,6 +49,10 @@ func (p *PrefData) String() string {
 	return string(output)
 }
 
+func (p *PrefData) PutRootString(name, value string) error {
+	return p.PutString("", name, value)
+}
+
 func (p *PrefData) PutString(path, name, value string) error {
 	m, s, ok := p.getDataForPath(path, false)
 	if ok && s != "" {
@@ -64,6 +68,15 @@ func (p *PrefData) PutString(path, name, value string) error {
 	(*m)[name] = value
 	p.cache[path+"."+name] = value
 	return nil
+}
+
+func (p *PrefData) GetBoolWithFallback(name string, fb bool) bool {
+	s := p.GetValueForPathWithFallback(name, fmt.Sprintf("%t", fb))
+	s = strings.ToLower(s)
+	if strings.HasPrefix(s, "tr") {
+		return true
+	}
+	return false
 }
 
 func (p *PrefData) GetValueForPathWithFallback(path, fb string) string {

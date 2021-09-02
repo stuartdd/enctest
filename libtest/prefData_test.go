@@ -30,7 +30,7 @@ func TestSave(t *testing.T) {
 		t.Error("Should be the same value")
 	}
 
-	p.PutString("", "root", "haveatit")
+	p.PutRootString("root", "haveatit")
 	v7 := p.GetValueForPathWithFallback("root", "bla")
 	if v7 != "haveatit" {
 		t.Error("Should have returned haveatit")
@@ -94,7 +94,7 @@ func TestPutString(t *testing.T) {
 		t.Error("should have found new value (overwriteNote)")
 	}
 
-	err = p.PutString("", "newRoot", "newRootValue")
+	err = p.PutRootString("newRoot", "newRootValue")
 	if err != nil {
 		t.Error("should not return an error")
 	}
@@ -284,10 +284,6 @@ func TestLoadSinglePath(t *testing.T) {
 	}
 	if m != nil {
 		t.Error("float should return nil map")
-	}
-	ss := p.String()
-	if ss != "{\"boolean\":true,\"float\":479.52,\"integer\":830,\"split\":0.2}" {
-		t.Errorf("String returned %s NOT {\"boolean\":true,\"float\":479.52,\"integer\":830,\"split\":0.2}", ss)
 	}
 }
 

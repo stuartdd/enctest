@@ -19,6 +19,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"stuartdd.com/gui"
 	"stuartdd.com/lib"
+	"stuartdd.com/pref"
 	"stuartdd.com/theme2"
 )
 
@@ -35,14 +36,16 @@ const (
 	ADD_TYPE_HINT = iota
 	ADD_TYPE_NOTE = iota
 
-	allowedCharsInName     = " *@#$%^&*()_+=?"
-	splitPrefName          = "split"
-	themeVarName           = "theme"
-	widthPrefName          = "width"
-	heightPrefName         = "height"
-	lastGoodSearchPrefName = "lastSearch"
-	searchCasePrefName     = "searchCase"
-	viewFuffScreenPrefName = "fullScreen"
+	allowedCharsInName      = " *@#$%^&*()_+=?"
+	splitPrefName           = "split"
+	themeVarPrefName        = "theme"
+	widthPrefName           = "width"
+	heightPrefName          = "height"
+	lastGoodSearchPrefName  = "lastSearch"
+	searchCasePrefName      = "searchCase"
+	viewFuffScreenPrefName  = "fullScreen"
+	fallbackPreferencesFile = "preferences.json"
+	dataFilePrefName        = "datafile"
 )
 
 var (
@@ -50,6 +53,7 @@ var (
 	searchWindow             fyne.Window
 	fileData                 *lib.FileData
 	dataRoot                 *lib.DataRoot
+	preferences              *pref.PrefData
 	navTreeLHS               *widget.Tree
 	splitContainer           *container.Split // So we can save the divider position to preferences.
 	splitContainerOffset     float64          = -1
@@ -70,21 +74,27 @@ var (
 
 func main() {
 	if len(os.Args) == 1 {
-		fmt.Println("ERROR: File name not provided")
+		fmt.Println("ERROR: Preferences File name not provided")
 		os.Exit(1)
 	}
-	p := 
-	loadThreadFileName = os.Args[1]
+	p, err := pref.NewPrefData(os.Args[1])
+	if err != nil {
+		fmt.Printf("Failed to load preferences using '%s'", os.Args[1])
+		os.Exit(1)
+	}
+	preferences = p
+
+	loadThreadFileName = p.GetValueForPathWithFallback(dataFilePrefName, fallbackPreferencesFile)
 	mainThreadNextState = MAIN_THREAD_IDLE
 	mainThreadNextRunMs = 0
 
 	a := app.NewWithID("stuartdd.enctest")
-	a.Settings().SetTheme(theme2.NewAppTheme(a.Preferences().StringWithFallback(themeVarName, "dark")))
+	a.Settings().SetTheme(theme2.NewAppTheme(preferences.GetValueForPathWithFallback(themeVarPrefName, "dark")))
 	a.SetIcon(theme2.AppLogo())
 
 	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", loadThreadFileName))
 
-	appIsFullScreenPref = a.Preferences().BoolWithFallback(viewFuffScreenPrefName, false)
+	appIsFullScreenPref = preferences.GetBoolWithFallback(viewFuffScreenPrefName, false)
 	sw := a.Preferences().FloatWithFallback(widthPrefName, float64(appScreenSize.Width))
 	sh := a.Preferences().FloatWithFallback(heightPrefName, float64(appScreenSize.Height))
 	appScreenSize = fyne.NewSize(float32(sw), float32(sh))
@@ -750,7 +760,8 @@ func savePreferences() {
 func setThemeById(varient string) {
 	t := theme2.NewAppTheme(varient)
 	fyne.CurrentApp().Settings().SetTheme(t)
-	fyne.CurrentApp().Preferences().SetString(themeVarName, varient)
+	preferences.PutRootString(themeVarPrefName, varient)
+	preferences.Save()
 }
 
 func saveChangesConfirm(option bool) {
