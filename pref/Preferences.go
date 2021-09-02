@@ -29,8 +29,45 @@ func NewPrefData(fileName string) (*PrefData, error) {
 	return &PrefData{fileName: fileName, data: m, cache: c}, nil
 }
 
+func (p *PrefData) Save() error {
+	return p.SaveAs(p.fileName)
+}
+
+func (p *PrefData) SaveAs(fileName string) error {
+	return ioutil.WriteFile(fileName, []byte(p.String()), 0644)
+}
+
+func (p *PrefData) GetFileName() string {
+	return p.fileName
+}
+
+func (p *PrefData) String() string {
+	output, err := json.MarshalIndent(p.data, "", "    ")
+	if err != nil {
+		return ""
+	}
+	return string(output)
+}
+
+func (p *PrefData) PutString(path, name, value string) error {
+	m, s, ok := p.getDataForPath(path, false)
+	if ok && s != "" {
+		return fmt.Errorf("path %s is an end (leaf) node already", path)
+	}
+	if m == nil {
+		p.makePath(path)
+		m, _, _ = p.getDataForPath(path, false)
+		if m == nil {
+			return fmt.Errorf("Failed to create node in path %s", path)
+		}
+	}
+	(*m)[name] = value
+	p.cache[path+"."+name] = value
+	return nil
+}
+
 func (p *PrefData) GetValueForPathWithFallback(path, fb string) string {
-	_, v, ok := p.GetDataForPath(path)
+	_, v, ok := p.getDataForPath(path, true)
 	if ok {
 		return v
 	}
@@ -38,11 +75,36 @@ func (p *PrefData) GetValueForPathWithFallback(path, fb string) string {
 }
 
 func (p *PrefData) GetDataForPath(path string) (*map[string]interface{}, string, bool) {
-	cached, ok := p.cache[path]
-	if ok {
-		return nil, cached, true
+	return p.getDataForPath(path, true)
+}
+
+func (p *PrefData) makePath(path string) error {
+	nodes := strings.Split(path, ".")
+	x := p.data
+	for _, v := range nodes {
+		y := x[v]
+		if y == nil {
+			x[v] = make(map[string]interface{})
+			y = x[v]
+			x = y.(map[string]interface{})
+		} else {
+			x = y.(map[string]interface{})
+		}
+	}
+	return nil
+}
+
+func (p *PrefData) getDataForPath(path string, cache bool) (*map[string]interface{}, string, bool) {
+	if cache {
+		cached, ok := p.cache[path]
+		if ok {
+			return nil, cached, true
+		}
 	}
 	nodes := strings.Split(path, ".")
+	if nodes[0] == "" {
+		return &p.data, "", true
+	}
 	x := p.data
 	for _, v := range nodes {
 		y := x[v]
@@ -63,14 +125,17 @@ func (p *PrefData) GetDataForPath(path string) (*map[string]interface{}, string,
 	return &x, "", true
 }
 
-func (p *PrefData) GetFileName() string {
-	return p.fileName
-}
-
-func (p *PrefData) String() string {
-	output, err := json.Marshal(p.data)
-	if err != nil {
-		return ""
+func getParentPath(path string) string {
+	if path == "" {
+		return path
 	}
-	return string(output)
+	p := strings.LastIndexByte(path, '.')
+	switch p {
+	case -1:
+		return ""
+	case 0:
+		return ""
+	default:
+		return path[0:p]
+	}
 }
