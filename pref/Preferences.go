@@ -50,53 +50,43 @@ func (p *PrefData) String() string {
 	return string(output)
 }
 
-func (p *PrefData) PutRootString(name, value string) error {
-	return p.PutString("", name, value)
-}
-
-func (p *PrefData) PutString(path, name, value string) error {
-	m, s, ok := p.getDataForPath(path, false)
+func (p *PrefData) PutString(path, value string) error {
+	parent, name := getParentAndName(path)
+	m, s, ok := p.getDataForPath(parent, false)
 	if ok && s != "" {
-		return fmt.Errorf("path %s is an end (leaf) node already", path)
+		return fmt.Errorf("path %s is an end (leaf) node already", parent)
 	}
 	if m == nil {
-		p.makePath(path)
-		m, _, _ = p.getDataForPath(path, false)
+		p.makePath(parent)
+		m, _, _ = p.getDataForPath(parent, false)
 		if m == nil {
-			return fmt.Errorf("Failed to create node in path %s", path)
+			return fmt.Errorf("Failed to create node for path %s", path)
 		}
 	}
 	(*m)[name] = value
-	p.cache[path+"."+name] = value
+	p.cache[path] = value
 	return nil
 }
 
-func (p *PrefData) PutRootBool(name string, value bool) error {
-	return p.PutBool("", name, value)
+func (p *PrefData) PutBool(path string, value bool) error {
+	return p.PutString(path, fmt.Sprintf("%t", value))
 }
 
-func (p *PrefData) PutBool(path, name string, value bool) error {
-	return p.PutString(path, name, fmt.Sprintf("%t", value))
+func (p *PrefData) PutFloat32(path string, value float32) error {
+	return p.PutString(path, fmt.Sprintf("%f", value))
 }
 
-func (p *PrefData) PutRootFloat(name string, value float64) error {
-	return p.PutFloat("", name, value)
+func (p *PrefData) PutFloat64(path string, value float64) error {
+	return p.PutString(path, fmt.Sprintf("%f", value))
 }
 
-func (p *PrefData) PutFloat(path, name string, value float64) error {
-	return p.PutString(path, name, fmt.Sprintf("%f", value))
+func (p *PrefData) GetBoolWithFallback(path string, fb bool) bool {
+	s := strings.ToLower(p.GetStringForPathWithFallback(path, fmt.Sprintf("%t", fb)))
+	return strings.HasPrefix(s, "tr")
 }
 
-func (p *PrefData) GetBoolWithFallback(name string, fb bool) bool {
-	s := strings.ToLower(p.GetValueForPathWithFallback(name, fmt.Sprintf("%t", fb)))
-	if strings.HasPrefix(s, "tr") {
-		return true
-	}
-	return false
-}
-
-func (p *PrefData) GetFloatWithFallback(name string, fb float64) float64 {
-	s := strings.ToLower(p.GetValueForPathWithFallback(name, fmt.Sprintf("%f", fb)))
+func (p *PrefData) GetFloat64WithFallback(path string, fb float64) float64 {
+	s := p.GetStringForPathWithFallback(path, fmt.Sprintf("%f", fb))
 	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return fb
@@ -104,7 +94,16 @@ func (p *PrefData) GetFloatWithFallback(name string, fb float64) float64 {
 	return f
 }
 
-func (p *PrefData) GetValueForPathWithFallback(path, fb string) string {
+func (p *PrefData) GetFloat32WithFallback(path string, fb float32) float32 {
+	s := p.GetStringForPathWithFallback(path, fmt.Sprintf("%f", fb))
+	f, err := strconv.ParseFloat(s, 32)
+	if err != nil {
+		return fb
+	}
+	return float32(f)
+}
+
+func (p *PrefData) GetStringForPathWithFallback(path, fb string) string {
 	_, v, ok := p.getDataForPath(path, true)
 	if ok {
 		return v
@@ -163,17 +162,15 @@ func (p *PrefData) getDataForPath(path string, cache bool) (*map[string]interfac
 	return &x, "", true
 }
 
-func getParentPath(path string) string {
+func getParentAndName(path string) (string, string) {
 	if path == "" {
-		return path
+		return "", ""
 	}
 	p := strings.LastIndexByte(path, '.')
 	switch p {
 	case -1:
-		return ""
-	case 0:
-		return ""
+		return "", path
 	default:
-		return path[0:p]
+		return path[0:p], path[p+1:]
 	}
 }

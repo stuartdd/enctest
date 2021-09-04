@@ -44,23 +44,24 @@ func GetWelcomePage(id string) *DetailPage {
 
 func GetDetailPage(id string, dataRootMap *map[string]interface{}) *DetailPage {
 	nodes := strings.Split(id, ".")
+	user := nodes[0]
 	switch len(nodes) {
 	case 1:
 		return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, dataRootMap)
 	case 2:
 		if nodes[1] == idPwDetails {
-			return NewDetailPage(id, "Hints", nodes[0], welcomeScreen, notesControls, dataRootMap)
+			return NewDetailPage(id, "Hints", user, welcomeScreen, notesControls, dataRootMap)
 		}
 		if nodes[1] == idNotes {
-			return NewDetailPage(id, "Notes", nodes[0], notesScreen, notesControls, dataRootMap)
+			return NewDetailPage(id, "Notes", user, notesScreen, notesControls, dataRootMap)
 		}
-		return NewDetailPage(id, "Unknown", nodes[0], welcomeScreen, notesControls, dataRootMap)
+		return NewDetailPage(id, "Unknown", user, welcomeScreen, notesControls, dataRootMap)
 	case 3:
 		if nodes[1] == idPwDetails {
-			return NewDetailPage(id, nodes[2], nodes[0], hintsScreen, hintsControls, dataRootMap)
+			return NewDetailPage(id, nodes[2], user, hintsScreen, hintsControls, dataRootMap)
 		}
 		if nodes[1] == idNotes {
-			return NewDetailPage(id, nodes[2], nodes[0], notesScreen, notesControls, dataRootMap)
+			return NewDetailPage(id, nodes[2], user, notesScreen, notesControls, dataRootMap)
 		}
 		return NewDetailPage(id, "Unknown", "", welcomeScreen, notesControls, dataRootMap)
 	}

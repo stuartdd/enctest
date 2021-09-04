@@ -1,9 +1,12 @@
 {
     "datafile": "libtest/TestDataTypes.json",
-    "height": "588.095276",
-    "lastSearch": "123",
-    "searchCase": "true",
-    "split": "0.294866",
-    "theme": "dark",
-    "width": "1067.142944"
+    "screen": {
+        "fullScreen": "false",
+        "height": "718.095276",
+        "split": "0.468481",
+        "width": "1076.190552"
+    },
+    "search": {
+        "case": "true"
+    }
 }

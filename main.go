@@ -36,16 +36,21 @@ const (
 	ADD_TYPE_HINT = iota
 	ADD_TYPE_NOTE = iota
 
+	defaultScreenWidth  = 640
+	defaultScreenHeight = 480
+
 	allowedCharsInName      = " *@#$%^&*()_+=?"
-	splitPrefName           = "split"
-	themeVarPrefName        = "theme"
-	widthPrefName           = "width"
-	heightPrefName          = "height"
-	lastGoodSearchPrefName  = "lastSearch"
-	searchCasePrefName      = "searchCase"
-	viewFuffScreenPrefName  = "fullScreen"
 	fallbackPreferencesFile = "preferences.json"
-	dataFilePrefName        = "datafile"
+
+	dataFilePrefName       = "datafile"
+	themeVarPrefName       = "theme"
+	positionalDataPrefName = "data.positional"
+	screenWidthPrefName    = "screen.width"
+	screenHeightPrefName   = "screen.height"
+	screenFullPrefName     = "screen.fullScreen"
+	screenSplitPrefName    = "screen.split"
+	searchLastGoodPrefName = "search.lastGood"
+	searchCasePrefName     = "search.case"
 )
 
 var (
@@ -68,8 +73,6 @@ var (
 	mainThreadNextRunMs   int64 = 0
 	loadThreadFileName          = ""
 	countStructureChanges       = 0
-	appIsFullScreenPref         = false
-	appScreenSize               = fyne.Size{Width: 640, Height: 480}
 )
 
 func main() {
@@ -84,29 +87,24 @@ func main() {
 	}
 	preferences = p
 
-	loadThreadFileName = p.GetValueForPathWithFallback(dataFilePrefName, fallbackPreferencesFile)
+	loadThreadFileName = p.GetStringForPathWithFallback(dataFilePrefName, fallbackPreferencesFile)
 	mainThreadNextState = MAIN_THREAD_IDLE
 	mainThreadNextRunMs = 0
 
 	a := app.NewWithID("stuartdd.enctest")
-	a.Settings().SetTheme(theme2.NewAppTheme(preferences.GetValueForPathWithFallback(themeVarPrefName, "dark")))
+	a.Settings().SetTheme(theme2.NewAppTheme(preferences.GetStringForPathWithFallback(themeVarPrefName, "dark")))
 	a.SetIcon(theme2.AppLogo())
 
 	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", loadThreadFileName))
 
-	appIsFullScreenPref = preferences.GetBoolWithFallback(viewFuffScreenPrefName, false)
-	sw := preferences.GetFloatWithFallback(widthPrefName, float64(appScreenSize.Width))
-	sh := preferences.GetFloatWithFallback(heightPrefName, float64(appScreenSize.Height))
-	appScreenSize = fyne.NewSize(float32(sw), float32(sh))
-
-	splitContainerOffsetPref = preferences.GetFloatWithFallback(splitPrefName, 0.2)
+	splitContainerOffsetPref = preferences.GetFloat64WithFallback(screenSplitPrefName, 0.2)
 	splitContainerOffset = -1
 
 	findCaseSensitive.Set(preferences.GetBoolWithFallback(searchCasePrefName, true))
 	findCaseSensitive.AddListener(binding.NewDataListener(func() {
 		b, err := findCaseSensitive.Get()
 		if err == nil {
-			preferences.PutRootBool(searchCasePrefName, b)
+			preferences.PutBool(searchCasePrefName, b)
 			preferences.Save()
 		}
 	}))
@@ -134,8 +132,8 @@ func main() {
 		fyne.NewMenuItem("Note", addNewNote),
 	)
 	viewItem := fyne.NewMenu("View",
-		fyne.NewMenuItem("Full Screen", viewFullScreen),
-		fyne.NewMenuItem("Positional Data", addNewHint),
+		fyne.NewMenuItem("Swap Full Screen With Windowed", flipFullScreen),
+		fyne.NewMenuItem("Show Positional data as a table", flipPositionalData),
 	)
 	helpMenu := fyne.NewMenu("Help",
 		fyne.NewMenuItem("Documentation", func() {
@@ -276,12 +274,7 @@ func main() {
 
 	requestMainThreadIn(1000, MAIN_THREAD_LOAD)
 
-	if appIsFullScreenPref {
-		window.SetFullScreen(true)
-	} else {
-		window.SetFullScreen(false)
-		window.Resize(appScreenSize)
-	}
+	setFullScreen(preferences.GetBoolWithFallback(screenFullPrefName, false))
 	window.ShowAndRun()
 }
 
@@ -330,7 +323,7 @@ Section below the tree with Search details and Light and Dark theme buttons
 */
 func makeLHSButtonsAndSearch(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	searchEntry := widget.NewEntry()
-	searchEntry.SetText(preferences.GetValueForPathWithFallback(lastGoodSearchPrefName, ""))
+	searchEntry.SetText(preferences.GetStringForPathWithFallback(searchLastGoodPrefName, ""))
 	c2 := container.New(
 		layout.NewHBoxLayout(),
 		widget.NewCheckWithData("Match Case", findCaseSensitive),
@@ -407,18 +400,34 @@ func dataMapUpdated(desc, user, path string, err error) {
 	requestMainThreadIn(100, MAIN_THREAD_RELOAD_TREE)
 }
 
+func flipPositionalData() {
+	p := preferences.GetBoolWithFallback(positionalDataPrefName, true)
+	preferences.PutBool(positionalDataPrefName, !p)
+}
+
 /**
 flip the full screen flag and set the screen to full screen if required
 */
-func viewFullScreen() {
-	appIsFullScreenPref = !appIsFullScreenPref
-	if appIsFullScreenPref {
-		appScreenSize = window.Canvas().Size()
+func flipFullScreen() {
+	setFullScreen(!window.FullScreen())
+}
+
+func setFullScreen(fullScreen bool) {
+	if fullScreen {
+		// Ensure that 0.0 is never stored.
+		if window.Canvas().Size().Width > 1 && window.Canvas().Size().Height > 1 {
+			preferences.PutFloat32(screenWidthPrefName, window.Canvas().Size().Width)
+			preferences.PutFloat32(screenHeightPrefName, window.Canvas().Size().Height)
+		}
+		window.Resize(fyne.NewSize(defaultScreenWidth, defaultScreenHeight))
 		window.SetFullScreen(true)
 	} else {
 		window.SetFullScreen(false)
-		window.Resize(appScreenSize)
+		sw := preferences.GetFloat32WithFallback(screenWidthPrefName, defaultScreenWidth)
+		sh := preferences.GetFloat32WithFallback(screenHeightPrefName, defaultScreenHeight)
+		window.Resize(fyne.NewSize(sw, sh))
 	}
+	preferences.PutBool(screenFullPrefName, fullScreen)
 }
 
 /**
@@ -503,8 +512,7 @@ func search(s string) {
 
 	// Use the sorted keys to populate the result window
 	if len(paths) > 0 {
-		preferences.PutRootString(lastGoodSearchPrefName, s)
-		preferences.Save()
+		preferences.PutString(searchLastGoodPrefName, s)
 		list := widget.NewList(
 			func() int { return len(paths) },
 			func() fyne.CanvasObject {
@@ -749,12 +757,15 @@ func commitChangedItems() (int, error) {
 func savePreferences() {
 
 	if splitContainer != nil {
-		preferences.PutRootFloat(splitPrefName, splitContainer.Offset)
+		preferences.PutFloat64(screenSplitPrefName, splitContainer.Offset)
 	}
 
 	if !window.FullScreen() {
-		preferences.PutRootFloat(widthPrefName, float64(window.Canvas().Size().Width))
-		preferences.PutRootFloat(heightPrefName, float64(window.Canvas().Size().Height))
+		// Ensure that 0.0 is never stored.
+		if window.Canvas().Size().Width > 1 && window.Canvas().Size().Height > 1 {
+			preferences.PutFloat32(screenWidthPrefName, window.Canvas().Size().Width)
+			preferences.PutFloat32(screenHeightPrefName, window.Canvas().Size().Height)
+		}
 	}
 
 	preferences.Save()
@@ -763,8 +774,7 @@ func savePreferences() {
 func setThemeById(varient string) {
 	t := theme2.NewAppTheme(varient)
 	fyne.CurrentApp().Settings().SetTheme(t)
-	preferences.PutRootString(themeVarPrefName, varient)
-	preferences.Save()
+	preferences.PutString(themeVarPrefName, varient)
 }
 
 func saveChangesConfirm(option bool) {

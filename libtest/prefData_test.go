@@ -2,6 +2,7 @@ package libtest
 
 import (
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -15,30 +16,66 @@ func removeFile(t *testing.T, fileName string) {
 	}
 }
 
+func TestFloats(t *testing.T) {
+	p, _ := pref.NewPrefData("TestDataTypes.json")
+	p.PutFloat32("float.f32", 1234.5)
+	p.PutFloat64("float.f64", 1234.5)
+
+	f32 := p.GetFloat32WithFallback("float.f32", float32(1.5))
+	if reflect.ValueOf(f32).Kind() != reflect.Float32 {
+		t.Error("should have returned float32")
+	}
+	if f32 != 1234.5 {
+		t.Error("should have returned 1234.5")
+	}
+	f32 = p.GetFloat32WithFallback("float.f64", float32(1.5))
+	if reflect.ValueOf(f32).Kind() != reflect.Float32 {
+		t.Error("should have returned float32")
+	}
+	if f32 != 1234.5 {
+		t.Error("should have returned 1234.5")
+	}
+
+	f64 := p.GetFloat64WithFallback("float.f64", float64(1.5))
+	if reflect.ValueOf(f64).Kind() != reflect.Float64 {
+		t.Error("should have returned float64")
+	}
+	if f64 != 1234.5 {
+		t.Error("should have returned 1234.5")
+	}
+	f64 = p.GetFloat64WithFallback("float.f32", float64(1.5))
+	if reflect.ValueOf(f64).Kind() != reflect.Float64 {
+		t.Error("should have returned float64")
+	}
+	if f64 != 1234.5 {
+		t.Error("should have returned 1234.5")
+	}
+}
+
 func TestSave(t *testing.T) {
 	defer removeFile(t, "TestSaveData.txt")
 	q, _ := pref.NewPrefData("TestDataTypes.json")
-	v5 := q.GetValueForPathWithFallback("groups.UserA.notes.note", "bla")
+	v5 := q.GetStringForPathWithFallback("groups.UserA.notes.note", "bla")
 	if v5 == "bla" {
 		t.Error("should have found value")
 	}
 	q.SaveAs("TestSaveData.txt")
 
 	p, _ := pref.NewPrefData("TestSaveData.txt")
-	v6 := p.GetValueForPathWithFallback("groups.UserA.notes.note", "bla")
+	v6 := p.GetStringForPathWithFallback("groups.UserA.notes.note", "bla")
 	if v6 != v5 {
 		t.Error("Should be the same value")
 	}
 
-	p.PutRootString("root", "haveatit")
-	v7 := p.GetValueForPathWithFallback("root", "bla")
+	p.PutString("root", "haveatit")
+	v7 := p.GetStringForPathWithFallback("root", "bla")
 	if v7 != "haveatit" {
 		t.Error("Should have returned haveatit")
 	}
 
 	p.Save()
 	r, _ := pref.NewPrefData("TestSaveData.txt")
-	v8 := r.GetValueForPathWithFallback("root", "bla")
+	v8 := r.GetStringForPathWithFallback("root", "bla")
 	if v8 != "haveatit" {
 		t.Error("Should have returned haveatit")
 	}
@@ -46,64 +83,73 @@ func TestSave(t *testing.T) {
 }
 func TestPutString(t *testing.T) {
 	p, _ := pref.NewPrefData("TestDataTypes.json")
-	err := p.PutString("groups.UserA.notes.note", "hi", "val")
+	err := p.PutString("groups.UserA.notes.note.hi", "val")
 	if err == nil {
 		t.Error("should return error 'Path x is an end")
 	}
-	v := p.GetValueForPathWithFallback("groups.UserA.notes.note", "bla")
+	v := p.GetStringForPathWithFallback("groups.UserA.notes.note", "bla")
 	if v == "" || v == "bla" {
 		t.Error("should have found v")
 	}
 
-	err = p.PutString("groups.UserA.notes", "note", "val")
+	err = p.PutString("groups.UserA.notes.note", "val")
 	if err != nil {
 		t.Error("should work")
 	}
 
-	v2 := p.GetValueForPathWithFallback("groups.UserA.notes.note", "bla")
+	v2 := p.GetStringForPathWithFallback("groups.UserA.notes.note", "bla")
 	if v2 != "val" {
 		t.Error("should have found new value")
 	}
 
-	err = p.PutString("groups.UserA.noes", "hi", "value3")
+	err = p.PutString("groups.UserA.noes.hi", "value3")
 	if err != nil {
 		t.Error("should not return an error")
 	}
-	v3 := p.GetValueForPathWithFallback("groups.UserA.noes.hi", "bla")
+	v3 := p.GetStringForPathWithFallback("groups.UserA.noes.hi", "bla")
 	if v3 != "value3" {
 		t.Error("should have found new value (value3)")
 	}
 
-	err = p.PutString("groups.newUser.notes", "note", "newNote")
+	err = p.PutString("groups.newUser.notes.note", "newNote")
 	if err != nil {
 		t.Error("should not return an error")
 	}
 
-	v4 := p.GetValueForPathWithFallback("groups.newUser.notes.note", "bla")
+	v4 := p.GetStringForPathWithFallback("groups.newUser.notes.note", "bla")
 	if v4 != "newNote" {
 		t.Error("should have found new value (newNote)")
 	}
 
-	err = p.PutString("groups.newUser.notes", "note", "overwriteNote")
+	err = p.PutString("groups.newUser.notes.note", "overwriteNote")
 	if err != nil {
 		t.Error("should not return an error")
 	}
 
-	v5 := p.GetValueForPathWithFallback("groups.newUser.notes.note", "bla")
+	v5 := p.GetStringForPathWithFallback("groups.newUser.notes.note", "bla")
 	if v5 != "overwriteNote" {
 		t.Error("should have found new value (overwriteNote)")
 	}
 
-	err = p.PutRootString("newRoot", "newRootValue")
+	err = p.PutString("newRoot", "newRootValue")
 	if err != nil {
 		t.Error("should not return an error")
 	}
 
-	v6 := p.GetValueForPathWithFallback("newRoot", "bla")
+	v6 := p.GetStringForPathWithFallback("newRoot", "bla")
 	if v6 != "newRootValue" {
 		t.Error("should have found new value (newRootValue)")
 	}
 
+	err = p.PutString(".xRoot", "dotRootValue")
+	if err != nil {
+		t.Error("should not return an error")
+	}
+
+	v7 := p.GetStringForPathWithFallback(".xRoot", "bla")
+	if v7 != "dotRootValue" {
+		t.Error("should have found new value (dotRootValue)")
+	}
 }
 func TestLoadFallback(t *testing.T) {
 	p, err := pref.NewPrefData("TestDataTypes.json")
@@ -117,16 +163,36 @@ func TestLoadFallback(t *testing.T) {
 	if s1 == "" {
 		t.Error("groups.UserA.notes.note should return a value")
 	}
-	s2 := p.GetValueForPathWithFallback("groups.UserA.notes.note", "x")
+	s2 := p.GetStringForPathWithFallback("groups.UserA.notes.note", "x")
 	if s1 != s2 {
-		t.Error("GetValueForPathWithFallback should return same as GetDataForPath")
+		t.Error("GetStringForPathWithFallback should return same as GetDataForPath")
 	}
-	s3 := p.GetValueForPathWithFallback("groups.UserA.notes.not", "fallback")
+	s3 := p.GetStringForPathWithFallback("groups.UserA.notes.not", "fallback")
 	if s3 != "fallback" {
 		t.Error("groups.UserA.notes.not should return \"fallback\" ")
 	}
 
 }
+func TestLoadCacheAfterPut(t *testing.T) {
+	p, err := pref.NewPrefData("TestDataTypes.json")
+	if err != nil {
+		t.Error("should NOT return error")
+	}
+	if p.GetFileName() != "TestDataTypes.json" {
+		t.Error("file name was not stored correctly")
+	}
+	p.PutString("a.b.c", "abc")
+	s := p.GetStringForPathWithFallback("a.b.c", "xyz")
+	if s != "abc" {
+		t.Error("Incorrect value returned. Not abc")
+	}
+	p.PutString("a.b.c", "123")
+	s = p.GetStringForPathWithFallback("a.b.c", "xyz")
+	if s != "123" {
+		t.Error("Incorrect value returned. Not 123")
+	}
+}
+
 func TestLoadCache(t *testing.T) {
 	p, err := pref.NewPrefData("TestDataTypes.json")
 	if err != nil {

@@ -149,7 +149,14 @@ func (p *EditEntry) GetCurrentText() string {
 	}
 }
 
-func NewDetailPage(uid string, title string, user string, viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject, cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject, dataRootMap *map[string]interface{}) *DetailPage {
+func NewDetailPage(
+	uid string,
+	title string,
+	user string,
+	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject,
+	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject,
+	dataRootMap *map[string]interface{}) *DetailPage {
+
 	heading := fmt.Sprintf("User:  %s", title)
 	if user != "" {
 		heading = fmt.Sprintf("User:  %s:  %s", user, title)
