@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"stuartdd.com/lib"
+	"stuartdd.com/pref"
 	"stuartdd.com/theme2"
 )
 
@@ -35,6 +36,7 @@ type DetailPage struct {
 	ViewFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject
 	CntlFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject
 	DataRootMap               *map[string]interface{}
+	Preferences               pref.PrefData
 }
 
 func NewEditEntry(path string, title string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string)) *EditEntry {
@@ -155,13 +157,14 @@ func NewDetailPage(
 	user string,
 	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject,
 	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject,
-	dataRootMap *map[string]interface{}) *DetailPage {
+	dataRootMap *map[string]interface{},
+	preferences pref.PrefData) *DetailPage {
 
 	heading := fmt.Sprintf("User:  %s", title)
 	if user != "" {
 		heading = fmt.Sprintf("User:  %s:  %s", user, title)
 	}
-	return &DetailPage{Uid: uid, Heading: heading, Title: title, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, DataRootMap: dataRootMap}
+	return &DetailPage{Uid: uid, Heading: heading, Title: title, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, DataRootMap: dataRootMap, Preferences: preferences}
 }
 
 func (p *DetailPage) GetMapForUid() *map[string]interface{} {

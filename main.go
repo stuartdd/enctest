@@ -31,6 +31,7 @@ const (
 	MAIN_THREAD_IDLE        = iota
 	MAIN_THREAD_RELOAD_TREE = iota
 	MAIN_THREAD_SELECT      = iota
+	MAIN_THREAD_RESELECT    = iota
 
 	ADD_TYPE_USER = iota
 	ADD_TYPE_HINT = iota
@@ -86,6 +87,7 @@ func main() {
 		os.Exit(1)
 	}
 	preferences = p
+	preferences.AddChangeListener(dataPreferencesChanged, "data.")
 
 	loadThreadFileName = p.GetStringForPathWithFallback(dataFilePrefName, fallbackPreferencesFile)
 	mainThreadNextState = MAIN_THREAD_IDLE
@@ -159,7 +161,7 @@ func main() {
 	window.SetMainMenu(mainMenu)
 	window.SetMaster()
 
-	wp := gui.GetWelcomePage("")
+	wp := gui.GetWelcomePage("", *preferences)
 	title := container.NewHBox()
 	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil)}
 	contentRHS := container.NewMax()
@@ -260,12 +262,16 @@ func main() {
 					window.SetContent(splitContainer)
 					requestMainThreadIn(0, MAIN_THREAD_IDLE)
 				}
-
+				if mainThreadNextState == MAIN_THREAD_RESELECT {
+					requestMainThreadIn(0, MAIN_THREAD_IDLE)
+					t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
+					setPageRHSFunc(*t)
+				}
 				// Select the tree element defined in pendingSelection
 				if mainThreadNextState == MAIN_THREAD_SELECT {
+					requestMainThreadIn(0, MAIN_THREAD_IDLE)
 					fmt.Printf("Select pending:%s ", pendingSelection)
 					selectTreeElement(pendingSelection)
-					requestMainThreadIn(0, MAIN_THREAD_IDLE)
 				}
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -308,11 +314,11 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 			return widget.NewLabel("?")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap())
+			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap(), *preferences)
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
-			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap())
+			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap(), *preferences)
 			setPage(*t)
 		},
 	}
@@ -336,12 +342,12 @@ func makeLHSButtonsAndSearch(setPage func(detailPage gui.DetailPage)) fyne.Canva
 	b := container.New(layout.NewGridLayout(2),
 		widget.NewButton("Dark", func() {
 			setThemeById("dark")
-			t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap())
+			t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
 			setPage(*t)
 		}),
 		widget.NewButton("Light", func() {
 			setThemeById("light")
-			t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap())
+			t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
 			setPage(*t)
 		}),
 	)
@@ -372,6 +378,10 @@ This is called when a heading button is pressed of the RH page
 func controlActionFunction(action string, uid string) {
 	fmt.Printf("Control %s %s\n", action, uid)
 	viewActionFunction(action, uid)
+}
+
+func dataPreferencesChanged(path, value, filter string) {
+	requestMainThreadIn(100, MAIN_THREAD_RESELECT)
 }
 
 /**

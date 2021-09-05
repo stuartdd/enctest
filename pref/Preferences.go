@@ -11,9 +11,10 @@ import (
 )
 
 type PrefData struct {
-	fileName string
-	data     map[string]interface{}
-	cache    map[string]string
+	fileName        string
+	data            map[string]interface{}
+	cache           map[string]string
+	changeListeners map[string]func(string, string, string)
 }
 
 func NewPrefData(fileName string) (*PrefData, error) {
@@ -27,13 +28,31 @@ func NewPrefData(fileName string) (*PrefData, error) {
 		return nil, err
 	}
 	c := make(map[string]string)
-	return &PrefData{fileName: fileName, data: m, cache: c}, nil
+	cl := make(map[string]func(string, string, string), 0)
+	return &PrefData{fileName: fileName, data: m, cache: c, changeListeners: cl}, nil
+}
+
+func (p *PrefData) AddChangeListener(cl func(string, string, string), filter string) {
+	p.changeListeners[filter] = cl
+}
+
+func (p *PrefData) RemoveChangeListener(key string) {
+	delete(p.changeListeners, key)
+}
+
+func (p *PrefData) callChangeListeners(path, value string) {
+	for filter, fn := range p.changeListeners {
+		if fn != nil {
+			if strings.HasPrefix(path, filter) {
+				fn(path, value, filter)
+			}
+		}
+	}
 }
 
 func (p *PrefData) Save() error {
 	return p.SaveAs(p.fileName)
 }
-
 func (p *PrefData) SaveAs(fileName string) error {
 	return ioutil.WriteFile(fileName, []byte(p.String()), 0644)
 }
@@ -60,11 +79,12 @@ func (p *PrefData) PutString(path, value string) error {
 		p.makePath(parent)
 		m, _, _ = p.getDataForPath(parent, false)
 		if m == nil {
-			return fmt.Errorf("Failed to create node for path %s", path)
+			return fmt.Errorf("failed to create node for path %s", path)
 		}
 	}
 	(*m)[name] = value
 	p.cache[path] = value
+	p.callChangeListeners(path, value)
 	return nil
 }
 

@@ -12,14 +12,16 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"stuartdd.com/pref"
 	"stuartdd.com/theme2"
 )
 
 const (
-	welcomeTitle = "Welcome"
-	appDesc      = "Welcome to Valt"
-	idNotes      = "notes"
-	idPwDetails  = "pwHints"
+	welcomeTitle           = "Welcome"
+	appDesc                = "Welcome to Valt"
+	idNotes                = "notes"
+	idPwDetails            = "pwHints"
+	positionalDataPrefName = "data.positional"
 
 	ACTION_REMOVE = "remove"
 	ACTION_RENAME = "rename"
@@ -38,34 +40,34 @@ func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool
 	return runModalEntryPopup(w, heading, txt, true, accept)
 }
 
-func GetWelcomePage(id string) *DetailPage {
-	return NewDetailPage(id, "", welcomeTitle, welcomeScreen, welcomeControls, nil)
+func GetWelcomePage(id string, preferences pref.PrefData) *DetailPage {
+	return NewDetailPage(id, "", welcomeTitle, welcomeScreen, welcomeControls, nil, preferences)
 }
 
-func GetDetailPage(id string, dataRootMap *map[string]interface{}) *DetailPage {
+func GetDetailPage(id string, dataRootMap *map[string]interface{}, preferences pref.PrefData) *DetailPage {
 	nodes := strings.Split(id, ".")
 	user := nodes[0]
 	switch len(nodes) {
 	case 1:
-		return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, dataRootMap)
+		return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, dataRootMap, preferences)
 	case 2:
 		if nodes[1] == idPwDetails {
-			return NewDetailPage(id, "Hints", user, welcomeScreen, notesControls, dataRootMap)
+			return NewDetailPage(id, "Hints", user, welcomeScreen, notesControls, dataRootMap, preferences)
 		}
 		if nodes[1] == idNotes {
-			return NewDetailPage(id, "Notes", user, notesScreen, notesControls, dataRootMap)
+			return NewDetailPage(id, "Notes", user, notesScreen, notesControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(id, "Unknown", user, welcomeScreen, notesControls, dataRootMap)
+		return NewDetailPage(id, "Unknown", user, welcomeScreen, notesControls, dataRootMap, preferences)
 	case 3:
 		if nodes[1] == idPwDetails {
-			return NewDetailPage(id, nodes[2], user, hintsScreen, hintsControls, dataRootMap)
+			return NewDetailPage(id, nodes[2], user, hintsScreen, hintsControls, dataRootMap, preferences)
 		}
 		if nodes[1] == idNotes {
-			return NewDetailPage(id, nodes[2], user, notesScreen, notesControls, dataRootMap)
+			return NewDetailPage(id, nodes[2], user, notesScreen, notesControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(id, "Unknown", "", welcomeScreen, notesControls, dataRootMap)
+		return NewDetailPage(id, "Unknown", "", welcomeScreen, notesControls, dataRootMap, preferences)
 	}
-	return NewDetailPage(id, id, "", welcomeScreen, notesControls, dataRootMap)
+	return NewDetailPage(id, id, "", welcomeScreen, notesControls, dataRootMap, preferences)
 }
 
 func entryChangedFunction(s string, path string) {
@@ -152,7 +154,7 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
 		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
 		cObj = append(cObj, widget.NewSeparator())
-		if strings.HasPrefix(strings.ToLower(e.Title), "posit") {
+		if strings.HasPrefix(strings.ToLower(e.Title), "posit") && details.Preferences.GetBoolWithFallback(positionalDataPrefName, true) {
 			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(e.GetCurrentText())))
 		} else {
 			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Ent))

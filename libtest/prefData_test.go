@@ -1,12 +1,21 @@
 package libtest
 
 import (
+	"math"
 	"os"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
 	"stuartdd.com/pref"
+)
+
+var (
+	path1 string = ""
+	val1  string = ""
+	path2 string = ""
+	val2  string = ""
 )
 
 func removeFile(t *testing.T, fileName string) {
@@ -81,6 +90,45 @@ func TestSave(t *testing.T) {
 	}
 
 }
+
+func TestChangeListeners(t *testing.T) {
+	pref, _ := pref.NewPrefData("TestDataTypes.json")
+	pref.AddChangeListener(func(p string, v string) {
+		path1 = p
+		val1 = v
+	})
+	path1 = ""
+	val1 = ""
+	path2 = ""
+	val2 = ""
+	pref.PutBool("cl.bool.a", true)
+	if path1 != "cl.bool.a" || val1 != "true" {
+		t.Error("Path1 and Val1 should have been updated")
+	}
+	if path2 != "" || val2 != "" {
+		t.Error("Path2 and Val2 should NOT have been updated")
+	}
+	pref.AddChangeListener(func(p string, v string) {
+		path2 = p
+		val2 = v
+	})
+	path1 = ""
+	val1 = ""
+	path2 = ""
+	val2 = ""
+	pref.PutFloat32("cl.32.a", 1.7)
+
+	f1, _ := strconv.ParseFloat(val1, 32)
+	f2, _ := strconv.ParseFloat(val2, 32)
+	if path1 != "cl.32.a" || (math.Round(f1*100)/100) != 1.7 {
+		t.Error("Path1 and Val1 should have been updated")
+	}
+	if path2 != "cl.32.a" || (math.Round(f2*100)/100) != 1.7 {
+		t.Error("Path2 and Val2 should have been updated")
+	}
+
+}
+
 func TestPutString(t *testing.T) {
 	p, _ := pref.NewPrefData("TestDataTypes.json")
 	err := p.PutString("groups.UserA.notes.note.hi", "val")
