@@ -2,4 +2,5 @@
 *.log
 *.txt
 data.json
+config.json
 enctest

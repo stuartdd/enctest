@@ -199,7 +199,11 @@ func hintsScreen(_ fyne.Window, details DetailPage, actionFunc func(action strin
 		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
 		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
 		cObj = append(cObj, widget.NewSeparator())
-		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Ent))
+		if strings.HasPrefix(strings.ToLower(e.Title), "posit") && details.Preferences.GetBoolWithFallback(positionalDataPrefName, true) {
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(e.GetCurrentText())))
+		} else {
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Ent))
+		}
 	}
 	return container.NewVBox(cObj...)
 }

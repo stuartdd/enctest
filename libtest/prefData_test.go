@@ -93,10 +93,10 @@ func TestSave(t *testing.T) {
 
 func TestChangeListeners(t *testing.T) {
 	pref, _ := pref.NewPrefData("TestDataTypes.json")
-	pref.AddChangeListener(func(p string, v string) {
+	pref.AddChangeListener(func(p string, v string, k string) {
 		path1 = p
 		val1 = v
-	})
+	}, "cl.")
 	path1 = ""
 	val1 = ""
 	path2 = ""
@@ -108,16 +108,15 @@ func TestChangeListeners(t *testing.T) {
 	if path2 != "" || val2 != "" {
 		t.Error("Path2 and Val2 should NOT have been updated")
 	}
-	pref.AddChangeListener(func(p string, v string) {
+	pref.AddChangeListener(func(p string, v string, k string) {
 		path2 = p
 		val2 = v
-	})
+	}, "cl.32.")
 	path1 = ""
 	val1 = ""
 	path2 = ""
 	val2 = ""
 	pref.PutFloat32("cl.32.a", 1.7)
-
 	f1, _ := strconv.ParseFloat(val1, 32)
 	f2, _ := strconv.ParseFloat(val2, 32)
 	if path1 != "cl.32.a" || (math.Round(f1*100)/100) != 1.7 {

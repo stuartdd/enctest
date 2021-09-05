@@ -134,8 +134,8 @@ func main() {
 		fyne.NewMenuItem("Note", addNewNote),
 	)
 	viewItem := fyne.NewMenu("View",
-		fyne.NewMenuItem("Swap Full Screen With Windowed", flipFullScreen),
-		fyne.NewMenuItem("Show Positional data as a table", flipPositionalData),
+		fyne.NewMenuItem("Toggle Full Screen", flipFullScreen),
+		fyne.NewMenuItem("Toggle Positional Data", flipPositionalData),
 	)
 	helpMenu := fyne.NewMenu("Help",
 		fyne.NewMenuItem("Documentation", func() {
