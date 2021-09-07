@@ -1,12 +1,25 @@
 {
     "groups": {
+        "Stuart": {
+            "notes": {
+                "note": ""
+            },
+            "pwHints": {
+                "application": {
+                    "notes": "",
+                    "post": "",
+                    "pre": "",
+                    "userId": ""
+                }
+            }
+        },
         "UserA": {
             "notes": {
-                "note": "An amazing A note (dont panic) fdf",
+                "note1": "An amazing A note (dont panic) fdf",
                 "posit": "This is a note"
             },
             "pwHints": {
-                "GMailA": {
+                "MyApp": {
                     "notes": "a note to User A",
                     "post": "123",
                     "pre": "abc",

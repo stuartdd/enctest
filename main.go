@@ -65,15 +65,14 @@ var (
 	splitContainerOffset     float64          = -1
 	splitContainerOffsetPref float64          = -1
 
-	findCaseSensitive           = binding.NewBool()
-	pendingSelection            = ""
-	currentSelection            = ""
-	currentUser                 = ""
-	shouldCloseLock             = false
-	mainThreadNextState         = 0
-	mainThreadNextRunMs   int64 = 0
-	loadThreadFileName          = ""
-	countStructureChanges       = 0
+	findCaseSensitive     = binding.NewBool()
+	pendingSelection      = ""
+	currentSelection      = ""
+	currentUser           = ""
+	shouldCloseLock       = false
+	mainThreadNextState   = 0
+	loadThreadFileName    = ""
+	countStructureChanges = 0
 )
 
 func main() {
@@ -91,7 +90,6 @@ func main() {
 
 	loadThreadFileName = p.GetStringForPathWithFallback(dataFilePrefName, fallbackPreferencesFile)
 	mainThreadNextState = MAIN_THREAD_IDLE
-	mainThreadNextRunMs = 0
 
 	a := app.NewWithID("stuartdd.enctest")
 	a.Settings().SetTheme(theme2.NewAppTheme(preferences.GetStringForPathWithFallback(themeVarPrefName, "dark")))
@@ -199,86 +197,78 @@ func main() {
 			mainThreadNextState is the action performed by the main loop
 				Each action should leave the state as MAIN_THREAD_IDLE unless a follow on action is required
 		*/
-		for {
-			if mainThreadNextRunMs > 0 && time.Now().UnixMilli() > mainThreadNextRunMs {
-				mainThreadNextRunMs = 0
-				if mainThreadNextState == MAIN_THREAD_LOAD {
-
-					// Load the file and decrypt it if required
-					fmt.Println("Load State")
-					fd, err := lib.NewFileData(loadThreadFileName)
-					if err != nil {
-						fmt.Printf("Failed to load data file %s\n", loadThreadFileName)
-						os.Exit(1)
-					}
-					/*
-						While file is ENCRYPTED
-							Get PW and decrypt
-							if Decryption is cancelled the application exits
-					*/
-					message := ""
-					for fd.RequiresDecryption() {
-						getPasswordAndDecrypt(fd, message, func(s string) {
-							// FAIL
-							message = "Error: " + strings.TrimSpace(s) + ". Please try again"
-							time.Sleep(1000 * time.Millisecond)
-						})
-					}
-					/*
-						Data is decrypted so process the JSON so
-							update the navigation tree
-							select the root element
-					*/
-					dr, err := lib.NewDataRoot(fd.GetContent(), dataMapUpdated)
-					if err != nil {
-						fmt.Printf("ERROR: Cannot process data. %s\n", err)
-						os.Exit(1)
-					}
-					fileData = fd
-					dataRoot = dr
-
-					// Follow on action to rebuild the Tree and re-display it
-					requestMainThreadIn(500, MAIN_THREAD_RELOAD_TREE)
+		ticker := time.NewTicker(100 * time.Millisecond)
+		for range ticker.C {
+			switch mainThreadNextState {
+			case MAIN_THREAD_LOAD:
+				// Load the file and decrypt it if required
+				fmt.Println("Load State")
+				fd, err := lib.NewFileData(loadThreadFileName)
+				if err != nil {
+					fmt.Printf("Failed to load data file %s\n", loadThreadFileName)
+					os.Exit(1)
 				}
-
-				if mainThreadNextState == MAIN_THREAD_RELOAD_TREE {
-					// Re-build the main tree view.
-					// Select the root of currentUser if defined.
-					// Init the devider (split)
-					// Populate the window and we are done!
-					navTreeLHS = makeNavTree(setPageRHSFunc)
-					uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
-					fmt.Printf("Refresh current:%s ", uid)
-					selectTreeElement(uid)
-
-					if splitContainerOffset < 0 {
-						splitContainerOffset = splitContainerOffsetPref
-					} else {
-						splitContainerOffset = splitContainer.Offset
-					}
-					splitContainer = container.NewHSplit(container.NewBorder(nil, makeLHSButtonsAndSearch(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
-					splitContainer.SetOffset(splitContainerOffset)
-
-					window.SetContent(splitContainer)
-					requestMainThreadIn(0, MAIN_THREAD_IDLE)
+				/*
+					While file is ENCRYPTED
+						Get PW and decrypt
+						if Decryption is cancelled the application exits
+				*/
+				message := ""
+				for fd.RequiresDecryption() {
+					getPasswordAndDecrypt(fd, message, func(s string) {
+						// FAIL
+						message = "Error: " + strings.TrimSpace(s) + ". Please try again"
+						time.Sleep(1000 * time.Millisecond)
+					})
 				}
-				if mainThreadNextState == MAIN_THREAD_RESELECT {
-					requestMainThreadIn(0, MAIN_THREAD_IDLE)
-					t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
-					setPageRHSFunc(*t)
+				/*
+					Data is decrypted so process the JSON so
+						update the navigation tree
+						select the root element
+				*/
+				dr, err := lib.NewDataRoot(fd.GetContent(), dataMapUpdated)
+				if err != nil {
+					fmt.Printf("ERROR: Cannot process data. %s\n", err)
+					os.Exit(1)
 				}
-				// Select the tree element defined in pendingSelection
-				if mainThreadNextState == MAIN_THREAD_SELECT {
-					requestMainThreadIn(0, MAIN_THREAD_IDLE)
-					fmt.Printf("Select pending:%s ", pendingSelection)
-					selectTreeElement(pendingSelection)
+				fileData = fd
+				dataRoot = dr
+
+				// Follow on action to rebuild the Tree and re-display it
+				mainThreadNextState = MAIN_THREAD_RELOAD_TREE
+			case MAIN_THREAD_RELOAD_TREE:
+				// Re-build the main tree view.
+				// Select the root of currentUser if defined.
+				// Init the devider (split)
+				// Populate the window and we are done!
+				navTreeLHS = makeNavTree(setPageRHSFunc)
+				uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
+				fmt.Printf("Refresh current:%s ", uid)
+				selectTreeElement(uid)
+
+				if splitContainerOffset < 0 {
+					splitContainerOffset = splitContainerOffsetPref
+				} else {
+					splitContainerOffset = splitContainer.Offset
 				}
+				splitContainer = container.NewHSplit(container.NewBorder(nil, makeLHSButtonsAndSearch(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
+				splitContainer.SetOffset(splitContainerOffset)
+
+				window.SetContent(splitContainer)
+				mainThreadNextState = MAIN_THREAD_IDLE
+			case MAIN_THREAD_RESELECT:
+				mainThreadNextState = MAIN_THREAD_IDLE
+				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
+				setPageRHSFunc(*t)
+			case MAIN_THREAD_SELECT:
+				mainThreadNextState = MAIN_THREAD_IDLE
+				fmt.Printf("Select pending:%s ", pendingSelection)
+				selectTreeElement(pendingSelection)
 			}
-			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
-	requestMainThreadIn(1000, MAIN_THREAD_LOAD)
+	futureSetMainThread(1000, MAIN_THREAD_LOAD)
 
 	setFullScreen(preferences.GetBoolWithFallback(screenFullPrefName, false))
 	window.ShowAndRun()
@@ -294,6 +284,18 @@ func selectTreeElement(uid string) {
 	navTreeLHS.OpenBranch(user)
 	navTreeLHS.OpenBranch(parent)
 	navTreeLHS.Select(uid)
+}
+
+func futureSetMainThread(ms int, status int) {
+	go func() {
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+		count := 100
+		for mainThreadNextState != MAIN_THREAD_IDLE && count != 0 {
+			time.Sleep(100 * time.Millisecond)
+			count--
+		}
+		mainThreadNextState = status
+	}()
 }
 
 /**
@@ -355,24 +357,6 @@ func makeLHSButtonsAndSearch(setPage func(detailPage gui.DetailPage)) fyne.Canva
 }
 
 /**
-Request that the main loop is started in n milliseconds with a specific state.
-*/
-func requestMainThreadIn(ms int64, reqState int) {
-	if reqState == MAIN_THREAD_IDLE {
-		mainThreadNextRunMs = 0
-		mainThreadNextState = MAIN_THREAD_IDLE
-	} else {
-		if ms == 0 {
-			mainThreadNextRunMs = 0
-		} else {
-			mainThreadNextRunMs = time.Now().UnixMilli() + ms
-		}
-		mainThreadNextState = reqState
-	}
-
-}
-
-/**
 This is called when a heading button is pressed of the RH page
 */
 func controlActionFunction(action string, uid string) {
@@ -381,7 +365,7 @@ func controlActionFunction(action string, uid string) {
 }
 
 func dataPreferencesChanged(path, value, filter string) {
-	requestMainThreadIn(100, MAIN_THREAD_RESELECT)
+	futureSetMainThread(100, MAIN_THREAD_RESELECT)
 }
 
 /**
@@ -407,7 +391,7 @@ func dataMapUpdated(desc, user, path string, err error) {
 		currentSelection = path
 		countStructureChanges++
 	}
-	requestMainThreadIn(100, MAIN_THREAD_RELOAD_TREE)
+	futureSetMainThread(100, MAIN_THREAD_RELOAD_TREE)
 }
 
 func flipPositionalData() {
@@ -536,7 +520,7 @@ func search(s string) {
 		// pendingSelection is the path to the selected item
 		list.OnSelected = func(id widget.ListItemID) {
 			pendingSelection = mapPaths[paths[id]]
-			requestMainThreadIn(100, MAIN_THREAD_SELECT)
+			futureSetMainThread(100, MAIN_THREAD_SELECT)
 		}
 		go showSearchResultsWindow(window.Canvas().Size().Width/2, window.Canvas().Size().Height/2, list)
 	} else {
