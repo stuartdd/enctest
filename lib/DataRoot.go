@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	hintStr      = "pwHints"
-	noteStr      = "notes"
-	groupsStr    = "groups"
-	timeStampStr = "timeStamp"
+	hintStr         = "pwHints"
+	noteStr         = "notes"
+	dataMapRootName = "groups"
+	timeStampStr    = "timeStamp"
 )
 
 var (
@@ -43,9 +43,9 @@ func NewDataRoot(j []byte, dataMapUpdated func(string, string, string, error)) (
 	if err != nil {
 		return nil, fmt.Errorf("'%s' could not be parsed", timeStampStr)
 	}
-	_, ok = m[groupsStr]
+	_, ok = m[dataMapRootName]
 	if !ok {
-		return nil, fmt.Errorf("'%s' does not exist in data root", groupsStr)
+		return nil, fmt.Errorf("'%s' does not exist in data root", dataMapRootName)
 	}
 
 	dr := &DataRoot{timeStamp: tim, dataMap: m, navIndex: createNavIndex(m), dataMapUpdated: dataMapUpdated}
@@ -54,7 +54,7 @@ func NewDataRoot(j []byte, dataMapUpdated func(string, string, string, error)) (
 
 func (p *DataRoot) Search(addPath func(string, string), needle string, matchCase bool) {
 	rootMap := p.dataMap
-	groups := rootMap[groupsStr].(map[string]interface{})
+	groups := rootMap[dataMapRootName].(map[string]interface{})
 	for user, v := range groups {
 		searchUsers(addPath, needle, user, v.(map[string]interface{}), matchCase)
 	}
@@ -119,23 +119,19 @@ func containsWithCase(haystack, needle string, matchCase bool) bool {
 
 func (p *DataRoot) Rename(uid, to string) error {
 	parent := GetParentId(uid)
-
 	id := GetLastId(uid)
 	m, _ := p.GetDataForUid(parent)
 	x := (*m)[id]
 	(*m)[to] = x
 	delete(*m, id)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Removed", GetUserFromPath(uid), parent, nil)
+	p.dataMapUpdated("Renamed", GetUserFromPath(uid), parent, nil)
 	return nil
 }
 
 func (p *DataRoot) Remove(uid string, min int) error {
 	parent := GetParentId(uid)
 	id := GetLastId(uid)
-	if parent == id {
-		parent = groupsStr
-	}
 	m, _ := p.GetDataForUid(parent)
 	count := countElementsInMapRoot(m)
 	if count <= min {
@@ -153,7 +149,7 @@ func (p *DataRoot) AddUser(userName string) error {
 		return fmt.Errorf("user name '%s' already exists", userName)
 	}
 	rootMap := p.dataMap
-	groups := rootMap[groupsStr].(map[string]interface{})
+	groups := rootMap[dataMapRootName].(map[string]interface{})
 
 	newUser := make(map[string]interface{})
 	addHint("application", userName, newUser)
@@ -289,7 +285,7 @@ func GetParentId(uid string) string {
 	p := strings.LastIndexByte(uid, '.')
 	switch p {
 	case -1:
-		return uid
+		return "groups"
 	case 0:
 		return ""
 	default:
@@ -352,8 +348,8 @@ func GetMapForUid(uid string, m *map[string]interface{}) (*map[string]interface{
 		return m, ""
 	}
 	n := *m
-	x := n[groupsStr]
-	if uid == groupsStr {
+	x := n[dataMapRootName]
+	if uid == dataMapRootName {
 		y := x.(map[string]interface{})
 		return &y, ""
 	}

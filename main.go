@@ -45,7 +45,6 @@ const (
 
 	dataFilePrefName       = "datafile"
 	themeVarPrefName       = "theme"
-	positionalDataPrefName = "data.positional"
 	screenWidthPrefName    = "screen.width"
 	screenHeightPrefName   = "screen.height"
 	screenFullPrefName     = "screen.fullScreen"
@@ -128,8 +127,8 @@ func main() {
 
 	newItem := fyne.NewMenu("New",
 		fyne.NewMenuItem("User", addNewUser),
-		fyne.NewMenuItem("Hint", addNewHint),
-		fyne.NewMenuItem("Note", addNewNote),
+		fyne.NewMenuItem(preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint"), addNewHint),
+		fyne.NewMenuItem(preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note"), addNewNote),
 	)
 	viewItem := fyne.NewMenu("View",
 		fyne.NewMenuItem("Toggle Full Screen", flipFullScreen),
@@ -188,12 +187,6 @@ func main() {
 	*/
 	go func() {
 		/*
-			--- MAIN LOOP ---
-			mainThreadNextRunMs is 0 for never run the main loop
-			mainThreadNextRunMs is current milliseconds + an offset.
-				This will then run the Main loop at that time
-			mainThreadNextRunMs is always reset to 0 when the main loop starts.
-
 			mainThreadNextState is the action performed by the main loop
 				Each action should leave the state as MAIN_THREAD_IDLE unless a follow on action is required
 		*/
@@ -257,13 +250,13 @@ func main() {
 				window.SetContent(splitContainer)
 				mainThreadNextState = MAIN_THREAD_IDLE
 			case MAIN_THREAD_RESELECT:
-				mainThreadNextState = MAIN_THREAD_IDLE
 				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
 				setPageRHSFunc(*t)
-			case MAIN_THREAD_SELECT:
 				mainThreadNextState = MAIN_THREAD_IDLE
+			case MAIN_THREAD_SELECT:
 				fmt.Printf("Select pending:%s ", pendingSelection)
 				selectTreeElement(pendingSelection)
+				mainThreadNextState = MAIN_THREAD_IDLE
 			}
 		}
 	}()
@@ -290,9 +283,12 @@ func futureSetMainThread(ms int, status int) {
 	go func() {
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 		count := 100
-		for mainThreadNextState != MAIN_THREAD_IDLE && count != 0 {
+		for mainThreadNextState != MAIN_THREAD_IDLE {
 			time.Sleep(100 * time.Millisecond)
 			count--
+			if count <= 0 {
+				return
+			}
 		}
 		mainThreadNextState = status
 	}()
@@ -395,8 +391,8 @@ func dataMapUpdated(desc, user, path string, err error) {
 }
 
 func flipPositionalData() {
-	p := preferences.GetBoolWithFallback(positionalDataPrefName, true)
-	preferences.PutBool(positionalDataPrefName, !p)
+	p := preferences.GetBoolWithFallback(gui.DataPositionalPrefName, true)
+	preferences.PutBool(gui.DataPositionalPrefName, !p)
 }
 
 /**
@@ -466,7 +462,7 @@ func renameAction(uid string) {
 }
 
 /**
-Activate a link in a browser if it is contained in a note of hint
+Activate a link in a browser if it is contained in a note or hint
 */
 func linkAction(s string) {
 	if s != "" {
@@ -555,14 +551,16 @@ func addNewUser() {
 Selecting the menu to add a hint
 */
 func addNewHint() {
-	addNewEntity("Hint for "+currentUser, "Hint", ADD_TYPE_HINT)
+	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	addNewEntity(n+" for "+currentUser, n, ADD_TYPE_HINT)
 }
 
 /**
 Selecting the menu to add a note
 */
 func addNewNote() {
-	addNewEntity("Note for "+currentUser, "Note", ADD_TYPE_NOTE)
+	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
+	addNewEntity(n+" for "+currentUser, n, ADD_TYPE_NOTE)
 }
 
 /**

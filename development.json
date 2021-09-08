@@ -1,13 +1,15 @@
 {
     "data": {
+        "hintIsCalled": "Bog",
+        "noteIsCalled": "Nog",
         "positional": "true"
     },
     "datafile": "libtest/TestDataTypes.json",
     "screen": {
         "fullScreen": "false",
-        "height": "680.476196",
+        "height": "663.333374",
         "split": "0.317994",
-        "width": "1053.809570"
+        "width": "1047.142944"
     },
     "search": {
         "case": "true"

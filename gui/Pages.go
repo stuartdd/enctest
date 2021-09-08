@@ -17,11 +17,13 @@ import (
 )
 
 const (
-	welcomeTitle           = "Welcome"
-	appDesc                = "Welcome to Valt"
-	idNotes                = "notes"
-	idPwDetails            = "pwHints"
-	positionalDataPrefName = "data.positional"
+	welcomeTitle             = "Welcome"
+	appDesc                  = "Welcome to Valt"
+	idNotes                  = "notes"
+	idPwDetails              = "pwHints"
+	DataPositionalPrefName   = "data.positional"
+	DataHintIsCalledPrefName = "data.hintIsCalled"
+	DataNoteIsCalledPrefName = "data.noteIsCalled"
 
 	ACTION_REMOVE = "remove"
 	ACTION_RENAME = "rename"
@@ -47,15 +49,17 @@ func GetWelcomePage(id string, preferences pref.PrefData) *DetailPage {
 func GetDetailPage(id string, dataRootMap *map[string]interface{}, preferences pref.PrefData) *DetailPage {
 	nodes := strings.Split(id, ".")
 	user := nodes[0]
+	hintsAreCalled := preferences.GetStringForPathWithFallback(DataHintIsCalledPrefName, "Hint")
+	notesAreCalled := preferences.GetStringForPathWithFallback(DataNoteIsCalledPrefName, "Note")
 	switch len(nodes) {
 	case 1:
 		return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, dataRootMap, preferences)
 	case 2:
 		if nodes[1] == idPwDetails {
-			return NewDetailPage(id, "Hints", user, welcomeScreen, notesControls, dataRootMap, preferences)
+			return NewDetailPage(id, hintsAreCalled+"s", user, welcomeScreen, notesControls, dataRootMap, preferences)
 		}
 		if nodes[1] == idNotes {
-			return NewDetailPage(id, "Notes", user, notesScreen, notesControls, dataRootMap, preferences)
+			return NewDetailPage(id, notesAreCalled+"s", user, notesScreen, notesControls, dataRootMap, preferences)
 		}
 		return NewDetailPage(id, "Unknown", user, welcomeScreen, notesControls, dataRootMap, preferences)
 	case 3:
@@ -97,6 +101,9 @@ func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, 
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, details.Uid)
+	}))
+	cObj = append(cObj, widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
+		actionFunc(ACTION_RENAME, details.Uid)
 	}))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
@@ -154,7 +161,7 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
 		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
 		cObj = append(cObj, widget.NewSeparator())
-		if strings.HasPrefix(strings.ToLower(e.Title), "posit") && details.Preferences.GetBoolWithFallback(positionalDataPrefName, true) {
+		if strings.HasPrefix(strings.ToLower(e.Title), "posit") && details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true) {
 			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(e.GetCurrentText())))
 		} else {
 			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Ent))
@@ -199,7 +206,7 @@ func hintsScreen(_ fyne.Window, details DetailPage, actionFunc func(action strin
 		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
 		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
 		cObj = append(cObj, widget.NewSeparator())
-		if strings.HasPrefix(strings.ToLower(e.Title), "posit") && details.Preferences.GetBoolWithFallback(positionalDataPrefName, true) {
+		if strings.HasPrefix(strings.ToLower(e.Title), "posit") && details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true) {
 			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(e.GetCurrentText())))
 		} else {
 			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Ent))
