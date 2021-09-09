@@ -11,13 +11,14 @@ import (
 )
 
 var (
-	content1     = []byte("{\"text\":\"This is one of those times\"}")
-	content2     = []byte("{\"text\":\"This is NOT one of those times\"}")
-	content3     = []byte("\n  {}")
-	content4     = []byte("[]")
-	content5     = []byte("\n  F9")
-	password     = []byte("mysecretpassword")
-	testFileName = "TempTestData.json"
+	content1        = []byte("{\"text\":\"This is one of those times\"}")
+	content2        = []byte("{\"text\":\"This is NOT one of those times\"}")
+	content3        = []byte("\n  {}")
+	content4        = []byte("[]")
+	content5        = []byte("\n  F9")
+	password        = []byte("mysecretpassword")
+	testFileName    = "TempTestData.json"
+	storeCalledBack = false
 )
 
 func TestMain(m *testing.M) {
@@ -40,7 +41,11 @@ func TestEncReload(t *testing.T) {
 	if !fd1.IsRawJson() {
 		t.Errorf("Content should not be JSON:'%s'", string(fd1.GetContent()))
 	}
-	fd1.StoreContentAsIs()
+	storeCalledBack = false
+	fd1.StoreContentAsIs(storeCallMeBack)
+	if !storeCalledBack {
+		t.Error("err should have called back when done!")
+	}
 	fd2, err2 := lib.NewFileData(testFileName)
 	if err2 != nil {
 		t.Error("err should be nil for file found")
@@ -54,7 +59,12 @@ func TestEncReload(t *testing.T) {
 	if fd2.HasEncData() {
 		t.Error("file should NOT have key")
 	}
-	fd2.StoreContentEncrypted(password)
+	storeCalledBack = false
+	fd2.StoreContentEncrypted(password, storeCallMeBack)
+	if !storeCalledBack {
+		t.Error("err should have called back when done!")
+	}
+
 	fd3, err3 := lib.NewFileData(testFileName)
 	if err3 != nil {
 		t.Error("err should be nil for file found")
@@ -73,7 +83,12 @@ func TestEncReload(t *testing.T) {
 		t.Errorf("File content is incorrect %s != %s", string(fd2.GetContent()), string(content2))
 	}
 	resetTestFile(testFileName, content1)
-	err = fd3.StoreContentAsIs()
+
+	storeCalledBack = false
+	err = fd3.StoreContentAsIs(storeCallMeBack)
+	if !storeCalledBack {
+		t.Error("err should have called back when done!")
+	}
 	if err != nil {
 		t.Error("Failed to store as is")
 	}
@@ -98,7 +113,11 @@ func TestEncReload(t *testing.T) {
 		t.Error("file should have key")
 	}
 
-	err = fd4.StoreContentUnEncrypted()
+	storeCalledBack = false
+	err = fd4.StoreContentUnEncrypted(storeCallMeBack)
+	if !storeCalledBack {
+		t.Error("err should have called back when done!")
+	}
 	if err != nil {
 		t.Error("Failed to store")
 	}
@@ -139,7 +158,11 @@ func TestEnc(t *testing.T) {
 	if fd1.HasEncData() {
 		t.Error("file should not have key and salt")
 	}
-	err1 = fd1.StoreContentEncrypted(password)
+	storeCalledBack = false
+	err1 = fd1.StoreContentEncrypted(password, storeCallMeBack)
+	if !storeCalledBack {
+		t.Error("err should have called back when done!")
+	}
 	if err1 != nil {
 		t.Errorf("Store Enc failed. %s", err1)
 	}
@@ -213,7 +236,7 @@ func TestConstructNotFound(t *testing.T) {
 		t.Error("err should not be nil for file not found")
 	}
 	_, err = lib.NewFileData("TestDataTypes.json")
-	if err == nil {
+	if err != nil {
 		t.Error("err should be nil for enc file found")
 	}
 }
@@ -251,7 +274,12 @@ func TestStoreContent(t *testing.T) {
 	if string(fd1.GetContent()) != string(content2) {
 		t.Errorf("Content setter is incorrect:'%s' != '%s'", string(fd1.GetContent()), string(content2))
 	}
-	fd1.StoreContentAsIs()
+	storeCalledBack = false
+	fd1.StoreContentAsIs(storeCallMeBack)
+	if !storeCalledBack {
+		t.Error("err should have called back when done!")
+	}
+
 	if !fd1.IsRawJson() {
 		t.Error("Json file should be recognised")
 	}
@@ -295,4 +323,8 @@ func echoTestFile(fileName string) {
 		fmt.Printf("%d,", v)
 	}
 	fmt.Println("}")
+}
+
+func storeCallMeBack() {
+	storeCalledBack = true
 }
