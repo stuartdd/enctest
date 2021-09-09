@@ -51,7 +51,7 @@ const (
 	screenHeightPrefName   = "screen.height"
 	screenFullPrefName     = "screen.fullScreen"
 	screenSplitPrefName    = "screen.split"
-	searchLastGoodPrefName = "search.lastGood"
+	searchLastGoodPrefName = "search.lastGoodList"
 	searchCasePrefName     = "search.case"
 )
 
@@ -210,7 +210,7 @@ func main() {
 				} else {
 					splitContainerOffset = splitContainer.Offset
 				}
-				splitContainer = container.NewHSplit(container.NewBorder(nil, makeLHSButtonsAndSearch(setPageRHSFunc), nil, nil, navTreeLHS), layoutRHS)
+				splitContainer = container.NewHSplit(container.NewBorder(makeSearchLHS(setPageRHSFunc), nil, nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(splitContainerOffset)
 
 				window.SetContent(splitContainer)
@@ -281,10 +281,26 @@ func makeMenus() *fyne.MainMenu {
 			fyne.NewMenuItem(fmt.Sprintf("%s Item for '%s'", hintName, hint), addNewHintItem),
 			n3, n4)
 	}
+
+	var themeMenuItem *fyne.MenuItem
+	if preferences.GetStringForPathWithFallback(themeVarPrefName, "dark") == "dark" {
+		themeMenuItem = fyne.NewMenuItem("Light Theme", func() {
+			setThemeById("light")
+			futureSetMainThread(300, MAIN_THREAD_RESELECT)
+		})
+	} else {
+		themeMenuItem = fyne.NewMenuItem("Dark Theme", func() {
+			setThemeById("dark")
+			futureSetMainThread(300, MAIN_THREAD_RESELECT)
+		})
+	}
+
 	viewItem := fyne.NewMenu("View",
 		fyne.NewMenuItem(oneOrTheOther(preferences.GetBoolWithFallback(screenFullPrefName, false), "View Windowed", "View Full Screen"), flipFullScreen),
 		fyne.NewMenuItem(oneOrTheOther(preferences.GetBoolWithFallback(gui.DataPositionalPrefName, true), "Hide Positional Data", "Show Positional Data"), flipPositionalData),
+		themeMenuItem,
 	)
+
 	helpMenu := fyne.NewMenu("Help",
 		fyne.NewMenuItem("Documentation", func() {
 			u, _ := url.Parse("https://developer.fyne.io")
@@ -303,9 +319,9 @@ func makeMenus() *fyne.MainMenu {
 	saveItem := fyne.NewMenuItem("Save", func() {
 		commitAndSaveData(SAVE_AS_IS, true)
 	})
+
 	saveAsItem := fyne.NewMenuItem("Undefined", func() {})
 	if fileData != nil {
-		fmt.Printf("RE-MENU %t", fileData.IsEncryptedOnDisk())
 		if fileData.IsEncryptedOnDisk() {
 			saveAsItem = fyne.NewMenuItem("Save Un-Encrypted", func() {
 				commitAndSaveData(SAVE_UN_ENCRYPTED, false)
@@ -357,31 +373,21 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 /**
 Section below the tree with Search details and Light and Dark theme buttons
 */
-func makeLHSButtonsAndSearch(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
-	searchEntry := widget.NewEntry()
-	searchEntry.SetText(preferences.GetStringForPathWithFallback(searchLastGoodPrefName, ""))
+func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
+	x := preferences.GetStringList(searchLastGoodPrefName)
+	searchEntry := widget.NewSelectEntry(x)
+	searchEntry.SetText(x[0])
 	c2 := container.New(
 		layout.NewHBoxLayout(),
-		widget.NewCheckWithData("Match Case", findCaseSensitive),
-		widget.NewButtonWithIcon("", theme.SearchIcon(), func() { search(searchEntry.Text) }))
-
+		widget.NewLabel("Find:"),
+		widget.NewButtonWithIcon("", theme.SearchIcon(), func() { search(searchEntry.Text) }),
+		widget.NewCheckWithData("Match Case", findCaseSensitive))
 	c := container.New(
 		layout.NewVBoxLayout(),
 		c2,
 		searchEntry)
-	b := container.New(layout.NewGridLayout(2),
-		widget.NewButton("Dark", func() {
-			setThemeById("dark")
-			t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
-			setPage(*t)
-		}),
-		widget.NewButton("Light", func() {
-			setThemeById("light")
-			t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
-			setPage(*t)
-		}),
-	)
-	return container.NewVBox(widget.NewSeparator(), c, b)
+
+	return container.NewVBox(widget.NewSeparator(), c)
 }
 
 /**
@@ -536,7 +542,8 @@ func search(s string) {
 
 	// Use the sorted keys to populate the result window
 	if len(paths) > 0 {
-		preferences.PutString(searchLastGoodPrefName, s)
+		preferences.PutStringList(searchLastGoodPrefName, s, 10)
+		defer futureSetMainThread(200, MAIN_THREAD_RELOAD_TREE)
 		list := widget.NewList(
 			func() int { return len(paths) },
 			func() fyne.CanvasObject {

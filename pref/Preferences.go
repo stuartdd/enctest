@@ -69,23 +69,73 @@ func (p *PrefData) String() string {
 	return string(output)
 }
 
-func (p *PrefData) PutString(path, value string) error {
-	parent, name := getParentAndName(path)
-	m, s, ok := p.getDataForPath(parent, false)
-	if ok && s != "" {
-		return fmt.Errorf("path %s is an end (leaf) node already", parent)
+func (p *PrefData) PutStringList(path, value string, maxLen int) error {
+	m, name, err := p.createNoteAndReturnNode(path, true)
+	if err != nil {
+		return err
 	}
-	if m == nil {
-		p.makePath(parent)
-		m, _, _ = p.getDataForPath(parent, false)
-		if m == nil {
-			return fmt.Errorf("failed to create node for path %s", path)
+	l := (*m)[name]
+	if l == nil {
+		t := make([]string, 1)
+		t[0] = value
+		(*m)[name] = t
+	} else {
+		tm := make(map[string]bool)
+		tm[value] = true
+		switch x := l.(type) {
+		case []interface{}:
+			for _, v := range x {
+				tm[fmt.Sprintf("%s", v)] = true
+			}
+		case []string:
+			for _, v := range x {
+				tm[v] = true
+			}
 		}
+		t := make([]string, 0)
+		for k := range tm {
+			t = append(t, k)
+			if len(t) >= maxLen {
+				break
+			}
+		}
+		(*m)[name] = t
+	}
+	return nil
+}
+
+func (p *PrefData) PutString(path, value string) error {
+	m, name, err := p.createNoteAndReturnNode(path, true)
+	if err != nil {
+		return err
 	}
 	(*m)[name] = value
 	p.cache[path] = value
 	p.callChangeListeners(path, value)
 	return nil
+}
+
+func (p *PrefData) createNoteAndReturnNode(path string, parent bool) (*map[string]interface{}, string, error) {
+	var target string
+	name := ""
+	if parent {
+		target, name = getParentAndName(path)
+	} else {
+		target = path
+	}
+	m, s, ok := p.getMapDataForPath(target, false)
+	if ok && s != "" && parent {
+		return nil, "", fmt.Errorf("parent path %s exists but is a leaf node", target)
+	}
+	if m != nil {
+		return m, name, nil
+	}
+	p.makePath(target)
+	m, _, _ = p.getMapDataForPath(target, false)
+	if m == nil {
+		return nil, "", fmt.Errorf("failed to create node for path %s", target)
+	}
+	return m, name, nil
 }
 
 func (p *PrefData) PutBool(path string, value bool) error {
@@ -124,15 +174,26 @@ func (p *PrefData) GetFloat32WithFallback(path string, fb float32) float32 {
 }
 
 func (p *PrefData) GetStringForPathWithFallback(path, fb string) string {
-	_, v, ok := p.getDataForPath(path, true)
+	_, v, ok := p.getMapDataForPath(path, true)
 	if ok {
 		return v
 	}
 	return fb
 }
 
+func (p *PrefData) GetStringList(path string) []string {
+	l := p.getListDataForPath(path)
+	if l != nil {
+		return l
+	} else {
+		ll := make([]string, 1)
+		ll[0] = ""
+		return ll
+	}
+}
+
 func (p *PrefData) GetDataForPath(path string) (*map[string]interface{}, string, bool) {
-	return p.getDataForPath(path, true)
+	return p.getMapDataForPath(path, true)
 }
 
 func (p *PrefData) makePath(path string) error {
@@ -151,7 +212,41 @@ func (p *PrefData) makePath(path string) error {
 	return nil
 }
 
-func (p *PrefData) getDataForPath(path string, cache bool) (*map[string]interface{}, string, bool) {
+func (p *PrefData) getListDataForPath(path string) []string {
+	list := make([]string, 0)
+	nodes := strings.Split(path, ".")
+	if nodes[0] == "" {
+		return nil
+	}
+	x := p.data
+	for _, v := range nodes {
+		y := x[v]
+		if y == nil {
+			return nil
+		}
+		if reflect.TypeOf(y).Kind() == reflect.Slice {
+			if reflect.TypeOf(y).Elem().Kind() == reflect.String {
+				s := y.([]string)
+				list = append(list, s...)
+			} else {
+				s := y.([]interface{})
+				for _, v := range s {
+					list = append(list, fmt.Sprintf("%s", v))
+				}
+			}
+			return list
+		} else {
+			if reflect.TypeOf(y).Kind() == reflect.String {
+				list = append(list, y.(string))
+				return list
+			}
+			x = y.(map[string]interface{})
+		}
+	}
+	return nil
+}
+
+func (p *PrefData) getMapDataForPath(path string, cache bool) (*map[string]interface{}, string, bool) {
 	if cache {
 		cached, ok := p.cache[path]
 		if ok {

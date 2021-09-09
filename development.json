@@ -1,15 +1,19 @@
 {
-    "data": {
-        "positional": "true"
-    },
     "datafile": "libtest/TestDataTypes.json",
     "screen": {
         "fullScreen": "false",
-        "height": "618.571472",
-        "split": "0.317994",
-        "width": "1032.857178"
+        "height": "477.142883",
+        "split": "0.332050",
+        "width": "977.142883"
     },
     "search": {
-        "case": "true"
-    }
+        "case": "true",
+        "lastGoodList": [
+            "application",
+            "post",
+            "userId",
+            "note"
+        ]
+    },
+    "theme": "dark"
 }
