@@ -11,10 +11,11 @@ import (
 )
 
 type FileData struct {
-	fileName string
-	key      []byte
-	content  []byte
-	isEmpty  bool
+	fileName        string
+	key             []byte
+	content         []byte
+	isEmpty         bool
+	encryptedOnDisk bool
 }
 
 /**
@@ -28,7 +29,7 @@ var (
 )
 
 func NewFileData(fName string) (*FileData, error) {
-	fd := FileData{fileName: fName, content: make([]byte, 0), key: make([]byte, 0), isEmpty: false}
+	fd := FileData{fileName: fName, content: make([]byte, 0), key: make([]byte, 0), isEmpty: false, encryptedOnDisk: false}
 	return &fd, fd.loadData()
 }
 
@@ -45,26 +46,37 @@ func (r *FileData) DecryptContents(encKey []byte) error {
 	return nil
 }
 
-func (r *FileData) StoreContentEncrypted(encKey []byte) error {
+func (r *FileData) StoreContentEncrypted(encKey []byte, callbackWhenDone func()) error {
 	cont, err := encrypt(encKey, r.content)
 	if err != nil {
 		return err
 	}
 	err = r.storeData(cont)
+	if err != nil {
+		return err
+	}
+	r.encryptedOnDisk = true
 	r.key = encKey
-	return err
+	callbackWhenDone()
+	return nil
 }
 
-func (r *FileData) StoreContentUnEncrypted() error {
+func (r *FileData) StoreContentUnEncrypted(callbackWhenDone func()) error {
 	r.key = make([]byte, 0)
-	return r.storeData(r.content)
+	r.encryptedOnDisk = false
+	err := r.storeData(r.content)
+	if err != nil {
+		return err
+	}
+	callbackWhenDone()
+	return nil
 }
 
-func (r *FileData) StoreContentAsIs() error {
+func (r *FileData) StoreContentAsIs(callbackWhenDone func()) error {
 	if r.HasEncData() {
-		return r.StoreContentEncrypted(r.key)
+		return r.StoreContentEncrypted(r.key, callbackWhenDone)
 	} else {
-		return r.storeData(r.content)
+		return r.StoreContentUnEncrypted(callbackWhenDone)
 	}
 }
 
@@ -83,7 +95,7 @@ func (r *FileData) IsRawJson() bool {
 }
 
 func (r *FileData) HasEncData() bool {
-	return len(r.key) != 0
+	return len(r.key) > 0
 }
 
 func (r *FileData) GetFileName() string {
@@ -100,6 +112,10 @@ func (r *FileData) GetContentString() string {
 
 func (r *FileData) IsEmpty() bool {
 	return r.isEmpty
+}
+
+func (r *FileData) IsEncryptedOnDisk() bool {
+	return r.encryptedOnDisk
 }
 
 func (r *FileData) SetContent(data []byte) {
@@ -121,6 +137,7 @@ func (r *FileData) loadData() error {
 		return err
 	}
 	r.content = dat
+	r.encryptedOnDisk = !r.IsRawJson()
 	return nil
 }
 

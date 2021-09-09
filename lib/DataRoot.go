@@ -153,7 +153,7 @@ func (p *DataRoot) AddUser(userName string) error {
 
 	newUser := make(map[string]interface{})
 	addHint("application", userName, newUser)
-	addNote(userName, "note", newUser)
+	addNoteItem(userName, "note", newUser)
 
 	groups[userName] = newUser
 	p.navIndex = createNavIndex(p.dataMap)
@@ -161,29 +161,49 @@ func (p *DataRoot) AddUser(userName string) error {
 	return nil
 }
 
-func (p *DataRoot) AddNote(userName, noteName string) error {
+func (p *DataRoot) AddNoteItem(userName, noteName string) error {
 	user, _ := GetMapForUid(userName, &p.dataMap)
 	if user == nil {
 		return fmt.Errorf("user name '%s' does not exists", userName)
 	}
-	path, err := addNote(userName, noteName, *user)
+	path, err := addNoteItem(userName, noteName, *user)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Added note:", userName, path, err)
+	p.dataMapUpdated("Added item:", userName, path, err)
 	return err
 }
 
-func (p *DataRoot) AddHint(userName, appName string) error {
+func (p *DataRoot) AddHint(userName, hintName string) error {
 	user, _ := GetMapForUid(userName, &p.dataMap)
 	if user == nil {
 		return fmt.Errorf("user name '%s' does not exists", userName)
 	}
-	path, err := addHint(appName, userName, *user)
+	path, err := addHint(hintName, userName, *user)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Added hint:", userName, path, err)
+	p.dataMapUpdated("Added item:", userName, path, err)
 	return err
 }
 
-func addNote(userName, noteName string, user map[string]interface{}) (string, error) {
+func (p *DataRoot) AddHintItem(userName, hintName, hintItem string) error {
+	user, _ := GetMapForUid(userName, &p.dataMap)
+	if user == nil {
+		return fmt.Errorf("user name '%s' does not exists", userName)
+	}
+	hintPath := userName + "." + hintStr + "." + hintName
+	hint, _ := GetMapForUid(hintPath, &p.dataMap)
+	if hint == nil {
+		return fmt.Errorf("item '%s' does not exists", hintName)
+	}
+	newItem, _ := GetMapForUid(hintPath+"."+hintItem, &p.dataMap)
+	if newItem != nil {
+		return fmt.Errorf("item '%s' already exists", hintItem)
+	}
+	path, err := addHintItem(hintPath, hintItem, *hint)
+	p.navIndex = createNavIndex(p.dataMap)
+	p.dataMapUpdated("Added item:", userName, path, err)
+	return err
+}
+
+func addNoteItem(userName, noteName string, user map[string]interface{}) (string, error) {
 	_, ok := user[noteStr]
 	if !ok {
 		user[noteStr] = make(map[string]interface{})
@@ -194,7 +214,16 @@ func addNote(userName, noteName string, user map[string]interface{}) (string, er
 		notes[noteName] = ""
 		return fmt.Sprintf("%s.%s", userName, noteStr), nil
 	}
-	return "", fmt.Errorf("note '%s' already exists", noteName)
+	return "", fmt.Errorf("item '%s' already exists", noteName)
+}
+
+func addHintItem(hintPath, hintItem string, hint map[string]interface{}) (string, error) {
+	_, ok := hint[hintItem]
+	if !ok {
+		hint[hintItem] = ""
+		return hintPath, nil
+	}
+	return "", fmt.Errorf("item '%s' already exists", hintItem)
 }
 
 func addHint(hintName, userName string, user map[string]interface{}) (string, error) {
@@ -310,6 +339,10 @@ func GetLastId(uid string) string {
 
 func GetUserFromPath(path string) string {
 	return GetFirstPathElements(path, 1)
+}
+
+func GetHintFromPath(path string) string {
+	return GetPathElementAt(path, 2)
 }
 
 func GetFirstPathElements(path string, count int) string {

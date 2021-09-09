@@ -32,10 +32,12 @@ const (
 	MAIN_THREAD_RELOAD_TREE = iota
 	MAIN_THREAD_SELECT      = iota
 	MAIN_THREAD_RESELECT    = iota
+	MAIN_THREAD_RE_MENU     = iota
 
-	ADD_TYPE_USER = iota
-	ADD_TYPE_HINT = iota
-	ADD_TYPE_NOTE = iota
+	ADD_TYPE_USER      = iota
+	ADD_TYPE_HINT      = iota
+	ADD_TYPE_HINT_ITEM = iota
+	ADD_TYPE_NOTE_ITEM = iota
 
 	defaultScreenWidth  = 640
 	defaultScreenHeight = 480
@@ -67,7 +69,6 @@ var (
 	findCaseSensitive     = binding.NewBool()
 	pendingSelection      = ""
 	currentSelection      = ""
-	currentUser           = ""
 	shouldCloseLock       = false
 	mainThreadNextState   = 0
 	loadThreadFileName    = ""
@@ -121,41 +122,6 @@ func main() {
 	/*
 		Create the menus
 	*/
-	saveItem := fyne.NewMenuItem("Save", func() { commitAndSaveData(SAVE_AS_IS, true) })
-	saveEncItem := fyne.NewMenuItem("Save Encrypted", func() { commitAndSaveData(SAVE_ENCRYPTED, false) })
-	saveUnEncItem := fyne.NewMenuItem("Save Un-Encrypted", func() { commitAndSaveData(SAVE_UN_ENCRYPTED, false) })
-
-	newItem := fyne.NewMenu("New",
-		fyne.NewMenuItem("User", addNewUser),
-		fyne.NewMenuItem(preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint"), addNewHint),
-		fyne.NewMenuItem(preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note"), addNewNote),
-	)
-	viewItem := fyne.NewMenu("View",
-		fyne.NewMenuItem("Toggle Full Screen", flipFullScreen),
-		fyne.NewMenuItem("Toggle Positional Data", flipPositionalData),
-	)
-	helpMenu := fyne.NewMenu("Help",
-		fyne.NewMenuItem("Documentation", func() {
-			u, _ := url.Parse("https://developer.fyne.io")
-			_ = a.OpenURL(u)
-		}),
-		fyne.NewMenuItem("Support", func() {
-			u, _ := url.Parse("https://fyne.io/support/")
-			_ = a.OpenURL(u)
-		}),
-		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Sponsor", func() {
-			u, _ := url.Parse("https://github.com/sponsors/fyne-io")
-			_ = a.OpenURL(u)
-		}))
-	mainMenu := fyne.NewMainMenu(
-		// a quit item will be appended to our first menu
-		fyne.NewMenu("File", saveItem, saveEncItem, saveUnEncItem, fyne.NewMenuItemSeparator()),
-		newItem,
-		viewItem,
-		helpMenu,
-	)
-	window.SetMainMenu(mainMenu)
 	window.SetMaster()
 
 	wp := gui.GetWelcomePage("", *preferences)
@@ -170,8 +136,8 @@ func main() {
 	*/
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
 		currentSelection = detailPage.Uid
-		currentUser = lib.GetUserFromPath(currentSelection)
-		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentUser))
+		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), lib.GetUserFromPath(currentSelection)))
+		window.SetMainMenu(makeMenus())
 		navTreeLHS.OpenBranch(currentSelection)
 		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction)}
 		title.Refresh()
@@ -231,12 +197,12 @@ func main() {
 				mainThreadNextState = MAIN_THREAD_RELOAD_TREE
 			case MAIN_THREAD_RELOAD_TREE:
 				// Re-build the main tree view.
-				// Select the root of currentUser if defined.
+				// Select the root of current user if defined.
 				// Init the devider (split)
 				// Populate the window and we are done!
 				navTreeLHS = makeNavTree(setPageRHSFunc)
 				uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
-				fmt.Printf("Refresh current:%s ", uid)
+				fmt.Printf("Refresh current:%s\n", uid)
 				selectTreeElement(uid)
 
 				if splitContainerOffset < 0 {
@@ -248,21 +214,24 @@ func main() {
 				splitContainer.SetOffset(splitContainerOffset)
 
 				window.SetContent(splitContainer)
-				mainThreadNextState = MAIN_THREAD_IDLE
+				mainThreadNextState = MAIN_THREAD_RE_MENU
 			case MAIN_THREAD_RESELECT:
+				fmt.Println("RE-SELECT")
 				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
 				setPageRHSFunc(*t)
 				mainThreadNextState = MAIN_THREAD_IDLE
 			case MAIN_THREAD_SELECT:
-				fmt.Printf("Select pending:%s ", pendingSelection)
+				fmt.Printf("Select pending:%s\n", pendingSelection)
 				selectTreeElement(pendingSelection)
+				mainThreadNextState = MAIN_THREAD_IDLE
+			case MAIN_THREAD_RE_MENU:
+				window.SetMainMenu(makeMenus())
 				mainThreadNextState = MAIN_THREAD_IDLE
 			}
 		}
 	}()
 
 	futureSetMainThread(1000, MAIN_THREAD_LOAD)
-
 	setFullScreen(preferences.GetBoolWithFallback(screenFullPrefName, false))
 	window.ShowAndRun()
 }
@@ -292,6 +261,69 @@ func futureSetMainThread(ms int, status int) {
 		}
 		mainThreadNextState = status
 	}()
+}
+
+func makeMenus() *fyne.MainMenu {
+	hintName := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	noteName := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
+	hint := lib.GetHintFromPath(currentSelection)
+	user := lib.GetUserFromPath(currentSelection)
+
+	n1 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem)
+	n3 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", hintName, user), addNewHint)
+	n4 := fyne.NewMenuItem("User", addNewUser)
+	var newItem *fyne.Menu
+	if hint == "" {
+		newItem = fyne.NewMenu("New", n1, n3, n4)
+	} else {
+		newItem = fyne.NewMenu("New",
+			n1,
+			fyne.NewMenuItem(fmt.Sprintf("%s Item for '%s'", hintName, hint), addNewHintItem),
+			n3, n4)
+	}
+	viewItem := fyne.NewMenu("View",
+		fyne.NewMenuItem(oneOrTheOther(preferences.GetBoolWithFallback(screenFullPrefName, false), "View Windowed", "View Full Screen"), flipFullScreen),
+		fyne.NewMenuItem(oneOrTheOther(preferences.GetBoolWithFallback(gui.DataPositionalPrefName, true), "Hide Positional Data", "Show Positional Data"), flipPositionalData),
+	)
+	helpMenu := fyne.NewMenu("Help",
+		fyne.NewMenuItem("Documentation", func() {
+			u, _ := url.Parse("https://developer.fyne.io")
+			_ = fyne.CurrentApp().OpenURL(u)
+		}),
+		fyne.NewMenuItem("Support", func() {
+			u, _ := url.Parse("https://fyne.io/support/")
+			_ = fyne.CurrentApp().OpenURL(u)
+		}),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("Sponsor", func() {
+			u, _ := url.Parse("https://github.com/sponsors/fyne-io")
+			_ = fyne.CurrentApp().OpenURL(u)
+		}))
+
+	saveItem := fyne.NewMenuItem("Save", func() {
+		commitAndSaveData(SAVE_AS_IS, true)
+	})
+	saveAsItem := fyne.NewMenuItem("Undefined", func() {})
+	if fileData != nil {
+		fmt.Printf("RE-MENU %t", fileData.IsEncryptedOnDisk())
+		if fileData.IsEncryptedOnDisk() {
+			saveAsItem = fyne.NewMenuItem("Save Un-Encrypted", func() {
+				commitAndSaveData(SAVE_UN_ENCRYPTED, false)
+			})
+		} else {
+			saveAsItem = fyne.NewMenuItem("Save Encrypted", func() {
+				commitAndSaveData(SAVE_ENCRYPTED, false)
+			})
+		}
+	}
+
+	return fyne.NewMainMenu(
+		// a quit item will be appended to our first menu
+		fyne.NewMenu("File", saveItem, saveAsItem, fyne.NewMenuItemSeparator()),
+		newItem,
+		viewItem,
+		helpMenu,
+	)
 }
 
 /**
@@ -393,6 +425,7 @@ func dataMapUpdated(desc, user, path string, err error) {
 func flipPositionalData() {
 	p := preferences.GetBoolWithFallback(gui.DataPositionalPrefName, true)
 	preferences.PutBool(gui.DataPositionalPrefName, !p)
+	futureSetMainThread(500, MAIN_THREAD_RE_MENU)
 }
 
 /**
@@ -418,6 +451,7 @@ func setFullScreen(fullScreen bool) {
 		window.Resize(fyne.NewSize(sw, sh))
 	}
 	preferences.PutBool(screenFullPrefName, fullScreen)
+	futureSetMainThread(500, MAIN_THREAD_RE_MENU)
 }
 
 /**
@@ -552,15 +586,28 @@ Selecting the menu to add a hint
 */
 func addNewHint() {
 	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
-	addNewEntity(n+" for "+currentUser, n, ADD_TYPE_HINT)
+	addNewEntity(n+" for ", n, ADD_TYPE_HINT)
 }
 
 /**
-Selecting the menu to add a note
+Selecting the menu to add an item to a hint
 */
-func addNewNote() {
+func addNewHintItem() {
+	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Hint")
+	ch := lib.GetHintFromPath(currentSelection)
+	if ch == "" {
+		dialog.NewInformation("Add New "+n, fmt.Sprintf("A %s needs to be selected", n), window).Show()
+	} else {
+		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_HINT_ITEM)
+	}
+}
+
+/**
+Selecting the menu to add an item to the notes
+*/
+func addNewNoteItem() {
 	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
-	addNewEntity(n+" for "+currentUser, n, ADD_TYPE_NOTE)
+	addNewEntity(n+" Item for ", n, ADD_TYPE_NOTE_ITEM)
 }
 
 /**
@@ -568,6 +615,7 @@ Add an entity to the model.
 Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
 */
 func addNewEntity(head string, name string, addType int) {
+	cu := lib.GetUserFromPath(currentSelection)
 	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", func(accept bool, s string) {
 		if accept {
 			err := validateEntityName(s)
@@ -575,10 +623,12 @@ func addNewEntity(head string, name string, addType int) {
 				switch addType {
 				case ADD_TYPE_USER:
 					err = dataRoot.AddUser(s)
-				case ADD_TYPE_NOTE:
-					err = dataRoot.AddNote(currentUser, s)
+				case ADD_TYPE_NOTE_ITEM:
+					err = dataRoot.AddNoteItem(cu, s)
 				case ADD_TYPE_HINT:
-					err = dataRoot.AddHint(currentUser, s)
+					err = dataRoot.AddHint(cu, s)
+				case ADD_TYPE_HINT_ITEM:
+					err = dataRoot.AddHintItem(cu, lib.GetHintFromPath(currentSelection), s)
 				}
 			}
 			if err != nil {
@@ -649,6 +699,10 @@ func getPasswordAndDecrypt(fd *lib.FileData, message string, fail func(string)) 
 	}
 }
 
+func callbackAfterSave() {
+	defer futureSetMainThread(500, MAIN_THREAD_RE_MENU)
+}
+
 /**
 Commit changes to the model and save it to file.
 If we are saving encrypted then capture a password and encrypt the file
@@ -669,7 +723,7 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 							dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
 							return
 						}
-						err = fileData.StoreContentEncrypted([]byte(value))
+						err = fileData.StoreContentEncrypted([]byte(value), callbackAfterSave)
 						if err != nil {
 							dialog.NewInformation("Save Encrypted File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
 						} else {
@@ -687,9 +741,9 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 				return
 			}
 			if enc == SAVE_AS_IS {
-				err = fileData.StoreContentAsIs()
+				err = fileData.StoreContentAsIs(callbackAfterSave)
 			} else {
-				err = fileData.StoreContentUnEncrypted()
+				err = fileData.StoreContentUnEncrypted(callbackAfterSave)
 			}
 			if err != nil {
 				dialog.NewInformation("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
@@ -775,4 +829,11 @@ func saveChangesConfirm(option bool) {
 		fmt.Println("Quit without saving changes")
 		window.Close()
 	}
+}
+
+func oneOrTheOther(one bool, s1, s2 string) string {
+	if one {
+		return s1
+	}
+	return s2
 }
