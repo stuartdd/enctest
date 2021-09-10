@@ -14,6 +14,7 @@ replace stuartdd.com/pref => ./pref
 
 require (
 	fyne.io/fyne/v2 v2.0.4
+	github.com/fyne-io/fyne-cross v1.1.0 // indirect
 	github.com/go-gl/gl v0.0.0-20210501111010-69f74958bac0 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210727001814-0db043d8d5be // indirect
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect

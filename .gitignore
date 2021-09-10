@@ -1,6 +1,8 @@
 #ignore following file patterns:
 *.log
 *.txt
+*.exe
+fyne-cross/tmp/
 data.json
 config.json
 enctest
