@@ -43,7 +43,8 @@ const (
 	defaultScreenHeight = 480
 
 	allowedCharsInName      = " *@#$%^&*()_+=?"
-	fallbackPreferencesFile = "preferences.json"
+	fallbackPreferencesFile = "config.json"
+	fallbackDataFile        = "data.json"
 
 	dataFilePrefName       = "datafile"
 	themeVarPrefName       = "theme"
@@ -73,23 +74,38 @@ var (
 	mainThreadNextState   = 0
 	loadThreadFileName    = ""
 	countStructureChanges = 0
+
+	debugStepCount = 0
 )
 
+func abortWithUsage(message string) {
+	fmt.Printf(message+"\n  Usage: %s <configfile>\n  Where: <configfile> is a json file. E.g. config.json\n", os.Args[0])
+	fmt.Println("    Minimum content for this file is:\n      {\"datafile\": \"dataFile.json\"}")
+	fmt.Println("    Where \"dataFile.json\" is the name of the required data file")
+	fmt.Println("    This file will be updated by this application")
+	os.Exit(1)
+}
+func debugStep(point string) {
+	fmt.Printf("%d: %s\n", debugStepCount, point)
+	debugStepCount = debugStepCount + 1
+}
+
 func main() {
+	debugStep("Main 0")
+	var prefFile string
 	if len(os.Args) == 1 {
-		fmt.Println("ERROR: Preferences File name not provided")
-		os.Exit(1)
+		prefFile = fallbackPreferencesFile
+	} else {
+		prefFile = os.Args[1]
 	}
-	p, err := pref.NewPrefData(os.Args[1])
+	p, err := pref.NewPrefData(prefFile)
 	if err != nil {
-		fmt.Printf("Failed to load preferences using '%s'", os.Args[1])
-		os.Exit(1)
+		abortWithUsage(fmt.Sprintf("Failed to load configuration file '%s'", prefFile))
 	}
 	preferences = p
 	preferences.AddChangeListener(dataPreferencesChanged, "data.")
 
-	loadThreadFileName = p.GetStringForPathWithFallback(dataFilePrefName, fallbackPreferencesFile)
-	mainThreadNextState = MAIN_THREAD_IDLE
+	loadThreadFileName = p.GetStringForPathWithFallback(dataFilePrefName, fallbackDataFile)
 
 	a := app.NewWithID("stuartdd.enctest")
 	a.Settings().SetTheme(theme2.NewAppTheme(preferences.GetStringForPathWithFallback(themeVarPrefName, "dark")))
@@ -110,14 +126,8 @@ func main() {
 	}))
 
 	window.SetCloseIntercept(shouldClose)
-	go func() {
-		time.Sleep(2 * time.Second)
-		for _, item := range window.MainMenu().Items[0].Items {
-			if item.Label == "Quit" {
-				item.Action = shouldClose
-			}
-		}
-	}()
+
+	debugStep("Main 1")
 
 	/*
 		Create the menus
@@ -152,6 +162,8 @@ func main() {
 			requestMainThreadIn(1000, MAIN_THREAD_LOAD)
 	*/
 	go func() {
+		mainThreadNextState = MAIN_THREAD_IDLE
+		debugStep("Loop 0")
 		/*
 			mainThreadNextState is the action performed by the main loop
 				Each action should leave the state as MAIN_THREAD_IDLE unless a follow on action is required
@@ -164,14 +176,14 @@ func main() {
 				fmt.Println("Load State")
 				fd, err := lib.NewFileData(loadThreadFileName)
 				if err != nil {
-					fmt.Printf("Failed to load data file %s\n", loadThreadFileName)
-					os.Exit(1)
+					abortWithUsage(fmt.Sprintf("Failed to load data file %s\n", loadThreadFileName))
 				}
 				/*
 					While file is ENCRYPTED
 						Get PW and decrypt
 						if Decryption is cancelled the application exits
 				*/
+				debugStep("Loop 1")
 				message := ""
 				for fd.RequiresDecryption() {
 					getPasswordAndDecrypt(fd, message, func(s string) {
@@ -185,14 +197,15 @@ func main() {
 						update the navigation tree
 						select the root element
 				*/
+				debugStep("Loop 2")
 				dr, err := lib.NewDataRoot(fd.GetContent(), dataMapUpdated)
 				if err != nil {
-					fmt.Printf("ERROR: Cannot process data. %s\n", err)
-					os.Exit(1)
+					abortWithUsage(fmt.Sprintf("ERROR: Cannot process data in file '%s'.\n%s\n", loadThreadFileName, err))
 				}
 				fileData = fd
 				dataRoot = dr
 
+				debugStep("Loop 3")
 				// Follow on action to rebuild the Tree and re-display it
 				mainThreadNextState = MAIN_THREAD_RELOAD_TREE
 			case MAIN_THREAD_RELOAD_TREE:
@@ -200,11 +213,13 @@ func main() {
 				// Select the root of current user if defined.
 				// Init the devider (split)
 				// Populate the window and we are done!
+				debugStep("Loop 4")
 				navTreeLHS = makeNavTree(setPageRHSFunc)
+				debugStep("Loop 5")
 				uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
 				fmt.Printf("Refresh current:%s\n", uid)
 				selectTreeElement(uid)
-
+				debugStep("Loop 6")
 				if splitContainerOffset < 0 {
 					splitContainerOffset = splitContainerOffsetPref
 				} else {
@@ -212,9 +227,11 @@ func main() {
 				}
 				splitContainer = container.NewHSplit(container.NewBorder(makeSearchLHS(setPageRHSFunc), nil, nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(splitContainerOffset)
+				debugStep("Loop 7")
 
 				window.SetContent(splitContainer)
 				mainThreadNextState = MAIN_THREAD_RE_MENU
+				debugStep("Loop 8")
 			case MAIN_THREAD_RESELECT:
 				fmt.Println("RE-SELECT")
 				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
@@ -225,15 +242,19 @@ func main() {
 				selectTreeElement(pendingSelection)
 				mainThreadNextState = MAIN_THREAD_IDLE
 			case MAIN_THREAD_RE_MENU:
+				debugStep("Loop 9")
 				window.SetMainMenu(makeMenus())
 				mainThreadNextState = MAIN_THREAD_IDLE
 			}
 		}
 	}()
 
+	debugStep("Main 2")
 	futureSetMainThread(1000, MAIN_THREAD_LOAD)
-	setFullScreen(preferences.GetBoolWithFallback(screenFullPrefName, false))
+	setFullScreen(preferences.GetBoolWithFallback(screenFullPrefName, false), false)
+	debugStep("Main 3")
 	window.ShowAndRun()
+	debugStep("Main 4")
 }
 
 /**
@@ -264,6 +285,7 @@ func futureSetMainThread(ms int, status int) {
 }
 
 func makeMenus() *fyne.MainMenu {
+
 	hintName := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	noteName := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
 	hint := lib.GetHintFromPath(currentSelection)
@@ -333,13 +355,22 @@ func makeMenus() *fyne.MainMenu {
 		}
 	}
 
-	return fyne.NewMainMenu(
+	mainMenu := fyne.NewMainMenu(
 		// a quit item will be appended to our first menu
 		fyne.NewMenu("File", saveItem, saveAsItem, fyne.NewMenuItemSeparator()),
 		newItem,
 		viewItem,
 		helpMenu,
 	)
+	for _, item := range mainMenu.Items[0].Items {
+		if item != nil {
+			if item.Label == "Quit" {
+				item.Action = shouldClose
+			}
+		}
+	}
+
+	return mainMenu
 }
 
 /**
@@ -438,10 +469,10 @@ func flipPositionalData() {
 flip the full screen flag and set the screen to full screen if required
 */
 func flipFullScreen() {
-	setFullScreen(!window.FullScreen())
+	setFullScreen(!window.FullScreen(), true)
 }
 
-func setFullScreen(fullScreen bool) {
+func setFullScreen(fullScreen, refreshMenu bool) {
 	if fullScreen {
 		// Ensure that 0.0 is never stored.
 		if window.Canvas().Size().Width > 1 && window.Canvas().Size().Height > 1 {
@@ -457,7 +488,9 @@ func setFullScreen(fullScreen bool) {
 		window.Resize(fyne.NewSize(sw, sh))
 	}
 	preferences.PutBool(screenFullPrefName, fullScreen)
-	futureSetMainThread(500, MAIN_THREAD_RE_MENU)
+	if refreshMenu {
+		futureSetMainThread(500, MAIN_THREAD_RE_MENU)
+	}
 }
 
 /**
@@ -696,8 +729,7 @@ func getPasswordAndDecrypt(fd *lib.FileData, message string, fail func(string)) 
 			}
 			running = false
 		} else {
-			fmt.Printf("Failed to decrypt data file %s. password was not provided\n", fd.GetFileName())
-			os.Exit(1)
+			abortWithUsage(fmt.Sprintf("Failed to decrypt data file '%s'\nPassword was not provided\n", fd.GetFileName()))
 		}
 	})
 	// This method must not end until OK or Cancel are pressed
