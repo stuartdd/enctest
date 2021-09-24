@@ -465,7 +465,6 @@ func keysToList(id string, m map[string]interface{}) ([]string, []string) {
 		} else {
 			ll = append(ll, fmt.Sprintf("%s.%s", id, k))
 		}
-
 	}
 	sort.Strings(l)
 	sort.Strings(ll)

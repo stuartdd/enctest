@@ -85,8 +85,8 @@ func abortWithUsage(message string) {
 	os.Exit(1)
 }
 func debugStep(point string) {
-	fmt.Printf("%d: %s\n", debugStepCount, point)
-	debugStepCount = debugStepCount + 1
+	//	fmt.Printf("%d: %s\n", debugStepCount, point)
+	//	debugStepCount = debugStepCount + 1
 }
 
 func main() {
