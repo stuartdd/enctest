@@ -353,13 +353,13 @@ func makeMenus() *fyne.MainMenu {
 		viewItem,
 		helpMenu,
 	)
-	for _, item := range mainMenu.Items[0].Items {
-		if item != nil {
-			if item.Label == "Quit" {
-				item.Action = shouldClose
-			}
-		}
-	}
+	// for _, item := range mainMenu.Items[0].Items {
+	// 	if item != nil {
+	// 		if item.Label == "Quit" {
+	// 			item.Action = shouldClose
+	// 		}
+	// 	}
+	// }
 
 	return mainMenu
 }

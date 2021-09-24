@@ -2,17 +2,17 @@
     "datafile": "libtest/TestDataTypes.json",
     "screen": {
         "fullScreen": "false",
-        "height": "471.904785",
+        "height": "497.619080",
         "split": "0.332050",
-        "width": "956.190491"
+        "width": "953.333374"
     },
     "search": {
         "case": "true",
         "lastGoodList": [
-            "application",
             "post",
             "userId",
-            "note"
+            "note",
+            "application"
         ]
     },
     "theme": "light"
