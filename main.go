@@ -28,7 +28,6 @@ const (
 	SAVE_ENCRYPTED          = iota
 	SAVE_UN_ENCRYPTED       = iota
 	MAIN_THREAD_LOAD        = iota
-	MAIN_THREAD_IDLE        = iota
 	MAIN_THREAD_RELOAD_TREE = iota
 	MAIN_THREAD_SELECT      = iota
 	MAIN_THREAD_RESELECT    = iota
@@ -71,11 +70,11 @@ var (
 	pendingSelection      = ""
 	currentSelection      = ""
 	shouldCloseLock       = false
-	mainThreadNextState   = 0
 	loadThreadFileName    = ""
 	countStructureChanges = 0
 
-	debugStepCount = 0
+	debugStepCount  = 0
+	releaseTheBeast = make(chan int, 5)
 )
 
 func abortWithUsage(message string) {
@@ -162,15 +161,15 @@ func main() {
 			requestMainThreadIn(1000, MAIN_THREAD_LOAD)
 	*/
 	go func() {
-		mainThreadNextState = MAIN_THREAD_IDLE
 		debugStep("Loop 0")
 		/*
-			mainThreadNextState is the action performed by the main loop
-				Each action should leave the state as MAIN_THREAD_IDLE unless a follow on action is required
+			queue a valid state on the the channel to releaseTheBeast
 		*/
-		ticker := time.NewTicker(100 * time.Millisecond)
-		for range ticker.C {
-			switch mainThreadNextState {
+		for { // EVER
+
+			taskForTheBeast := <-releaseTheBeast
+
+			switch taskForTheBeast {
 			case MAIN_THREAD_LOAD:
 				// Load the file and decrypt it if required
 				fmt.Println("Load State")
@@ -207,7 +206,7 @@ func main() {
 
 				debugStep("Loop 3")
 				// Follow on action to rebuild the Tree and re-display it
-				mainThreadNextState = MAIN_THREAD_RELOAD_TREE
+				futureReleaseTheBeast(0, MAIN_THREAD_RELOAD_TREE)
 			case MAIN_THREAD_RELOAD_TREE:
 				// Re-build the main tree view.
 				// Select the root of current user if defined.
@@ -228,29 +227,25 @@ func main() {
 				splitContainer = container.NewHSplit(container.NewBorder(makeSearchLHS(setPageRHSFunc), nil, nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(splitContainerOffset)
 				debugStep("Loop 7")
-
 				window.SetContent(splitContainer)
-				mainThreadNextState = MAIN_THREAD_RE_MENU
+				futureReleaseTheBeast(0, MAIN_THREAD_RE_MENU)
 				debugStep("Loop 8")
 			case MAIN_THREAD_RESELECT:
 				fmt.Println("RE-SELECT")
 				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
 				setPageRHSFunc(*t)
-				mainThreadNextState = MAIN_THREAD_IDLE
 			case MAIN_THREAD_SELECT:
 				fmt.Printf("Select pending:%s\n", pendingSelection)
 				selectTreeElement(pendingSelection)
-				mainThreadNextState = MAIN_THREAD_IDLE
 			case MAIN_THREAD_RE_MENU:
 				debugStep("Loop 9")
 				window.SetMainMenu(makeMenus())
-				mainThreadNextState = MAIN_THREAD_IDLE
 			}
 		}
 	}()
 
 	debugStep("Main 2")
-	futureSetMainThread(1000, MAIN_THREAD_LOAD)
+	futureReleaseTheBeast(1000, MAIN_THREAD_LOAD)
 	setFullScreen(preferences.GetBoolWithFallback(screenFullPrefName, false), false)
 	debugStep("Main 3")
 	window.ShowAndRun()
@@ -269,19 +264,15 @@ func selectTreeElement(uid string) {
 	navTreeLHS.Select(uid)
 }
 
-func futureSetMainThread(ms int, status int) {
-	go func() {
-		time.Sleep(time.Duration(ms) * time.Millisecond)
-		count := 100
-		for mainThreadNextState != MAIN_THREAD_IDLE {
-			time.Sleep(100 * time.Millisecond)
-			count--
-			if count <= 0 {
-				return
-			}
-		}
-		mainThreadNextState = status
-	}()
+func futureReleaseTheBeast(ms int, status int) {
+	if ms == 0 {
+		releaseTheBeast <- status
+	} else {
+		go func() {
+			time.Sleep(time.Duration(ms) * time.Millisecond)
+			releaseTheBeast <- status
+		}()
+	}
 }
 
 func makeMenus() *fyne.MainMenu {
@@ -308,12 +299,12 @@ func makeMenus() *fyne.MainMenu {
 	if preferences.GetStringForPathWithFallback(themeVarPrefName, "dark") == "dark" {
 		themeMenuItem = fyne.NewMenuItem("Light Theme", func() {
 			setThemeById("light")
-			futureSetMainThread(300, MAIN_THREAD_RESELECT)
+			futureReleaseTheBeast(300, MAIN_THREAD_RESELECT)
 		})
 	} else {
 		themeMenuItem = fyne.NewMenuItem("Dark Theme", func() {
 			setThemeById("dark")
-			futureSetMainThread(300, MAIN_THREAD_RESELECT)
+			futureReleaseTheBeast(300, MAIN_THREAD_RESELECT)
 		})
 	}
 
@@ -430,7 +421,7 @@ func controlActionFunction(action string, uid string) {
 }
 
 func dataPreferencesChanged(path, value, filter string) {
-	futureSetMainThread(100, MAIN_THREAD_RESELECT)
+	futureReleaseTheBeast(100, MAIN_THREAD_RESELECT)
 }
 
 /**
@@ -456,13 +447,13 @@ func dataMapUpdated(desc, user, path string, err error) {
 		currentSelection = path
 		countStructureChanges++
 	}
-	futureSetMainThread(100, MAIN_THREAD_RELOAD_TREE)
+	futureReleaseTheBeast(100, MAIN_THREAD_RELOAD_TREE)
 }
 
 func flipPositionalData() {
 	p := preferences.GetBoolWithFallback(gui.DataPositionalPrefName, true)
 	preferences.PutBool(gui.DataPositionalPrefName, !p)
-	futureSetMainThread(500, MAIN_THREAD_RE_MENU)
+	futureReleaseTheBeast(500, MAIN_THREAD_RE_MENU)
 }
 
 /**
@@ -489,7 +480,7 @@ func setFullScreen(fullScreen, refreshMenu bool) {
 	}
 	preferences.PutBool(screenFullPrefName, fullScreen)
 	if refreshMenu {
-		futureSetMainThread(500, MAIN_THREAD_RE_MENU)
+		futureReleaseTheBeast(500, MAIN_THREAD_RE_MENU)
 	}
 }
 
@@ -576,7 +567,7 @@ func search(s string) {
 	// Use the sorted keys to populate the result window
 	if len(paths) > 0 {
 		preferences.PutStringList(searchLastGoodPrefName, s, 10)
-		defer futureSetMainThread(200, MAIN_THREAD_RELOAD_TREE)
+		defer futureReleaseTheBeast(200, MAIN_THREAD_RELOAD_TREE)
 		list := widget.NewList(
 			func() int { return len(paths) },
 			func() fyne.CanvasObject {
@@ -590,7 +581,7 @@ func search(s string) {
 		// pendingSelection is the path to the selected item
 		list.OnSelected = func(id widget.ListItemID) {
 			pendingSelection = mapPaths[paths[id]]
-			futureSetMainThread(100, MAIN_THREAD_SELECT)
+			futureReleaseTheBeast(100, MAIN_THREAD_SELECT)
 		}
 		go showSearchResultsWindow(window.Canvas().Size().Width/2, window.Canvas().Size().Height/2, list)
 	} else {
@@ -739,7 +730,7 @@ func getPasswordAndDecrypt(fd *lib.FileData, message string, fail func(string)) 
 }
 
 func callbackAfterSave() {
-	defer futureSetMainThread(500, MAIN_THREAD_RE_MENU)
+	defer futureReleaseTheBeast(500, MAIN_THREAD_RE_MENU)
 }
 
 /**
