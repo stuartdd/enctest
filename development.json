@@ -4,7 +4,7 @@
         "fullScreen": "false",
         "height": "471.904785",
         "split": "0.332050",
-        "width": "959.047668"
+        "width": "956.190491"
     },
     "search": {
         "case": "true",
@@ -15,5 +15,5 @@
             "note"
         ]
     },
-    "theme": "dark"
+    "theme": "light"
 }
