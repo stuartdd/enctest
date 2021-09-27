@@ -46,20 +46,20 @@ func NewJsonData(j []byte, dataMapUpdated func(string, string, string, error)) (
 	return dr, nil
 }
 
-func (r *JsonData) GetTimeStamp() time.Time {
-	return r.timeStamp
+func (p *JsonData) GetTimeStamp() time.Time {
+	return p.timeStamp
 }
 
-func (r *JsonData) GetNavIndex(id string) []string {
-	return r.navIndex[id]
+func (p *JsonData) GetNavIndex(id string) []string {
+	return p.navIndex[id]
 }
 
-func (r *JsonData) GetDataRoot() parser.NodeI {
-	return r.dataMap
+func (p *JsonData) GetDataRoot() parser.NodeI {
+	return p.dataMap
 }
 
-func (r *JsonData) ToJson() string {
-	return r.dataMap.String()
+func (p *JsonData) ToJson() string {
+	return p.dataMap.String()
 }
 
 func (p *JsonData) Search(addPath func(string, string), needle string, matchCase bool) {
@@ -67,6 +67,53 @@ func (p *JsonData) Search(addPath func(string, string), needle string, matchCase
 	for _, v := range groups.GetValues() {
 		searchUsers(addPath, needle, v.GetName(), v.(*parser.JsonObject), matchCase)
 	}
+}
+
+func (p *JsonData) Rename(uid string, newName string) error {
+	n, err := p.GetUserDataForUid(uid)
+	if err != nil {
+		return fmt.Errorf("the item to rename '%s' was not found in the data", uid)
+	}
+	n.SetName(newName)
+	p.navIndex = *createNavIndex(p.dataMap)
+	p.dataMapUpdated("Rename", GetUserFromPath(uid), GetParentId(uid)+"."+newName, nil)
+	return nil
+}
+
+func (p *JsonData) Remove(uid string, min int) error {
+	n, err := p.GetUserDataForUid(uid)
+	if err != nil {
+		return fmt.Errorf("the item to remove '%s' was not found in the data", uid)
+	}
+	_, parent, ok := parser.FindNode(p.dataMap, n)
+	if !ok {
+		return fmt.Errorf("the item to remove '%s' does not have a valid parent", uid)
+	}
+	if parent.GetNodeType() != parser.NT_OBJECT {
+		return fmt.Errorf("the item to remove '%s' does not have an object parent", uid)
+	}
+	parentObj := parent.(*parser.JsonObject)
+	count := parentObj.Len()
+	if count <= min {
+		return fmt.Errorf("there must be at least %d element(s) remaining in this item", min)
+	}
+	parentObj.RemoveNode(p.dataMap, n)
+	p.navIndex = *createNavIndex(p.dataMap)
+	p.dataMapUpdated("Removed", GetUserFromPath(uid), GetParentId(uid), nil)
+	return nil
+}
+
+func (p *JsonData) GetUserDataForUid(uid string) (parser.NodeI, error) {
+	return GetUserDataForUid(p.GetDataRoot(), uid)
+}
+
+func GetUserDataForUid(root parser.NodeI, uid string) (parser.NodeI, error) {
+	fmt.Printf("JsonData:GetMapForUid.uid: %s\n", dataMapRootName+"."+uid)
+	nodes, err := parser.Find(root, dataMapRootName+"."+uid)
+	if err != nil {
+		return nil, err
+	}
+	return nodes, nil
 }
 
 func searchUsers(addPath func(string, string), needle, user string, m *parser.JsonObject, matchCase bool) {
@@ -124,14 +171,6 @@ func containsWithCase(haystack, needle string, matchCase bool) bool {
 		n := strings.ToLower(needle)
 		return strings.Contains(h, n)
 	}
-}
-
-func GetMapForUid(uid string, m parser.NodeI) (parser.NodeI, error) {
-	nodes, err := parser.Find(m, dataMapRootName+"."+uid)
-	if err != nil {
-		return nil, err
-	}
-	return nodes, nil
 }
 
 func createNavIndex(m parser.NodeI) *map[string][]string {

@@ -17,6 +17,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/stuartdd/jsonParserGo/parser"
 	"stuartdd.com/gui"
 	"stuartdd.com/lib"
 	"stuartdd.com/pref"
@@ -145,6 +146,7 @@ func main() {
 	*/
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
 		currentSelection = detailPage.Uid
+		fmt.Printf("setPageRHSFunc:currentSelection = %s\n", currentSelection)
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), lib.GetUserFromPath(currentSelection)))
 		window.SetMainMenu(makeMenus())
 		navTreeLHS.OpenBranch(currentSelection)
@@ -161,7 +163,6 @@ func main() {
 			requestMainThreadIn(1000, MAIN_THREAD_LOAD)
 	*/
 	go func() {
-		debugStep("Loop 0")
 		/*
 			queue a valid state on the the channel to releaseTheBeast
 		*/
@@ -386,6 +387,7 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
+			fmt.Printf("makeNavTree:OnSelected.uid = %s\n", uid)
 			t := gui.GetDetailPage(uid, dataRoot.GetDataRoot(), *preferences)
 			setPage(*t)
 		},
@@ -416,7 +418,7 @@ func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 This is called when a heading button is pressed of the RH page
 */
 func controlActionFunction(action string, uid string) {
-	fmt.Printf("Control %s %s\n", action, uid)
+	fmt.Printf("controlActionFunction:action: %s uid: %s\n", action, uid)
 	viewActionFunction(action, uid)
 }
 
@@ -443,7 +445,7 @@ Called if there is a structural change in the model
 */
 func dataMapUpdated(desc, user, path string, err error) {
 	if err == nil {
-		fmt.Printf("Updated: %s User: %s Path:%s\n", desc, user, path)
+		fmt.Printf("dataMapUpdated:desc: %s user: %s path %s\n %s\n", desc, user, path, parser.DiagnosticList(dataRoot.GetDataRoot()))
 		currentSelection = path
 		countStructureChanges++
 	}
@@ -489,13 +491,12 @@ Remove a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
 func removeAction(uid string) {
-	fmt.Println("to-do main.removeAction to be implemented")
-	// dialog.NewConfirm("Remove entry", fmt.Sprintf("%s\nAre you sure?", uid), func(b bool) {
-	// 	err := dataRoot.Remove(uid, 1)
-	// 	if err != nil {
-	// 		dialog.NewInformation("Remove item error", err.Error(), window).Show()
-	// 	}
-	// }, window).Show()
+	dialog.NewConfirm("Remove entry", fmt.Sprintf("%s\nAre you sure?", uid), func(b bool) {
+		err := dataRoot.Remove(uid, 1)
+		if err != nil {
+			dialog.NewInformation("Remove item error", err.Error(), window).Show()
+		}
+	}, window).Show()
 }
 
 /**
@@ -503,28 +504,27 @@ Rename a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
 func renameAction(uid string) {
-	fmt.Println("to-do main.renameAction to be implemented")
-	// m, _ := dataRoot.GetDataForUid(uid)
-	// if m != nil {
-	// 	fromName := lib.GetLastId(uid)
-	// 	gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", func(accept bool, s string) {
-	// 		if accept {
-	// 			err := validateEntityName(s)
-	// 			if err != nil {
-	// 				dialog.NewInformation("Name validation error", err.Error(), window).Show()
-	// 			} else {
-	// 				if fromName == s {
-	// 					dialog.NewInformation("Rename item error", "Rename to the same name", window).Show()
-	// 				} else {
-	// 					err := dataRoot.Rename(uid, s)
-	// 					if err != nil {
-	// 						dialog.NewInformation("Rename item error", err.Error(), window).Show()
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	})
-	// }
+	m, _ := dataRoot.GetMapForUid(uid)
+	if m != nil {
+		fromName := lib.GetLastId(uid)
+		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", func(accept bool, s string) {
+			if accept {
+				err := validateEntityName(s)
+				if err != nil {
+					dialog.NewInformation("Name validation error", err.Error(), window).Show()
+				} else {
+					if fromName == s {
+						dialog.NewInformation("Rename item error", "Rename to the same name", window).Show()
+					} else {
+						err := dataRoot.Rename(uid, s)
+						if err != nil {
+							dialog.NewInformation("Rename item error", err.Error(), window).Show()
+						}
+					}
+				}
+			}
+		})
+	}
 }
 
 /**

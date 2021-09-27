@@ -40,8 +40,9 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.5.1 h1:nOGnQDM7FYENwehXlg/kFVnos3rEvtKTjRvOWSzb6H4=
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
-github.com/stuartdd/jsonParserGo/parser v0.0.0-20210927140835-3e3dd8752dcd h1:hkQ5KbfncnLtE0Hg0dQiH6p99lBkbW28HSokBpns8NM=
 github.com/stuartdd/jsonParserGo/parser v0.0.0-20210927140835-3e3dd8752dcd/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20210927161047-24db436d1ca7 h1:YKPxeSuXMqUHk6JIoWbV+vjutczFTOaVIOrSgtb4Ohs=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20210927161047-24db436d1ca7/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/goldmark v1.3.8 h1:Nw158Q8QN+CPgTmVRByhVwapp8Mm1e2blinhmx4wx5E=

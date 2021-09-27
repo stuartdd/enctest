@@ -96,7 +96,7 @@ func (p *EditEntry) SetNew(s string) {
 }
 
 func (p *EditEntry) CommitEdit(data parser.NodeI) bool {
-	m, _ := lib.GetMapForUid(p.Path, data)
+	m, _ := lib.GetUserDataForUid(data, p.Path)
 	if m != nil {
 		switch m.GetNodeType() {
 		case parser.NT_STRING:
@@ -179,7 +179,7 @@ func NewDetailPage(
 }
 
 func (p *DetailPage) GetObjectsForUid() *parser.JsonObject {
-	m, err := lib.GetMapForUid(p.Uid, p.DataRootMap)
+	m, err := lib.GetUserDataForUid(p.DataRootMap, p.Uid)
 	if err != nil {
 		panic(fmt.Sprintf("DetailPage.GetMapForUid. Uid '%s' not found. %s", p.Uid, err.Error()))
 	}

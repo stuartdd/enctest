@@ -18,7 +18,7 @@ require (
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
-	github.com/stuartdd/jsonParserGo/parser v0.0.0-20210927140835-3e3dd8752dcd
+	github.com/stuartdd/jsonParserGo/parser v0.0.0-20210927161047-24db436d1ca7
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect

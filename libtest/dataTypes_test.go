@@ -73,14 +73,14 @@ func TestGetLastId(t *testing.T) {
 	}
 }
 
-func TestGetMapForMapId(t *testing.T) {
+func TestGetDataForSelectedId(t *testing.T) {
 	loadDataMap(dataFileName)
-	m, err := lib.GetMapForUid("", mapData.GetDataRoot())
-	if !strings.HasPrefix(toJson(m), "{\"groups\":{\"UserA\":{\"notes\":{\"dsdfsdfs\":\"") {
-		log.Fatal("1. GetMapForUid fail. should return whole json")
-	}
+	m, err := lib.GetUserDataForUid(mapData.GetDataRoot(), "UserA")
 	if err != nil {
-		log.Fatal("1. GetMapForUid fail. String value should be empty")
+		log.Fatalf("1. GetMapForUid fail. should not return error: '%s'", err.Error())
+	}
+	if !strings.HasPrefix(toJson(m), "\"UserA\":{\"") {
+		log.Fatalf("1. GetMapForUid fail. should return user json: actual: '%s'", toJson(m))
 	}
 
 	// m, s = lib.GetMapForUid("UserB.pwHints.GMail B", mapData.GetDataRootMap())
