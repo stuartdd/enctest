@@ -2,11 +2,13 @@ package gui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/stuartdd/jsonParserGo/parser"
 	"stuartdd.com/lib"
 	"stuartdd.com/pref"
 	"stuartdd.com/theme2"
@@ -35,7 +37,7 @@ type DetailPage struct {
 	Uid, Heading, Title, User string
 	ViewFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject
 	CntlFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject
-	DataRootMap               *map[string]interface{}
+	DataRootMap               parser.NodeI
 	Preferences               pref.PrefData
 }
 
@@ -93,13 +95,22 @@ func (p *EditEntry) SetNew(s string) {
 	p.updateButtons()
 }
 
-func (p *EditEntry) CommitEdit(data *map[string]interface{}) bool {
+func (p *EditEntry) CommitEdit(data parser.NodeI) bool {
 	m, _ := lib.GetMapForUid(p.Path, data)
 	if m != nil {
-		n := *m
-		n[p.Title] = p.New
+		switch m.GetNodeType() {
+		case parser.NT_STRING:
+			m.(*parser.JsonString).SetValue(p.New)
+		case parser.NT_BOOL:
+			m.(*parser.JsonBool).SetValue(p.New == "true")
+		case parser.NT_NUMBER:
+			f, err := strconv.ParseFloat(p.New, 64)
+			if err != nil {
+				return false
+			}
+			m.(*parser.JsonNumber).SetValue(f)
+		}
 		p.Old = p.New
-		p.SetNew(p.New)
 		return true
 	}
 	return false
@@ -157,7 +168,7 @@ func NewDetailPage(
 	user string,
 	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject,
 	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject,
-	dataRootMap *map[string]interface{},
+	dataRootMap parser.NodeI,
 	preferences pref.PrefData) *DetailPage {
 
 	heading := fmt.Sprintf("User:  %s", title)
@@ -167,9 +178,12 @@ func NewDetailPage(
 	return &DetailPage{Uid: uid, Heading: heading, Title: title, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, DataRootMap: dataRootMap, Preferences: preferences}
 }
 
-func (p *DetailPage) GetMapForUid() *map[string]interface{} {
+func (p *DetailPage) GetObjectsForUid() *parser.JsonObject {
 	m, _ := lib.GetMapForUid(p.Uid, p.DataRootMap)
-	return m
+	if m.GetNodeType() == parser.NT_OBJECT {
+		return m.(*parser.JsonObject)
+	}
+	panic("DetailPage.GetMapForUid must only return JsonObject types")
 }
 
 func parseStringForLink(s string) (string, bool) {

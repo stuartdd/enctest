@@ -29,7 +29,7 @@ func TestJsonDataLoad(t *testing.T) {
 }
 
 func testNavIndex(t *testing.T, jd *lib.JsonData, name, contains string) {
-	ni := jd.GetNavIndex2(name)
+	ni := jd.GetNavIndex(name)
 	if ni == nil {
 		t.Errorf("GetNavIndex2(\"%s\") returned nil", name)
 	}

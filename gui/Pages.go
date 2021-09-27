@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/stuartdd/jsonParserGo/parser"
 	"stuartdd.com/pref"
 	"stuartdd.com/theme2"
 )
@@ -46,7 +47,7 @@ func GetWelcomePage(id string, preferences pref.PrefData) *DetailPage {
 	return NewDetailPage(id, "", welcomeTitle, welcomeScreen, welcomeControls, nil, preferences)
 }
 
-func GetDetailPage(id string, dataRootMap *map[string]interface{}, preferences pref.PrefData) *DetailPage {
+func GetDetailPage(id string, dataRootMap parser.NodeI, preferences pref.PrefData) *DetailPage {
 	nodes := strings.Split(id, ".")
 	user := nodes[0]
 	hintsAreCalled := preferences.GetStringForPathWithFallback(DataHintIsCalledPrefName, "Hint")
@@ -138,11 +139,11 @@ func notesControls(_ fyne.Window, details DetailPage, actionFunc func(string, st
 }
 
 func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject {
-	data := *details.GetMapForUid()
+	data := details.GetObjectsForUid()
 	cObj := make([]fyne.CanvasObject, 0)
 	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
 	for _, k := range keys {
-		v := data[k]
+		v := data.GetNodeWithName(k)
 		idd := details.Uid + "." + k
 		e, ok := EditEntryList[idd]
 		if !ok {
@@ -183,11 +184,11 @@ func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(action str
 }
 
 func hintsScreen(_ fyne.Window, details DetailPage, actionFunc func(action string, uid string)) fyne.CanvasObject {
-	data := *details.GetMapForUid()
+	data := details.GetObjectsForUid()
 	cObj := make([]fyne.CanvasObject, 0)
 	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
 	for _, k := range keys {
-		v := data[k]
+		v := data.GetNodeWithName(k)
 		idd := details.Uid + "." + k
 		e, ok := EditEntryList[idd]
 		if !ok {
@@ -215,11 +216,8 @@ func hintsScreen(_ fyne.Window, details DetailPage, actionFunc func(action strin
 	return container.NewVBox(cObj...)
 }
 
-func listOfNonDupeInOrderKeys(m map[string]interface{}, ordered []string) []string {
-	keys := make([]string, 0)
-	for k := range m {
-		keys = append(keys, k)
-	}
+func listOfNonDupeInOrderKeys(m *parser.JsonObject, ordered []string) []string {
+	keys := m.GetSortedKeys()
 	sort.Strings(keys)
 	for _, s := range ordered {
 		pos, found := contains(keys, s)

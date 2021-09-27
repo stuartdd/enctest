@@ -59,7 +59,7 @@ var (
 	window                   fyne.Window
 	searchWindow             fyne.Window
 	fileData                 *lib.FileData
-	dataRoot                 *lib.DataRoot
+	dataRoot                 *lib.JsonData
 	preferences              *pref.PrefData
 	navTreeLHS               *widget.Tree
 	splitContainer           *container.Split // So we can save the divider position to preferences.
@@ -197,7 +197,7 @@ func main() {
 						select the root element
 				*/
 				debugStep("Loop 2")
-				dr, err := lib.NewDataRoot(fd.GetContent(), dataMapUpdated)
+				dr, err := lib.NewJsonData(fd.GetContent(), dataMapUpdated)
 				if err != nil {
 					abortWithUsage(fmt.Sprintf("ERROR: Cannot process data in file '%s'.\n%s\n", loadThreadFileName, err))
 				}
@@ -232,7 +232,7 @@ func main() {
 				debugStep("Loop 8")
 			case MAIN_THREAD_RESELECT:
 				fmt.Println("RE-SELECT")
-				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRootMap(), *preferences)
+				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRoot(), *preferences)
 				setPageRHSFunc(*t)
 			case MAIN_THREAD_SELECT:
 				fmt.Printf("Select pending:%s\n", pendingSelection)
@@ -382,11 +382,11 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 			return widget.NewLabel("?")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap(), *preferences)
+			t := gui.GetDetailPage(uid, dataRoot.GetDataRoot(), *preferences)
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
-			t := gui.GetDetailPage(uid, dataRoot.GetDataRootMap(), *preferences)
+			t := gui.GetDetailPage(uid, dataRoot.GetDataRoot(), *preferences)
 			setPage(*t)
 		},
 	}
@@ -489,12 +489,13 @@ Remove a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
 func removeAction(uid string) {
-	dialog.NewConfirm("Remove entry", fmt.Sprintf("%s\nAre you sure?", uid), func(b bool) {
-		err := dataRoot.Remove(uid, 1)
-		if err != nil {
-			dialog.NewInformation("Remove item error", err.Error(), window).Show()
-		}
-	}, window).Show()
+	fmt.Println("to-do main.removeAction to be implemented")
+	// dialog.NewConfirm("Remove entry", fmt.Sprintf("%s\nAre you sure?", uid), func(b bool) {
+	// 	err := dataRoot.Remove(uid, 1)
+	// 	if err != nil {
+	// 		dialog.NewInformation("Remove item error", err.Error(), window).Show()
+	// 	}
+	// }, window).Show()
 }
 
 /**
@@ -502,27 +503,28 @@ Rename a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
 func renameAction(uid string) {
-	m, _ := dataRoot.GetDataForUid(uid)
-	if m != nil {
-		fromName := lib.GetLastId(uid)
-		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", func(accept bool, s string) {
-			if accept {
-				err := validateEntityName(s)
-				if err != nil {
-					dialog.NewInformation("Name validation error", err.Error(), window).Show()
-				} else {
-					if fromName == s {
-						dialog.NewInformation("Rename item error", "Rename to the same name", window).Show()
-					} else {
-						err := dataRoot.Rename(uid, s)
-						if err != nil {
-							dialog.NewInformation("Rename item error", err.Error(), window).Show()
-						}
-					}
-				}
-			}
-		})
-	}
+	fmt.Println("to-do main.renameAction to be implemented")
+	// m, _ := dataRoot.GetDataForUid(uid)
+	// if m != nil {
+	// 	fromName := lib.GetLastId(uid)
+	// 	gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", func(accept bool, s string) {
+	// 		if accept {
+	// 			err := validateEntityName(s)
+	// 			if err != nil {
+	// 				dialog.NewInformation("Name validation error", err.Error(), window).Show()
+	// 			} else {
+	// 				if fromName == s {
+	// 					dialog.NewInformation("Rename item error", "Rename to the same name", window).Show()
+	// 				} else {
+	// 					err := dataRoot.Rename(uid, s)
+	// 					if err != nil {
+	// 						dialog.NewInformation("Rename item error", err.Error(), window).Show()
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	})
+	// }
 }
 
 /**
@@ -646,27 +648,28 @@ Add an entity to the model.
 Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
 */
 func addNewEntity(head string, name string, addType int) {
-	cu := lib.GetUserFromPath(currentSelection)
-	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", func(accept bool, s string) {
-		if accept {
-			err := validateEntityName(s)
-			if err == nil {
-				switch addType {
-				case ADD_TYPE_USER:
-					err = dataRoot.AddUser(s)
-				case ADD_TYPE_NOTE_ITEM:
-					err = dataRoot.AddNoteItem(cu, s)
-				case ADD_TYPE_HINT:
-					err = dataRoot.AddHint(cu, s)
-				case ADD_TYPE_HINT_ITEM:
-					err = dataRoot.AddHintItem(cu, lib.GetHintFromPath(currentSelection), s)
-				}
-			}
-			if err != nil {
-				dialog.NewInformation("Add New "+name, "Error: "+err.Error(), window).Show()
-			}
-		}
-	})
+	fmt.Println("to-do main.addNewEntity to be implemented")
+	// cu := lib.GetUserFromPath(currentSelection)
+	// gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", func(accept bool, s string) {
+	// 	if accept {
+	// 		err := validateEntityName(s)
+	// 		if err == nil {
+	// 			switch addType {
+	// 			case ADD_TYPE_USER:
+	// 				err = dataRoot.AddUser(s)
+	// 			case ADD_TYPE_NOTE_ITEM:
+	// 				err = dataRoot.AddNoteItem(cu, s)
+	// 			case ADD_TYPE_HINT:
+	// 				err = dataRoot.AddHint(cu, s)
+	// 			case ADD_TYPE_HINT_ITEM:
+	// 				err = dataRoot.AddHintItem(cu, lib.GetHintFromPath(currentSelection), s)
+	// 			}
+	// 		}
+	// 		if err != nil {
+	// 			dialog.NewInformation("Add New "+name, "Error: "+err.Error(), window).Show()
+	// 		}
+	// 	}
+	// })
 }
 
 /**
@@ -817,15 +820,12 @@ func commitChangedItems() (int, error) {
 	count := 0
 	for _, v := range gui.EditEntryList {
 		if v.IsChanged() {
-			if v.CommitEdit(dataRoot.GetDataRootMap()) {
+			if v.CommitEdit(dataRoot.GetDataRoot()) {
 				count++
 			}
 		}
 	}
-	c, err := dataRoot.ToJson()
-	if err != nil {
-		return 0, err
-	}
+	c := dataRoot.ToJson()
 	fileData.SetContentString(c)
 	return count, nil
 }

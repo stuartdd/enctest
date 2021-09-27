@@ -3,9 +3,18 @@ package lib
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/stuartdd/jsonParserGo/parser"
+)
+
+const (
+	hintStr         = "pwHints"
+	noteStr         = "notes"
+	dataMapRootName = "groups"
+	timeStampStr    = "timeStamp"
+	tabdata         = "                                     "
 )
 
 type JsonData struct {
@@ -20,7 +29,7 @@ func NewJsonData(j []byte, dataMapUpdated func(string, string, string, error)) (
 	if err != nil {
 		return nil, err
 	}
-	ts, err := parser.Find(m, "timeStamp")
+	ts, err := parser.Find(m, timeStampStr)
 	if err != nil {
 		return nil, fmt.Errorf("'%s' does not exist in data root", timeStampStr)
 	}
@@ -33,25 +42,105 @@ func NewJsonData(j []byte, dataMapUpdated func(string, string, string, error)) (
 	// 	return nil, fmt.Errorf("'%s' does not exist in data root", dataMapRootName)
 	// }
 
-	dr := &JsonData{timeStamp: tim, dataMap: m, navIndex: *createNavIndex2(m), dataMapUpdated: dataMapUpdated}
+	dr := &JsonData{timeStamp: tim, dataMap: m, navIndex: *createNavIndex(m), dataMapUpdated: dataMapUpdated}
 	return dr, nil
 }
 
-func (r *JsonData) GetTimeStamp2() time.Time {
+func (r *JsonData) GetTimeStamp() time.Time {
 	return r.timeStamp
 }
 
-func (r *JsonData) GetNavIndex2(id string) []string {
+func (r *JsonData) GetNavIndex(id string) []string {
 	return r.navIndex[id]
 }
 
-func createNavIndex2(m parser.NodeI) *map[string][]string {
+func (r *JsonData) GetDataRoot() parser.NodeI {
+	return r.dataMap
+}
+
+func (r *JsonData) ToJson() string {
+	return r.dataMap.String()
+}
+
+func (p *JsonData) Search(addPath func(string, string), needle string, matchCase bool) {
+	groups := p.dataMap.(*parser.JsonObject).GetNodeWithName(dataMapRootName).(*parser.JsonObject)
+	for _, v := range groups.GetValues() {
+		searchUsers(addPath, needle, v.GetName(), v.(*parser.JsonObject), matchCase)
+	}
+}
+
+func searchUsers(addPath func(string, string), needle, user string, m *parser.JsonObject, matchCase bool) {
+	for _, v := range m.GetValues() {
+		if v.GetName() == hintStr {
+			for _, v1 := range v.(*parser.JsonObject).GetValues() {
+				searchLeafNodes(addPath, true, needle, user, v1.GetName(), v1.(*parser.JsonObject), matchCase)
+			}
+		} else {
+			searchLeafNodes(addPath, false, needle, user, v.GetName(), v.(*parser.JsonObject), matchCase)
+		}
+	}
+}
+
+func searchLeafNodes(addPath func(string, string), isHint bool, needle, user, name string, m *parser.JsonObject, matchCase bool) {
+	tag1 := "."
+	if isHint {
+		tag1 = "." + hintStr + "."
+	}
+	if containsWithCase(name, needle, matchCase) {
+		addPath(user+tag1+name, searchDeriveText(user, isHint, name, "LHS Tree", ""))
+	}
+	for _, s := range m.GetValues() {
+		if containsWithCase(s.GetName(), needle, matchCase) {
+			addPath(user+tag1+name, searchDeriveText(user, isHint, name, "Field Name", s.GetName()))
+		}
+		if s.GetNodeType() == parser.NT_STRING {
+			if containsWithCase(s.(*parser.JsonString).GetValue(), needle, matchCase) {
+				addPath(user+tag1+name, searchDeriveText(user, isHint, name, "In Text", s.GetName()))
+			}
+		} else {
+			searchLeafNodes(addPath, isHint, needle, user, s.GetName(), s.(*parser.JsonObject), matchCase)
+		}
+	}
+}
+
+func searchDeriveText(user string, isHint bool, name, desc, key string) string {
+	if key != "" {
+		key = "'" + key + "'"
+	}
+	if isHint {
+		return user + " [Hint] " + name + ":  " + desc + ": " + key
+	}
+	if name == "notes" {
+		return user + " [Notes] :  " + desc + ": " + key
+	}
+	return user + " " + name + ":  " + desc + ": " + key
+}
+
+func containsWithCase(haystack, needle string, matchCase bool) bool {
+	if matchCase {
+		return strings.Contains(haystack, needle)
+	} else {
+		h := strings.ToLower(haystack)
+		n := strings.ToLower(needle)
+		return strings.Contains(h, n)
+	}
+}
+
+func GetMapForUid(uid string, m parser.NodeI) (parser.NodeI, error) {
+	nodes, err := parser.Find(m, uid)
+	if err != nil {
+		return nil, err
+	}
+	return nodes, nil
+}
+
+func createNavIndex(m parser.NodeI) *map[string][]string {
 	var uids = make(map[string][]string)
-	createNavIndexDetail2("", &uids, m)
+	createNavIndexDetail("", &uids, m)
 	return &uids
 }
 
-func createNavIndexDetail2(id string, uids *map[string][]string, nodeI parser.NodeI) {
+func createNavIndexDetail(id string, uids *map[string][]string, nodeI parser.NodeI) {
 	if nodeI.GetNodeType() == parser.NT_LIST {
 		panic("createNavIndexDetail2: cannot process lists")
 	}
@@ -104,4 +193,103 @@ func keysToList2(id string, m *parser.JsonObject) ([]string, []string) {
 	sort.Strings(l)
 	sort.Strings(ll)
 	return l, ll
+}
+
+func parseTime(st string) (time.Time, error) {
+	t, err := time.Parse(time.UnixDate, st)
+	if err != nil {
+		return time.Now(), err
+	}
+	return t, nil
+}
+
+func GetLastId(uid string) string {
+	if uid == "" {
+		return uid
+	}
+	p := strings.LastIndexByte(uid, '.')
+	switch p {
+	case -1:
+		return uid
+	case 0:
+		return uid[1:]
+	default:
+		return uid[p+1:]
+	}
+}
+
+func GetParentId(uid string) string {
+	if uid == "" {
+		return uid
+	}
+	p := strings.LastIndexByte(uid, '.')
+	switch p {
+	case -1:
+		return "groups"
+	case 0:
+		return ""
+	default:
+		return uid[0:p]
+	}
+}
+
+func GetPathElementAt(path string, index int) string {
+	elements := strings.Split(path, ".")
+	l := len(elements)
+	if l == 0 || index < 0 || index >= l {
+		return ""
+	}
+	if index < l {
+		return elements[index]
+	}
+	return elements[l-1]
+}
+
+func GetUserFromPath(path string) string {
+	return GetFirstPathElements(path, 1)
+}
+
+func GetHintFromPath(path string) string {
+	return GetPathElementAt(path, 2)
+}
+
+func GetFirstPathElements(path string, count int) string {
+	if count <= 0 {
+		return ""
+	}
+	var sb strings.Builder
+	dotCount := 0
+	for _, c := range path {
+		if c == '.' {
+			dotCount++
+		}
+		if dotCount == count {
+			return sb.String()
+		}
+		sb.WriteByte(byte(c))
+	}
+	return sb.String()
+}
+
+func (p *JsonData) GetRootUidOrCurrentUid(currentUid string) string {
+	if currentUid != "" {
+		for i := 4; i > 0; i-- {
+			x := GetFirstPathElements(currentUid, i)
+			_, ok := p.navIndex[x]
+			if ok {
+				return currentUid
+			}
+		}
+	}
+	l := make([]string, 0)
+	for k := range p.navIndex {
+		if k != "" {
+			l = append(l, k)
+		}
+	}
+	if len(l) > 0 {
+		sort.Strings(l)
+		return l[0]
+	}
+	return ""
 }
