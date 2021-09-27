@@ -147,7 +147,7 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		idd := details.Uid + "." + k
 		e, ok := EditEntryList[idd]
 		if !ok {
-			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), entryChangedFunction, unDoFunction, actionFunc)
+			e = NewEditEntry(idd, k, v.StringValue(), entryChangedFunction, unDoFunction, actionFunc)
 			EditEntryList[idd] = e
 		}
 		e.RefreshButtons()
@@ -192,7 +192,7 @@ func hintsScreen(_ fyne.Window, details DetailPage, actionFunc func(action strin
 		idd := details.Uid + "." + k
 		e, ok := EditEntryList[idd]
 		if !ok {
-			e = NewEditEntry(idd, k, fmt.Sprintf("%s", v), entryChangedFunction, unDoFunction, actionFunc)
+			e = NewEditEntry(idd, k, v.StringValue(), entryChangedFunction, unDoFunction, actionFunc)
 			EditEntryList[idd] = e
 		}
 		e.RefreshButtons()

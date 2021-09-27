@@ -127,7 +127,7 @@ func containsWithCase(haystack, needle string, matchCase bool) bool {
 }
 
 func GetMapForUid(uid string, m parser.NodeI) (parser.NodeI, error) {
-	nodes, err := parser.Find(m, uid)
+	nodes, err := parser.Find(m, dataMapRootName+"."+uid)
 	if err != nil {
 		return nil, err
 	}

@@ -179,7 +179,10 @@ func NewDetailPage(
 }
 
 func (p *DetailPage) GetObjectsForUid() *parser.JsonObject {
-	m, _ := lib.GetMapForUid(p.Uid, p.DataRootMap)
+	m, err := lib.GetMapForUid(p.Uid, p.DataRootMap)
+	if err != nil {
+		panic(fmt.Sprintf("DetailPage.GetMapForUid. Uid '%s' not found. %s", p.Uid, err.Error()))
+	}
 	if m.GetNodeType() == parser.NT_OBJECT {
 		return m.(*parser.JsonObject)
 	}
