@@ -17,19 +17,33 @@ const (
 	tabdata         = "                                     "
 )
 
+var (
+	defaultHintNames = []string{"notes", "post", "pre", "userId"}
+)
+
 type JsonData struct {
 	timeStamp      time.Time
-	dataMap        parser.NodeI
+	dataMap        *parser.JsonObject
 	navIndex       map[string][]string
 	dataMapUpdated func(string, string, string, error)
 }
 
 func NewJsonData(j []byte, dataMapUpdated func(string, string, string, error)) (*JsonData, error) {
-	m, err := parser.Parse(j)
+	mIn, err := parser.Parse(j)
 	if err != nil {
 		return nil, err
 	}
-	ts, err := parser.Find(m, timeStampStr)
+	if mIn.GetNodeType() != parser.NT_OBJECT {
+		return nil, fmt.Errorf("root element is NOT a JsonObject")
+	}
+	rO := mIn.(*parser.JsonObject)
+
+	u := rO.GetNodeWithName(dataMapRootName)
+	if u.GetNodeType() != parser.NT_OBJECT {
+		return nil, fmt.Errorf("root '%s' element is NOT a JsonObject", dataMapRootName)
+	}
+
+	ts, err := parser.Find(rO, timeStampStr)
 	if err != nil {
 		return nil, fmt.Errorf("'%s' does not exist in data root", timeStampStr)
 	}
@@ -37,12 +51,7 @@ func NewJsonData(j []byte, dataMapUpdated func(string, string, string, error)) (
 	if err != nil {
 		return nil, fmt.Errorf("'%s' could not be parsed", timeStampStr)
 	}
-	// _, ok = m[dataMapRootName]
-	// if !ok {
-	// 	return nil, fmt.Errorf("'%s' does not exist in data root", dataMapRootName)
-	// }
-
-	dr := &JsonData{timeStamp: tim, dataMap: m, navIndex: *createNavIndex(m), dataMapUpdated: dataMapUpdated}
+	dr := &JsonData{timeStamp: tim, dataMap: rO, navIndex: *createNavIndex(rO), dataMapUpdated: dataMapUpdated}
 	return dr, nil
 }
 
@@ -54,8 +63,23 @@ func (p *JsonData) GetNavIndex(id string) []string {
 	return p.navIndex[id]
 }
 
-func (p *JsonData) GetDataRoot() parser.NodeI {
+func (p *JsonData) GetDataRoot() *parser.JsonObject {
 	return p.dataMap
+}
+
+/*
+	We know we can cast the groups node. We checked it in NewJsonData
+*/
+func (p *JsonData) GetUserRoot() *parser.JsonObject {
+	return p.dataMap.GetNodeWithName(dataMapRootName).(*parser.JsonObject)
+}
+
+func (p *JsonData) GetUserNode(user string) *parser.JsonObject {
+	u := p.GetUserRoot().GetNodeWithName(user)
+	if u == nil {
+		return nil
+	}
+	return u.(*parser.JsonObject)
 }
 
 func (p *JsonData) ToJson() string {
@@ -63,10 +87,61 @@ func (p *JsonData) ToJson() string {
 }
 
 func (p *JsonData) Search(addPath func(string, string), needle string, matchCase bool) {
-	groups := p.dataMap.(*parser.JsonObject).GetNodeWithName(dataMapRootName).(*parser.JsonObject)
+	groups := p.dataMap.GetNodeWithName(dataMapRootName).(*parser.JsonObject)
 	for _, v := range groups.GetValues() {
 		searchUsers(addPath, needle, v.GetName(), v.(*parser.JsonObject), matchCase)
 	}
+}
+
+func (p *JsonData) AddHintItem(user, path, hintItemName string) error {
+	h, err := parser.Find(p.GetUserRoot(), path)
+	if err != nil {
+		return fmt.Errorf("the hint '%s' cannot be found", path)
+	}
+	if h.GetNodeType() != parser.NT_OBJECT {
+		return fmt.Errorf("the hint note '%s' was not an object node", path)
+	}
+	hO := h.(*parser.JsonObject)
+	addStringIfDoesNotExist(hO, hintItemName)
+	p.navIndex = *createNavIndex(p.dataMap)
+	p.dataMapUpdated("Add Note Item", GetUserFromPath(user), path, nil)
+	return nil
+}
+
+func (p *JsonData) AddHint(user, hintName string) error {
+	u := p.GetUserNode(user)
+	if u == nil {
+		return fmt.Errorf("the user '%s' cannot be found", user)
+	}
+	addHintToUser(u, hintName)
+	p.navIndex = *createNavIndex(p.dataMap)
+	p.dataMapUpdated("Add Note Item", GetUserFromPath(user), user+"."+hintStr+"."+hintName, nil)
+	return nil
+}
+
+func (p *JsonData) AddNoteItem(user, itemName string) error {
+	u := p.GetUserNode(user)
+	if u == nil {
+		return fmt.Errorf("the user '%s' cannot be found", user)
+	}
+	addNoteToUser(u, itemName, "")
+	p.navIndex = *createNavIndex(p.dataMap)
+	p.dataMapUpdated("Add Note Item", GetUserFromPath(user), user+"."+noteStr, nil)
+	return nil
+}
+
+func (p *JsonData) AddUser(user string) error {
+	u := p.GetUserNode(user)
+	if u != nil {
+		return fmt.Errorf("the user '%s' already exists", user)
+	}
+	userO := parser.NewJsonObject(user)
+	addNoteToUser(userO, "note", "text")
+	addHintToUser(userO, "App1")
+	p.GetUserRoot().AddNode(userO)
+	p.navIndex = *createNavIndex(p.dataMap)
+	p.dataMapUpdated("New User", GetUserFromPath(user), user, nil)
+	return nil
 }
 
 func (p *JsonData) Rename(uid string, newName string) error {
@@ -174,6 +249,50 @@ func searchDeriveText(user string, isHint bool, name, desc, key string) string {
 		return user + " [Notes] :  " + desc + ": " + key
 	}
 	return user + " " + name + ":  " + desc + ": " + key
+}
+
+func addDefaultHintItemsToHint(hint *parser.JsonObject) {
+	for _, n := range defaultHintNames {
+		addStringIfDoesNotExist(hint, n)
+	}
+}
+
+func addStringIfDoesNotExist(obj *parser.JsonObject, name string) {
+	node := obj.GetNodeWithName(name)
+	if node == nil {
+		node = parser.NewJsonString(name, "")
+		obj.AddNode(node)
+	}
+}
+
+func addHintToUser(userO *parser.JsonObject, hintName string) {
+	pwHints := userO.GetNodeWithName(hintStr)
+	if pwHints == nil {
+		pwHints = parser.NewJsonObject(hintStr)
+		userO.AddNode(pwHints)
+	}
+	pwHintsO := pwHints.(*parser.JsonObject)
+	hint := pwHintsO.GetNodeWithName(hintName)
+	if hint == nil {
+		hint = parser.NewJsonObject(hintName)
+		pwHintsO.AddNode(hint)
+	}
+	hintO := hint.(*parser.JsonObject)
+	addDefaultHintItemsToHint(hintO)
+}
+
+func addNoteToUser(userO *parser.JsonObject, noteName, noteText string) {
+	notes := userO.GetNodeWithName(noteStr)
+	if notes == nil {
+		notes = parser.NewJsonObject(noteStr)
+		userO.AddNode(notes)
+	}
+	notesO := notes.(*parser.JsonObject)
+	note := notesO.GetNodeWithName(noteName)
+	if note == nil {
+		note = parser.NewJsonString(noteName, noteText)
+		notesO.AddNode(note)
+	}
 }
 
 func containsWithCase(haystack, needle string, matchCase bool) bool {

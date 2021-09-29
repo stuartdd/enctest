@@ -350,13 +350,6 @@ func makeMenus() *fyne.MainMenu {
 		viewItem,
 		helpMenu,
 	)
-	// for _, item := range mainMenu.Items[0].Items {
-	// 	if item != nil {
-	// 		if item.Label == "Quit" {
-	// 			item.Action = shouldClose
-	// 		}
-	// 	}
-	// }
 
 	return mainMenu
 }
@@ -645,28 +638,27 @@ Add an entity to the model.
 Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
 */
 func addNewEntity(head string, name string, addType int) {
-	fmt.Println("to-do main.addNewEntity to be implemented")
-	// cu := lib.GetUserFromPath(currentSelection)
-	// gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", func(accept bool, s string) {
-	// 	if accept {
-	// 		err := validateEntityName(s)
-	// 		if err == nil {
-	// 			switch addType {
-	// 			case ADD_TYPE_USER:
-	// 				err = dataRoot.AddUser(s)
-	// 			case ADD_TYPE_NOTE_ITEM:
-	// 				err = dataRoot.AddNoteItem(cu, s)
-	// 			case ADD_TYPE_HINT:
-	// 				err = dataRoot.AddHint(cu, s)
-	// 			case ADD_TYPE_HINT_ITEM:
-	// 				err = dataRoot.AddHintItem(cu, lib.GetHintFromPath(currentSelection), s)
-	// 			}
-	// 		}
-	// 		if err != nil {
-	// 			dialog.NewInformation("Add New "+name, "Error: "+err.Error(), window).Show()
-	// 		}
-	// 	}
-	// })
+	cu := lib.GetUserFromPath(currentSelection)
+	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", func(accept bool, s string) {
+		if accept {
+			err := validateEntityName(s)
+			if err == nil {
+				switch addType {
+				case ADD_TYPE_USER:
+					err = dataRoot.AddUser(s)
+				case ADD_TYPE_NOTE_ITEM:
+					err = dataRoot.AddNoteItem(cu, s)
+				case ADD_TYPE_HINT:
+					err = dataRoot.AddHint(cu, s)
+				case ADD_TYPE_HINT_ITEM:
+					err = dataRoot.AddHintItem(cu, currentSelection, s)
+				}
+			}
+			if err != nil {
+				dialog.NewInformation("Add New "+name, "Error: "+err.Error(), window).Show()
+			}
+		}
+	})
 }
 
 /**
