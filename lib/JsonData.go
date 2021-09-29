@@ -86,7 +86,11 @@ func (p *JsonData) Rename(uid string, newName string) error {
 	n.SetName(newName)
 	parentObj.AddNode(n)
 	p.navIndex = *createNavIndex(p.dataMap)
-	p.dataMapUpdated("Rename", GetUserFromPath(uid), GetParentId(uid)+"."+newName, nil)
+	if parentObj.GetName() == dataMapRootName {
+		p.dataMapUpdated("Rename", GetUserFromPath(newName), newName, nil)
+	} else {
+		p.dataMapUpdated("Rename", GetUserFromPath(uid), GetParentId(uid)+"."+newName, nil)
+	}
 	return nil
 }
 
@@ -118,7 +122,6 @@ func (p *JsonData) GetUserDataForUid(uid string) (parser.NodeI, error) {
 }
 
 func GetUserDataForUid(root parser.NodeI, uid string) (parser.NodeI, error) {
-	fmt.Printf("JsonData:GetMapForUid.uid: %s\n", dataMapRootName+"."+uid)
 	nodes, err := parser.Find(root, dataMapRootName+"."+uid)
 	if err != nil {
 		return nil, err

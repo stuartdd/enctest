@@ -17,7 +17,6 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/stuartdd/jsonParserGo/parser"
 	"stuartdd.com/gui"
 	"stuartdd.com/lib"
 	"stuartdd.com/pref"
@@ -146,7 +145,6 @@ func main() {
 	*/
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
 		currentSelection = detailPage.Uid
-		fmt.Printf("setPageRHSFunc:currentSelection = %s\n", currentSelection)
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), lib.GetUserFromPath(currentSelection)))
 		window.SetMainMenu(makeMenus())
 		navTreeLHS.OpenBranch(currentSelection)
@@ -217,7 +215,6 @@ func main() {
 				navTreeLHS = makeNavTree(setPageRHSFunc)
 				debugStep("Loop 5")
 				uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
-				fmt.Printf("Refresh current:%s\n", uid)
 				selectTreeElement(uid)
 				debugStep("Loop 6")
 				if splitContainerOffset < 0 {
@@ -236,7 +233,6 @@ func main() {
 				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRoot(), *preferences)
 				setPageRHSFunc(*t)
 			case MAIN_THREAD_SELECT:
-				fmt.Printf("Select pending:%s\n", pendingSelection)
 				selectTreeElement(pendingSelection)
 			case MAIN_THREAD_RE_MENU:
 				debugStep("Loop 9")
@@ -387,7 +383,6 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
-			fmt.Printf("makeNavTree:OnSelected.uid = %s\n", uid)
 			t := gui.GetDetailPage(uid, dataRoot.GetDataRoot(), *preferences)
 			setPage(*t)
 		},
@@ -418,7 +413,6 @@ func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 This is called when a heading button is pressed of the RH page
 */
 func controlActionFunction(action string, uid string) {
-	fmt.Printf("controlActionFunction:action: %s uid: %s\n", action, uid)
 	viewActionFunction(action, uid)
 }
 
@@ -445,7 +439,10 @@ Called if there is a structural change in the model
 */
 func dataMapUpdated(desc, user, path string, err error) {
 	if err == nil {
-		fmt.Printf("dataMapUpdated:desc: %s user: %s path %s\n %s\n", desc, user, path, parser.DiagnosticList(dataRoot.GetDataRoot()))
+		pp := lib.GetParentId(path)
+		if dataRoot.GetNavIndex(pp) == nil {
+			path = pp
+		}
 		currentSelection = path
 		countStructureChanges++
 	}
