@@ -41,7 +41,6 @@ const (
 	defaultScreenWidth  = 640
 	defaultScreenHeight = 480
 
-	allowedCharsInName      = " *@#$%^&*()_+=?"
 	fallbackPreferencesFile = "config.json"
 	fallbackDataFile        = "data.json"
 
@@ -499,7 +498,7 @@ func renameAction(uid string) {
 		fromName := lib.GetLastId(uid)
 		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", func(accept bool, s string) {
 			if accept {
-				err := validateEntityName(s)
+				err := lib.ValidateEntityName(s)
 				if err != nil {
 					dialog.NewInformation("Name validation error", err.Error(), window).Show()
 				} else {
@@ -641,7 +640,7 @@ func addNewEntity(head string, name string, addType int) {
 	cu := lib.GetUserFromPath(currentSelection)
 	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", func(accept bool, s string) {
 		if accept {
-			err := validateEntityName(s)
+			err := lib.ValidateEntityName(s)
 			if err == nil {
 				switch addType {
 				case ADD_TYPE_USER:
@@ -659,30 +658,6 @@ func addNewEntity(head string, name string, addType int) {
 			}
 		}
 	})
-}
-
-/**
-Validate the names of entities. These result in JSON entity names so require
-some restrictions.
-*/
-func validateEntityName(entry string) error {
-	if len(entry) == 0 {
-		return fmt.Errorf("input is undefined")
-	}
-	if len(entry) < 2 {
-		return fmt.Errorf("input '%s' is too short. Must be longer that 1 char", entry)
-	}
-	lcEntry := strings.ToLower(entry)
-	for _, c := range lcEntry {
-		if c < ' ' {
-			return fmt.Errorf("input must not contain control characters")
-		}
-		if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (strings.ContainsRune(allowedCharsInName, c)) {
-			continue
-		}
-		return fmt.Errorf("input must not contain character '%c'. Only '0..9', 'a..z', 'A..Z' and '%s' chars are allowed", c, allowedCharsInName)
-	}
-	return nil
 }
 
 /**

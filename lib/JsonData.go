@@ -10,11 +10,12 @@ import (
 )
 
 const (
-	hintStr         = "pwHints"
-	noteStr         = "notes"
-	dataMapRootName = "groups"
-	timeStampStr    = "timeStamp"
-	tabdata         = "                                     "
+	hintStr            = "pwHints"
+	noteStr            = "notes"
+	dataMapRootName    = "groups"
+	timeStampStr       = "timeStamp"
+	tabdata            = "                                     "
+	allowedCharsInName = " *@#$%^&*()_+=?"
 )
 
 var (
@@ -202,6 +203,30 @@ func GetUserDataForUid(root parser.NodeI, uid string) (parser.NodeI, error) {
 		return nil, err
 	}
 	return nodes, nil
+}
+
+/**
+Validate the names of entities. These result in JSON entity names so require
+some restrictions.
+*/
+func ValidateEntityName(entry string) error {
+	if len(entry) == 0 {
+		return fmt.Errorf("input is undefined")
+	}
+	if len(entry) < 2 {
+		return fmt.Errorf("input '%s' is too short. Must be longer that 1 char", entry)
+	}
+	lcEntry := strings.ToLower(entry)
+	for _, c := range lcEntry {
+		if c < ' ' {
+			return fmt.Errorf("input must not contain control characters")
+		}
+		if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (strings.ContainsRune(allowedCharsInName, c)) {
+			continue
+		}
+		return fmt.Errorf("input must not contain character '%c'. Only '0..9', 'a..z', 'A..Z' and '%s' chars are allowed", c, allowedCharsInName)
+	}
+	return nil
 }
 
 func searchUsers(addPath func(string, string), needle, user string, m *parser.JsonObject, matchCase bool) {
