@@ -504,7 +504,7 @@ Rename a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
 func renameAction(uid string) {
-	m, _ := dataRoot.GetMapForUid(uid)
+	m, _ := dataRoot.GetUserDataForUid(uid)
 	if m != nil {
 		fromName := lib.GetLastId(uid)
 		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", func(accept bool, s string) {

@@ -79,41 +79,30 @@ func TestGetDataForSelectedId(t *testing.T) {
 	if err != nil {
 		log.Fatalf("1. GetMapForUid fail. should not return error: '%s'", err.Error())
 	}
-	if !strings.HasPrefix(toJson(m), "\"UserA\":{\"") {
-		log.Fatalf("1. GetMapForUid fail. should return user json: actual: '%s'", toJson(m))
+	if m.GetName() != "UserA" {
+		log.Fatalf("1. GetMapForUid fail. should return UserA. actual: '%s'", toJson(m))
 	}
-
-	// m, s = lib.GetMapForUid("UserB.pwHints.GMail B", mapData.GetDataRootMap())
-	// if !strings.HasPrefix(toJson(m), "{\"notes\":\"a note to User B\",\"positional\":\"1234567890") {
-	// 	log.Fatal("2. GetMapForUid fail. should return 'a note to User B'")
-	// }
-	// if s != "" {
-	// 	log.Fatal("2. GetMapForUid fail. String value should be empty")
-	// }
-
-	// m, s = lib.GetMapForUid("UserX.pwHints.GMail B", mapData.GetDataRootMap())
-	// if !strings.HasPrefix(toJson(m), "null") {
-	// 	log.Fatal("3. GetMapForUid fail. should return 'null'")
-	// }
-	// if s != "" {
-	// 	log.Fatal("3. GetMapForUid fail. String value should be empty")
-	// }
-
-	// m, s = lib.GetMapForUid("UserA.notes", mapData.GetDataRootMap())
-	// if !strings.HasPrefix(toJson(m), "{\"dsdfsdfs\":\"note\",\"note\":\"An amazing A note (dont panic) fdf\"}") {
-	// 	log.Fatal("4. GetMapForUid fail. should return 'a note to User A'")
-	// }
-	// if s != "" {
-	// 	log.Fatal("4. GetMapForUid fail. String value should be empty")
-	// }
-
-	// m, s = lib.GetMapForUid("UserB.notes.link", mapData.GetDataRootMap())
-	// if m != nil {
-	// 	log.Fatal("5. GetMapForUid fail. should return 'a note to User A'")
-	// }
-	// if !strings.HasPrefix(s, "https://") {
-	// 	log.Fatal("5. GetMapForUid fail. S should start 'https://'")
-	// }
+	m, err = lib.GetUserDataForUid(mapData.GetDataRoot(), "UserA.pwHints")
+	if err != nil {
+		log.Fatalf("1. GetMapForUid fail. should not return error: '%s'", err.Error())
+	}
+	if m.GetName() != "pwHints" {
+		log.Fatalf("1. GetMapForUid fail. should return pwHints. actual: '%s'", toJson(m))
+	}
+	m, err = lib.GetUserDataForUid(mapData.GetDataRoot(), "UserA.pwHints.MyApp")
+	if err != nil {
+		log.Fatalf("1. GetMapForUid fail. should not return error: '%s'", err.Error())
+	}
+	if m.GetName() != "MyApp" {
+		log.Fatalf("1. GetMapForUid fail. should return MyApp. actual: '%s'", toJson(m))
+	}
+	m, err = lib.GetUserDataForUid(mapData.GetDataRoot(), "UserB.pwHints.GMail B")
+	if err != nil {
+		log.Fatalf("1. GetMapForUid fail. should not return error: '%s'", err.Error())
+	}
+	if m.GetName() != "GMail B" {
+		log.Fatalf("1. GetMapForUid fail. should return GMail B. actual: '%s'", toJson(m))
+	}
 }
 
 func TestGetParentId(t *testing.T) {

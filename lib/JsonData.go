@@ -74,7 +74,17 @@ func (p *JsonData) Rename(uid string, newName string) error {
 	if err != nil {
 		return fmt.Errorf("the item to rename '%s' was not found in the data", uid)
 	}
+	_, parent, ok := parser.FindNode(p.dataMap, n)
+	if !ok {
+		return fmt.Errorf("the item to remove '%s' does not have a valid parent", uid)
+	}
+	if parent.GetNodeType() != parser.NT_OBJECT {
+		return fmt.Errorf("the item to remove '%s' does not have an object parent", uid)
+	}
+	parentObj := parent.(*parser.JsonObject)
+	parentObj.RemoveNode(p.dataMap, n)
 	n.SetName(newName)
+	parentObj.AddNode(n)
 	p.navIndex = *createNavIndex(p.dataMap)
 	p.dataMapUpdated("Rename", GetUserFromPath(uid), GetParentId(uid)+"."+newName, nil)
 	return nil
