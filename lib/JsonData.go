@@ -219,7 +219,7 @@ func ValidateEntityName(entry string) error {
 	lcEntry := strings.ToLower(entry)
 	for _, c := range lcEntry {
 		if c < ' ' {
-			return fmt.Errorf("input must not contain control characters")
+			return fmt.Errorf("input cannot not contain control characters")
 		}
 		if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (strings.ContainsRune(allowedCharsInName, c)) {
 			continue

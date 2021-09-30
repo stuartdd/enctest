@@ -33,14 +33,15 @@ const (
 
 var (
 	preferedOrderReversed = []string{"notes", "positional", "post", "pre", "link", "userId"}
+	styleRadioGroupNames  = []string{"Single Line", "Multi Line", "Rich Text"}
 )
 
-func NewModalEntryDialog(w fyne.Window, heading, txt string, accept func(bool, string)) (modal *widget.PopUp) {
-	return runModalEntryPopup(w, heading, txt, false, accept)
+func NewModalEntryDialog(w fyne.Window, heading, txt string, isNote bool, accept func(bool, string)) (modal *widget.PopUp) {
+	return runModalEntryPopup(w, heading, txt, false, isNote, accept)
 }
 
 func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool, string)) (modal *widget.PopUp) {
-	return runModalEntryPopup(w, heading, txt, true, accept)
+	return runModalEntryPopup(w, heading, txt, true, false, accept)
 }
 
 func GetWelcomePage(id string, preferences pref.PrefData) *DetailPage {
@@ -256,26 +257,52 @@ func parseURL(urlStr string) *url.URL {
 	return link
 }
 
-func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, accept func(bool, string)) (modal *widget.PopUp) {
+func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, accept func(bool, string)) (modal *widget.PopUp) {
 	submitInternal := func(s string) {
 		modal.Hide()
 		accept(true, s)
 	}
+	radinGroupChanged := func(s string) {
+		fmt.Println(s)
+	}
+	var radioGroup *widget.RadioGroup
+	var styles *fyne.Container
+
+	if isNote {
+		radioGroup = widget.NewRadioGroup(styleRadioGroupNames, radinGroupChanged)
+		radioGroup.SetSelected(styleRadioGroupNames[0])
+		styles = container.NewCenter(container.New(layout.NewHBoxLayout()), radioGroup)
+	}
 	entry := &widget.Entry{Text: txt, Password: password, OnChanged: func(s string) {}, OnSubmitted: submitInternal}
-	modal = widget.NewModalPopUp(
-		container.NewVBox(
-			widget.NewLabel("   "+heading+"   "),
-			entry,
-			container.NewCenter(container.New(layout.NewHBoxLayout(), widget.NewButton("Cancel", func() {
-				modal.Hide()
-				accept(false, entry.Text)
-			}), widget.NewButton("OK", func() {
-				modal.Hide()
-				accept(true, entry.Text)
-			}),
-			))),
-		w.Canvas(),
-	)
+	buttons := container.NewCenter(container.New(layout.NewHBoxLayout(), widget.NewButton("Cancel", func() {
+		modal.Hide()
+		accept(false, entry.Text)
+	}), widget.NewButton("OK", func() {
+		modal.Hide()
+		accept(true, entry.Text)
+	}),
+	))
+	if isNote {
+		modal = widget.NewModalPopUp(
+			container.NewVBox(
+				container.NewCenter(widget.NewLabel("Select the TYPE of the new note")),
+				styles,
+				container.NewCenter(widget.NewLabel(heading)),
+				entry,
+				buttons,
+			),
+			w.Canvas(),
+		)
+	} else {
+		modal = widget.NewModalPopUp(
+			container.NewVBox(
+				container.NewCenter(widget.NewLabel(heading)),
+				entry,
+				buttons,
+			),
+			w.Canvas(),
+		)
+	}
 	w.Canvas().SetOnTypedKey(func(ke *fyne.KeyEvent) {
 		if ke.Name == "Return" {
 			modal.Hide()

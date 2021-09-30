@@ -496,7 +496,7 @@ func renameAction(uid string) {
 	m, _ := dataRoot.GetUserDataForUid(uid)
 	if m != nil {
 		fromName := lib.GetLastId(uid)
-		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", func(accept bool, s string) {
+		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", false, func(accept bool, s string) {
 			if accept {
 				err := lib.ValidateEntityName(s)
 				if err != nil {
@@ -600,7 +600,7 @@ func showSearchResultsWindow(w float32, h float32, list *widget.List) {
 Selecting the menu to add a user
 */
 func addNewUser() {
-	addNewEntity("User", "User", ADD_TYPE_USER)
+	addNewEntity("User", "User", ADD_TYPE_USER, false)
 }
 
 /**
@@ -608,7 +608,7 @@ Selecting the menu to add a hint
 */
 func addNewHint() {
 	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
-	addNewEntity(n+" for ", n, ADD_TYPE_HINT)
+	addNewEntity(n+" for ", n, ADD_TYPE_HINT, false)
 }
 
 /**
@@ -620,7 +620,7 @@ func addNewHintItem() {
 	if ch == "" {
 		dialog.NewInformation("Add New "+n, fmt.Sprintf("A %s needs to be selected", n), window).Show()
 	} else {
-		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_HINT_ITEM)
+		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_HINT_ITEM, true)
 	}
 }
 
@@ -629,16 +629,16 @@ Selecting the menu to add an item to the notes
 */
 func addNewNoteItem() {
 	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
-	addNewEntity(n+" Item for ", n, ADD_TYPE_NOTE_ITEM)
+	addNewEntity(n+" Item for ", n, ADD_TYPE_NOTE_ITEM, true)
 }
 
 /**
 Add an entity to the model.
 Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
 */
-func addNewEntity(head string, name string, addType int) {
+func addNewEntity(head string, name string, addType int, isNote bool) {
 	cu := lib.GetUserFromPath(currentSelection)
-	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", func(accept bool, s string) {
+	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, func(accept bool, s string) {
 		if accept {
 			err := lib.ValidateEntityName(s)
 			if err == nil {
