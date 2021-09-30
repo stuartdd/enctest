@@ -12,25 +12,27 @@ import (
 	"stuartdd.com/lib"
 	"stuartdd.com/pref"
 	"stuartdd.com/theme2"
+	"stuartdd.com/types"
 )
 
 var EditEntryList = make(map[string]*EditEntry)
 
 type EditEntry struct {
-	Path         string
-	Title        string
-	Old          string
-	New          string
-	Url          string
-	Ent          *widget.Entry
-	Lab          *widget.Label
-	UnDo         *widget.Button
-	Link         *widget.Button
-	Remove       *widget.Button
-	Rename       *widget.Button
-	OnChangeFunc func(input string, path string)
-	UnDoFunc     func(path string)
-	ActionFunc   func(action string, path string)
+	Path           string
+	Title          string
+	Old            string
+	New            string
+	Url            string
+	Ent            *widget.Entry
+	Lab            *widget.Label
+	UnDo           *widget.Button
+	Link           *widget.Button
+	Remove         *widget.Button
+	Rename         *widget.Button
+	NodeAnnotation types.NodeAnnotationEnum
+	OnChangeFunc   func(input string, path string)
+	UnDoFunc       func(path string)
+	ActionFunc     func(action string, path string)
 }
 
 type DetailPage struct {
@@ -41,12 +43,13 @@ type DetailPage struct {
 	Preferences               pref.PrefData
 }
 
-func NewEditEntry(path string, title string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string)) *EditEntry {
+func NewEditEntry(path string, combinedTitle string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string)) *EditEntry {
 	var w *widget.Entry
-	if strings.Contains(strings.ToLower(title), "note") {
-		w = widget.NewMultiLineEntry()
-	} else {
+	nodeAnnotation, title := types.GetNodeAnnotationTypeAndName(combinedTitle)
+	if nodeAnnotation == types.NOTE_TYPE_SL || nodeAnnotation == types.NOTE_TYPE_PO {
 		w = widget.NewEntry()
+	} else {
+		w = widget.NewMultiLineEntry()
 	}
 	w.OnChanged = func(input string) {
 		onChangeFunc(input, path)
@@ -67,7 +70,7 @@ func NewEditEntry(path string, title string, old string, onChangeFunc func(s str
 	})
 	u.Disable()
 	i.Disable()
-	return &EditEntry{Path: path, Title: title, Ent: w, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
+	return &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, Ent: w, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
 }
 
 func (p *EditEntry) RefreshButtons() {

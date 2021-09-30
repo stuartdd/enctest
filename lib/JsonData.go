@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stuartdd/jsonParserGo/parser"
+	"stuartdd.com/types"
 )
 
 const (
@@ -159,7 +160,11 @@ func (p *JsonData) Rename(uid string, newName string) error {
 	}
 	parentObj := parent.(*parser.JsonObject)
 	parentObj.RemoveNode(p.dataMap, n)
-	n.SetName(newName)
+	if strings.Contains(n.GetName(), "!") {
+		n.SetName(n.GetName()[0:3] + newName)
+	} else {
+		n.SetName(newName)
+	}
 	parentObj.AddNode(n)
 	p.navIndex = *createNavIndex(p.dataMap)
 	if parentObj.GetName() == dataMapRootName {
@@ -209,24 +214,24 @@ func GetUserDataForUid(root parser.NodeI, uid string) (parser.NodeI, error) {
 Validate the names of entities. These result in JSON entity names so require
 some restrictions.
 */
-func ValidateEntityName(entry string) error {
+func ProcessEntityName(entry string, nt types.NodeAnnotationEnum) (string, error) {
 	if len(entry) == 0 {
-		return fmt.Errorf("input is undefined")
+		return "", fmt.Errorf("input is undefined")
 	}
 	if len(entry) < 2 {
-		return fmt.Errorf("input '%s' is too short. Must be longer that 1 char", entry)
+		return "", fmt.Errorf("input '%s' is too short. Must be longer that 1 char", entry)
 	}
 	lcEntry := strings.ToLower(entry)
 	for _, c := range lcEntry {
 		if c < ' ' {
-			return fmt.Errorf("input cannot not contain control characters")
+			return "", fmt.Errorf("input cannot not contain control characters")
 		}
 		if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (strings.ContainsRune(allowedCharsInName, c)) {
 			continue
 		}
-		return fmt.Errorf("input must not contain character '%c'. Only '0..9', 'a..z', 'A..Z' and '%s' chars are allowed", c, allowedCharsInName)
+		return "", fmt.Errorf("input must not contain character '%c'. Only '0..9', 'a..z', 'A..Z' and '%s' chars are allowed", c, allowedCharsInName)
 	}
-	return nil
+	return types.GetNodeAnnotationPrefixName(nt) + entry, nil
 }
 
 func searchUsers(addPath func(string, string), needle, user string, m *parser.JsonObject, matchCase bool) {

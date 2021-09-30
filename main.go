@@ -1,4 +1,3 @@
-// Package main provides various examples of Fyne API capabilities.
 package main
 
 import (
@@ -21,6 +20,7 @@ import (
 	"stuartdd.com/lib"
 	"stuartdd.com/pref"
 	"stuartdd.com/theme2"
+	"stuartdd.com/types"
 )
 
 const (
@@ -480,10 +480,13 @@ Remove a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
 func removeAction(uid string) {
-	dialog.NewConfirm("Remove entry", fmt.Sprintf("%s\nAre you sure?", uid), func(b bool) {
-		err := dataRoot.Remove(uid, 1)
-		if err != nil {
-			dialog.NewInformation("Remove item error", err.Error(), window).Show()
+	removeName := types.GetNodeName(lib.GetLastId(uid))
+	dialog.NewConfirm("Remove entry", fmt.Sprintf("'%s'\nAre you sure?", removeName), func(ok bool) {
+		if ok {
+			err := dataRoot.Remove(uid, 1)
+			if err != nil {
+				dialog.NewInformation("Remove item error", err.Error(), window).Show()
+			}
 		}
 	}, window).Show()
 }
@@ -495,10 +498,10 @@ dataMapUpdated id called if a change is made to the model
 func renameAction(uid string) {
 	m, _ := dataRoot.GetUserDataForUid(uid)
 	if m != nil {
-		fromName := lib.GetLastId(uid)
-		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", false, func(accept bool, s string) {
+		fromName := types.GetNodeName(lib.GetLastId(uid))
+		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", false, func(accept bool, toName string, nt types.NodeAnnotationEnum) {
 			if accept {
-				err := lib.ValidateEntityName(s)
+				s, err := lib.ProcessEntityName(toName, nt)
 				if err != nil {
 					dialog.NewInformation("Name validation error", err.Error(), window).Show()
 				} else {
@@ -638,9 +641,9 @@ Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a ch
 */
 func addNewEntity(head string, name string, addType int, isNote bool) {
 	cu := lib.GetUserFromPath(currentSelection)
-	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, func(accept bool, s string) {
+	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, func(accept bool, newName string, nt types.NodeAnnotationEnum) {
 		if accept {
-			err := lib.ValidateEntityName(s)
+			s, err := lib.ProcessEntityName(newName, nt)
 			if err == nil {
 				switch addType {
 				case ADD_TYPE_USER:
@@ -668,7 +671,7 @@ func getPasswordAndDecrypt(fd *lib.FileData, message string, fail func(string)) 
 		message = "Enter the password to DECRYPT the file"
 	}
 	running := true
-	gui.NewModalPasswordDialog(window, message, "", func(ok bool, value string) {
+	gui.NewModalPasswordDialog(window, message, "", func(ok bool, value string, nt types.NodeAnnotationEnum) {
 		if ok {
 			if value == "" {
 				fail("password is empty")
@@ -712,7 +715,7 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 		dialog.NewInformation("File Save", "There were no items to save!\n\nPress OK to continue", window).Show()
 	} else {
 		if enc == SAVE_ENCRYPTED {
-			gui.NewModalPasswordDialog(window, "Enter the password to DECRYPT the file", "", func(ok bool, value string) {
+			gui.NewModalPasswordDialog(window, "Enter the password to DECRYPT the file", "", func(ok bool, value string, nt types.NodeAnnotationEnum) {
 				if ok {
 					if value != "" {
 						_, err := commitChangedItems()

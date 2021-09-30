@@ -15,6 +15,7 @@ import (
 	"github.com/stuartdd/jsonParserGo/parser"
 	"stuartdd.com/pref"
 	"stuartdd.com/theme2"
+	"stuartdd.com/types"
 )
 
 const (
@@ -33,14 +34,13 @@ const (
 
 var (
 	preferedOrderReversed = []string{"notes", "positional", "post", "pre", "link", "userId"}
-	styleRadioGroupNames  = []string{"Single Line", "Multi Line", "Rich Text"}
 )
 
-func NewModalEntryDialog(w fyne.Window, heading, txt string, isNote bool, accept func(bool, string)) (modal *widget.PopUp) {
+func NewModalEntryDialog(w fyne.Window, heading, txt string, isNote bool, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
 	return runModalEntryPopup(w, heading, txt, false, isNote, accept)
 }
 
-func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool, string)) (modal *widget.PopUp) {
+func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
 	return runModalEntryPopup(w, heading, txt, true, false, accept)
 }
 
@@ -66,7 +66,7 @@ func GetDetailPage(id string, dataRootMap parser.NodeI, preferences pref.PrefDat
 		return NewDetailPage(id, "Unknown", user, welcomeScreen, notesControls, dataRootMap, preferences)
 	case 3:
 		if nodes[1] == idPwDetails {
-			return NewDetailPage(id, nodes[2], user, hintsScreen, hintsControls, dataRootMap, preferences)
+			return NewDetailPage(id, nodes[2], user, notesScreen, hintsControls, dataRootMap, preferences)
 		}
 		if nodes[1] == idNotes {
 			return NewDetailPage(id, nodes[2], user, notesScreen, notesControls, dataRootMap, preferences)
@@ -146,27 +146,27 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 	for _, k := range keys {
 		v := data.GetNodeWithName(k)
 		idd := details.Uid + "." + k
-		e, ok := EditEntryList[idd]
+		editEntry, ok := EditEntryList[idd]
 		if !ok {
-			e = NewEditEntry(idd, k, v.StringValue(), entryChangedFunction, unDoFunction, actionFunc)
-			EditEntryList[idd] = e
+			editEntry = NewEditEntry(idd, k, v.StringValue(), entryChangedFunction, unDoFunction, actionFunc)
+			EditEntryList[idd] = editEntry
 		}
-		e.RefreshButtons()
-		fcl := container.New(&FixedLayout{100, 1}, e.Lab)
-		fcbl := container.New(&FixedLayout{10, 5}, e.Link)
-		fcbr := container.New(&FixedLayout{10, 5}, e.UnDo)
+		editEntry.RefreshButtons()
+		fcl := container.New(&FixedLayout{100, 1}, editEntry.Lab)
+		fcbl := container.New(&FixedLayout{10, 5}, editEntry.Link)
+		fcbr := container.New(&FixedLayout{10, 5}, editEntry.UnDo)
 		if len(keys) < 2 {
-			e.Remove.Disable()
+			editEntry.Remove.Disable()
 		} else {
-			e.Remove.Enable()
+			editEntry.Remove.Enable()
 		}
-		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
-		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
+		fcre := container.New(&FixedLayout{10, 5}, editEntry.Remove)
+		fcna := container.New(&FixedLayout{10, 5}, editEntry.Rename)
 		cObj = append(cObj, widget.NewSeparator())
-		if strings.HasPrefix(strings.ToLower(e.Title), "posit") && details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true) {
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(e.GetCurrentText())))
+		if editEntry.NodeAnnotation == types.NOTE_TYPE_PO && details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true) {
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(editEntry.GetCurrentText())))
 		} else {
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Ent))
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, editEntry.Ent))
 		}
 	}
 	return container.NewVBox(cObj...)
@@ -182,39 +182,6 @@ func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(action str
 	}))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
-}
-
-func hintsScreen(_ fyne.Window, details DetailPage, actionFunc func(action string, uid string)) fyne.CanvasObject {
-	data := details.GetObjectsForUid()
-	cObj := make([]fyne.CanvasObject, 0)
-	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
-	for _, k := range keys {
-		v := data.GetNodeWithName(k)
-		idd := details.Uid + "." + k
-		e, ok := EditEntryList[idd]
-		if !ok {
-			e = NewEditEntry(idd, k, v.StringValue(), entryChangedFunction, unDoFunction, actionFunc)
-			EditEntryList[idd] = e
-		}
-		e.RefreshButtons()
-		fcl := container.New(&FixedLayout{100, 1}, e.Lab)
-		fcbl := container.New(&FixedLayout{10, 5}, e.Link)
-		fcbr := container.New(&FixedLayout{10, 5}, e.UnDo)
-		if len(keys) < 2 {
-			e.Remove.Disable()
-		} else {
-			e.Remove.Enable()
-		}
-		fcre := container.New(&FixedLayout{10, 5}, e.Remove)
-		fcna := container.New(&FixedLayout{10, 5}, e.Rename)
-		cObj = append(cObj, widget.NewSeparator())
-		if strings.HasPrefix(strings.ToLower(e.Title), "posit") && details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true) {
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(e.GetCurrentText())))
-		} else {
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, e.Ent))
-		}
-	}
-	return container.NewVBox(cObj...)
 }
 
 func listOfNonDupeInOrderKeys(m *parser.JsonObject, ordered []string) []string {
@@ -257,29 +224,37 @@ func parseURL(urlStr string) *url.URL {
 	return link
 }
 
-func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, accept func(bool, string)) (modal *widget.PopUp) {
-	submitInternal := func(s string) {
-		modal.Hide()
-		accept(true, s)
-	}
-	radinGroupChanged := func(s string) {
-		fmt.Println(s)
-	}
+func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
 	var radioGroup *widget.RadioGroup
 	var styles *fyne.Container
+	var noteTypeId types.NodeAnnotationEnum = 0
+	submitInternal := func(s string) {
+		modal.Hide()
+		accept(true, s, noteTypeId)
+	}
+
+	radinGroupChanged := func(s string) {
+		for i := 0; i < len(types.NodeAnnotationEnums); i++ {
+			if s == types.NodeAnnotationPrefixNames[i] {
+				noteTypeId = types.NodeAnnotationEnums[i]
+				return
+			}
+		}
+		noteTypeId = 0
+	}
 
 	if isNote {
-		radioGroup = widget.NewRadioGroup(styleRadioGroupNames, radinGroupChanged)
-		radioGroup.SetSelected(styleRadioGroupNames[0])
+		radioGroup = widget.NewRadioGroup(types.NodeAnnotationPrefixNames, radinGroupChanged)
+		radioGroup.SetSelected(types.NodeAnnotationPrefixNames[0])
 		styles = container.NewCenter(container.New(layout.NewHBoxLayout()), radioGroup)
 	}
 	entry := &widget.Entry{Text: txt, Password: password, OnChanged: func(s string) {}, OnSubmitted: submitInternal}
 	buttons := container.NewCenter(container.New(layout.NewHBoxLayout(), widget.NewButton("Cancel", func() {
 		modal.Hide()
-		accept(false, entry.Text)
+		accept(false, entry.Text, noteTypeId)
 	}), widget.NewButton("OK", func() {
 		modal.Hide()
-		accept(true, entry.Text)
+		accept(true, entry.Text, noteTypeId)
 	}),
 	))
 	if isNote {
@@ -306,11 +281,11 @@ func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNot
 	w.Canvas().SetOnTypedKey(func(ke *fyne.KeyEvent) {
 		if ke.Name == "Return" {
 			modal.Hide()
-			accept(true, entry.Text)
+			accept(true, entry.Text, noteTypeId)
 		} else {
 			if ke.Name == "Escape" {
 				modal.Hide()
-				accept(false, entry.Text)
+				accept(false, entry.Text, noteTypeId)
 			}
 		}
 	})
