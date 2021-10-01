@@ -24,6 +24,7 @@ type EditEntry struct {
 	New            string
 	Url            string
 	Ent            *widget.Entry
+	Rtx            *widget.RichText
 	Lab            *widget.Label
 	UnDo           *widget.Button
 	Link           *widget.Button
@@ -44,17 +45,22 @@ type DetailPage struct {
 }
 
 func NewEditEntry(path string, combinedTitle string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string)) *EditEntry {
-	var w *widget.Entry
+	var we *widget.Entry
+	var rt *widget.RichText
 	nodeAnnotation, title := types.GetNodeAnnotationTypeAndName(combinedTitle)
-	if nodeAnnotation == types.NOTE_TYPE_SL || nodeAnnotation == types.NOTE_TYPE_PO {
-		w = widget.NewEntry()
+	if nodeAnnotation == types.NOTE_TYPE_RT {
+		rt = widget.NewRichTextWithText(old)
 	} else {
-		w = widget.NewMultiLineEntry()
+		if nodeAnnotation == types.NOTE_TYPE_SL || nodeAnnotation == types.NOTE_TYPE_PO {
+			we = widget.NewEntry()
+		} else {
+			we = widget.NewMultiLineEntry()
+		}
+		we.OnChanged = func(input string) {
+			onChangeFunc(input, path)
+		}
+		we.SetText(old)
 	}
-	w.OnChanged = func(input string) {
-		onChangeFunc(input, path)
-	}
-	w.SetText(old)
 	l := widget.NewLabel(fmt.Sprintf(" %s ", title))
 	u := widget.NewButtonWithIcon("", theme.ContentUndoIcon(), func() {
 		unDoFunc(path)
@@ -70,7 +76,7 @@ func NewEditEntry(path string, combinedTitle string, old string, onChangeFunc fu
 	})
 	u.Disable()
 	i.Disable()
-	return &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, Ent: w, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
+	return &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, Ent: we, Rtx: rt, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
 }
 
 func (p *EditEntry) RefreshButtons() {

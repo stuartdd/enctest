@@ -163,11 +163,16 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		fcre := container.New(&FixedLayout{10, 5}, editEntry.Remove)
 		fcna := container.New(&FixedLayout{10, 5}, editEntry.Rename)
 		cObj = append(cObj, widget.NewSeparator())
-		if editEntry.NodeAnnotation == types.NOTE_TYPE_PO && details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true) {
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(editEntry.GetCurrentText())))
+		if editEntry.NodeAnnotation == types.NOTE_TYPE_RT {
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, editEntry.Rtx))
 		} else {
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, editEntry.Ent))
+			if editEntry.NodeAnnotation == types.NOTE_TYPE_PO && details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true) {
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(editEntry.GetCurrentText())))
+			} else {
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, editEntry.Ent))
+			}
 		}
+
 	}
 	return container.NewVBox(cObj...)
 }
