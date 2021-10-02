@@ -2,9 +2,10 @@ module stuartdd.com/lib
 
 go 1.16
 
-replace stuartdd.com/types => ./types
+replace stuartdd.com/types => ../types
+
 require (
-	github.com/stuartdd/jsonParserGo/parser v0.0.0-20210927161047-24db436d1ca7
+	github.com/stuartdd/jsonParserGo/parser v0.0.0-20211002110506-b8ed7e77c400
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	stuartdd.com/types v0.0.0
 )
