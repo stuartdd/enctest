@@ -61,6 +61,7 @@ var (
 	dataRoot                 *lib.JsonData
 	preferences              *pref.PrefData
 	navTreeLHS               *widget.Tree
+	saveShortcutButton       *widget.Button
 	splitContainer           *container.Split // So we can save the divider position to preferences.
 	splitContainerOffset     float64          = -1
 	splitContainerOffsetPref float64          = -1
@@ -71,9 +72,7 @@ var (
 	shouldCloseLock       = false
 	loadThreadFileName    = ""
 	countStructureChanges = 0
-
-	debugStepCount  = 0
-	releaseTheBeast = make(chan int, 5)
+	releaseTheBeast       = make(chan int, 5)
 )
 
 func abortWithUsage(message string) {
@@ -83,13 +82,8 @@ func abortWithUsage(message string) {
 	fmt.Println("    This file will be updated by this application")
 	os.Exit(1)
 }
-func debugStep(point string) {
-	//	fmt.Printf("%d: %s\n", debugStepCount, point)
-	//	debugStepCount = debugStepCount + 1
-}
 
 func main() {
-	debugStep("Main 0")
 	var prefFile string
 	if len(os.Args) == 1 {
 		prefFile = fallbackPreferencesFile
@@ -125,8 +119,6 @@ func main() {
 
 	window.SetCloseIntercept(shouldClose)
 
-	debugStep("Main 1")
-
 	/*
 		Create the menus
 	*/
@@ -137,6 +129,7 @@ func main() {
 	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil)}
 	contentRHS := container.NewMax()
 	layoutRHS := container.NewBorder(title, nil, nil, nil, contentRHS)
+	buttonBar := makeButtonBar()
 
 	/*
 		function called when a selection is made in the LHS tree.
@@ -180,7 +173,6 @@ func main() {
 						Get PW and decrypt
 						if Decryption is cancelled the application exits
 				*/
-				debugStep("Loop 1")
 				message := ""
 				for fd.RequiresDecryption() {
 					getPasswordAndDecrypt(fd, message, func(s string) {
@@ -194,15 +186,12 @@ func main() {
 						update the navigation tree
 						select the root element
 				*/
-				debugStep("Loop 2")
 				dr, err := lib.NewJsonData(fd.GetContent(), dataMapUpdated)
 				if err != nil {
 					abortWithUsage(fmt.Sprintf("ERROR: Cannot process data in file '%s'.\n%s\n", loadThreadFileName, err))
 				}
 				fileData = fd
 				dataRoot = dr
-
-				debugStep("Loop 3")
 				// Follow on action to rebuild the Tree and re-display it
 				futureReleaseTheBeast(0, MAIN_THREAD_RELOAD_TREE)
 			case MAIN_THREAD_RELOAD_TREE:
@@ -210,12 +199,9 @@ func main() {
 				// Select the root of current user if defined.
 				// Init the devider (split)
 				// Populate the window and we are done!
-				debugStep("Loop 4")
 				navTreeLHS = makeNavTree(setPageRHSFunc)
-				debugStep("Loop 5")
 				uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
 				selectTreeElement(uid)
-				debugStep("Loop 6")
 				if splitContainerOffset < 0 {
 					splitContainerOffset = splitContainerOffsetPref
 				} else {
@@ -223,10 +209,8 @@ func main() {
 				}
 				splitContainer = container.NewHSplit(container.NewBorder(makeSearchLHS(setPageRHSFunc), nil, nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(splitContainerOffset)
-				debugStep("Loop 7")
-				window.SetContent(splitContainer)
+				window.SetContent(container.NewBorder(buttonBar, nil, nil, nil, splitContainer))
 				futureReleaseTheBeast(0, MAIN_THREAD_RE_MENU)
-				debugStep("Loop 8")
 			case MAIN_THREAD_RESELECT:
 				fmt.Println("RE-SELECT")
 				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRoot(), *preferences)
@@ -234,18 +218,14 @@ func main() {
 			case MAIN_THREAD_SELECT:
 				selectTreeElement(pendingSelection)
 			case MAIN_THREAD_RE_MENU:
-				debugStep("Loop 9")
 				window.SetMainMenu(makeMenus())
 			}
 		}
 	}()
 
-	debugStep("Main 2")
 	futureReleaseTheBeast(1000, MAIN_THREAD_LOAD)
 	setFullScreen(preferences.GetBoolWithFallback(screenFullPrefName, false), false)
-	debugStep("Main 3")
 	window.ShowAndRun()
-	debugStep("Main 4")
 }
 
 /**
@@ -269,6 +249,11 @@ func futureReleaseTheBeast(ms int, status int) {
 			releaseTheBeast <- status
 		}()
 	}
+}
+func makeButtonBar() *fyne.Container {
+	saveShortcutButton = widget.NewButton("Save", func() {})
+	saveShortcutButton.Disable()
+	return container.NewHBox(saveShortcutButton)
 }
 
 func makeMenus() *fyne.MainMenu {
