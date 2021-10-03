@@ -2,15 +2,14 @@
     "groups": {
         "Stuart": {
             "notes": {
-                "note": "dHellofg",
-                "rt!RT": "# Hi\n\n```go\n\nHippy := 10\n\n```\n\nHow are\n\n## you\n\nToday\n\n"
+                "note": "dHellofg"
             },
             "pwHints": {
                 "application": {
+                    "notes": "",
                     "post": "",
                     "pre": "",
-                    "userId": "",
-                    "notes": ""
+                    "userId": ""
                 }
             }
         },
@@ -21,10 +20,10 @@
             },
             "pwHints": {
                 "MyApp": {
-                    "pre": "abc",
-                    "userId": "fakeuser@gmail.com",
                     "notes": "a note to User A",
-                    "post": "123"
+                    "post": "123",
+                    "pre": "abc",
+                    "userId": "fakeuser@gmail.com"
                 },
                 "PrincipalityA": {
                     "notes": "https://www.principality.co.uk/en/your-account",
@@ -41,20 +40,20 @@
             },
             "pwHints": {
                 "GMail B": {
-                    "userId": "another@gmail.com",
                     "notes": "a note to User B",
                     "po!positional": "1234567890",
                     "post": "123 Fred",
                     "pre": "abc",
                     "some More Notes": "hi",
-                    "some More!": "hi"
+                    "some More!": "hi",
+                    "userId": "another@gmail.com"
                 },
                 "Principality B": {
-                    "pre": "efg",
-                    "userId": "Buser",
                     "link": "https://www.principality.co.uk/en/your-account",
                     "notes": "Principality note",
-                    "post": "456"
+                    "post": "456",
+                    "pre": "efg",
+                    "userId": "Buser"
                 }
             }
         }
