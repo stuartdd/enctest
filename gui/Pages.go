@@ -155,7 +155,6 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		fcl := container.New(&FixedLayout{100, 1}, editEntry.Lab)
 		fcbl := container.New(&FixedLayout{10, 0}, editEntry.Link)
 		fcbr := container.New(&FixedLayout{10, 0}, editEntry.UnDo)
-		blank := container.New(&FixedLayout{10, 0})
 		if len(keys) < 2 {
 			editEntry.Remove.Disable()
 		} else {
@@ -164,11 +163,16 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		fcre := container.New(&FixedLayout{10, 0}, editEntry.Remove)
 		fcna := container.New(&FixedLayout{10, 0}, editEntry.Rename)
 		cObj = append(cObj, widget.NewSeparator())
-		if editEntry.NodeAnnotation == types.NOTE_TYPE_PO && details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true) {
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), blank, positional(editEntry.GetCurrentText())))
+		if editEntry.NodeAnnotation == types.NOTE_TYPE_RT {
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, editEntry.Rtx))
 		} else {
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, editEntry.Ent))
+			if editEntry.NodeAnnotation == types.NOTE_TYPE_PO && details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true) {
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(editEntry.GetCurrentText())))
+			} else {
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, editEntry.Ent))
+			}
 		}
+
 	}
 	return container.NewVBox(cObj...)
 }
