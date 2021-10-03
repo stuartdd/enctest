@@ -120,6 +120,7 @@ func (p *EditEntry) CommitEdit(data parser.NodeI) bool {
 			m.(*parser.JsonNumber).SetValue(f)
 		}
 		p.Old = p.New
+		p.New = ""
 		return true
 	}
 	return false

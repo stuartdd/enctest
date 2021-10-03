@@ -66,13 +66,13 @@ var (
 	splitContainerOffset     float64          = -1
 	splitContainerOffsetPref float64          = -1
 
-	findCaseSensitive     = binding.NewBool()
-	pendingSelection      = ""
-	currentSelection      = ""
-	shouldCloseLock       = false
-	loadThreadFileName    = ""
-	countStructureChanges = 0
-	releaseTheBeast       = make(chan int, 5)
+	findCaseSensitive  = binding.NewBool()
+	pendingSelection   = ""
+	currentSelection   = ""
+	shouldCloseLock    = false
+	loadThreadFileName = ""
+	hasDataChanges     = false
+	releaseTheBeast    = make(chan int, 5)
 )
 
 func abortWithUsage(message string) {
@@ -212,12 +212,12 @@ func main() {
 				window.SetContent(container.NewBorder(buttonBar, nil, nil, nil, splitContainer))
 				futureReleaseTheBeast(0, MAIN_THREAD_RE_MENU)
 			case MAIN_THREAD_RESELECT:
-				fmt.Println("RE-SELECT")
 				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRoot(), *preferences)
 				setPageRHSFunc(*t)
 			case MAIN_THREAD_SELECT:
 				selectTreeElement(pendingSelection)
 			case MAIN_THREAD_RE_MENU:
+				updateButtonBar()
 				window.SetMainMenu(makeMenus())
 			}
 		}
@@ -241,7 +241,7 @@ func selectTreeElement(uid string) {
 }
 
 func futureReleaseTheBeast(ms int, status int) {
-	if ms == 0 {
+	if ms < 1 {
 		releaseTheBeast <- status
 	} else {
 		go func() {
@@ -250,14 +250,24 @@ func futureReleaseTheBeast(ms int, status int) {
 		}()
 	}
 }
+
+func updateButtonBar() {
+	if countChangedItems() > 0 {
+		saveShortcutButton.Enable()
+	} else {
+		saveShortcutButton.Disable()
+	}
+}
+
 func makeButtonBar() *fyne.Container {
-	saveShortcutButton = widget.NewButton("Save", func() {})
-	saveShortcutButton.Disable()
+	saveShortcutButton = widget.NewButton("Save", func() {
+		commitAndSaveData(SAVE_AS_IS, true)
+	})
+	updateButtonBar()
 	return container.NewHBox(saveShortcutButton)
 }
 
 func makeMenus() *fyne.MainMenu {
-
 	hintName := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	noteName := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
 	hint := lib.GetHintFromPath(currentSelection)
@@ -408,6 +418,8 @@ func viewActionFunction(action string, uid string) {
 		renameAction(uid)
 	case gui.ACTION_LINK:
 		linkAction(uid)
+	case gui.ACTION_UPDATED:
+		updateButtonBar()
 	}
 }
 
@@ -421,7 +433,7 @@ func dataMapUpdated(desc, user, path string, err error) {
 			path = pp
 		}
 		currentSelection = path
-		countStructureChanges++
+		hasDataChanges = true
 	}
 	futureReleaseTheBeast(100, MAIN_THREAD_RELOAD_TREE)
 }
@@ -685,7 +697,7 @@ func getPasswordAndDecrypt(fd *lib.FileData, message string, fail func(string)) 
 }
 
 func callbackAfterSave() {
-	defer futureReleaseTheBeast(500, MAIN_THREAD_RE_MENU)
+	futureReleaseTheBeast(500, MAIN_THREAD_RE_MENU)
 }
 
 /**
@@ -693,8 +705,11 @@ Commit changes to the model and save it to file.
 If we are saving encrypted then capture a password and encrypt the file
 Otherwise save it as it was loaded!
 commitChangedItems writes any un-doable entries to the model. Nothing structural!
+Once we have done all that we must update the button bar to disable the save button
 */
 func commitAndSaveData(enc int, mustBeChanged bool) {
+	defer updateButtonBar()
+
 	count := countChangedItems()
 	if count == 0 && mustBeChanged {
 		dialog.NewInformation("File Save", "There were no items to save!\n\nPress OK to continue", window).Show()
@@ -712,7 +727,7 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 						if err != nil {
 							dialog.NewInformation("Save Encrypted File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
 						} else {
-							countStructureChanges = 0
+							hasDataChanges = false
 						}
 					} else {
 						dialog.NewInformation("Save Encrypted File Error:", "Error Message:\n\n-- Password not provided --\n\nFile was not saved!\nPress OK to continue", window).Show()
@@ -733,7 +748,7 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 			if err != nil {
 				dialog.NewInformation("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
 			} else {
-				countStructureChanges = 0
+				hasDataChanges = false
 			}
 		}
 	}
@@ -759,11 +774,14 @@ func shouldClose() {
 }
 
 func countChangedItems() int {
-	count := countStructureChanges
+	count := 0
 	for _, v := range gui.EditEntryList {
 		if v.IsChanged() {
 			count++
 		}
+	}
+	if hasDataChanges {
+		count++
 	}
 	return count
 }

@@ -27,9 +27,10 @@ const (
 	DataHintIsCalledPrefName = "data.hintIsCalled"
 	DataNoteIsCalledPrefName = "data.noteIsCalled"
 
-	ACTION_REMOVE = "remove"
-	ACTION_RENAME = "rename"
-	ACTION_LINK   = "link"
+	ACTION_REMOVE  = "remove"
+	ACTION_RENAME  = "rename"
+	ACTION_LINK    = "link"
+	ACTION_UPDATED = "update"
 )
 
 var (
@@ -76,10 +77,10 @@ func GetDetailPage(id string, dataRootMap parser.NodeI, preferences pref.PrefDat
 	return NewDetailPage(id, id, "", welcomeScreen, notesControls, dataRootMap, preferences)
 }
 
-func entryChangedFunction(s string, path string) {
+func entryChangedFunction(newWalue string, path string) {
 	ee := EditEntryList[path]
 	if ee != nil {
-		ee.SetNew(s)
+		ee.SetNew(newWalue)
 	}
 }
 
@@ -148,7 +149,12 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		idd := details.Uid + "." + k
 		editEntry, ok := EditEntryList[idd]
 		if !ok {
-			editEntry = NewEditEntry(idd, k, v.StringValue(), entryChangedFunction, unDoFunction, actionFunc)
+			editEntry = NewEditEntry(idd, k, v.StringValue(),
+				func(newWalue string, path string) {
+					entryChangedFunction(newWalue, path)
+					actionFunc(ACTION_UPDATED, path)
+				},
+				unDoFunction, actionFunc)
 			EditEntryList[idd] = editEntry
 		}
 		editEntry.RefreshButtons()
