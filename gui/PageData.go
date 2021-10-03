@@ -49,7 +49,7 @@ func NewEditEntry(path string, combinedTitle string, old string, onChangeFunc fu
 	var rt *widget.RichText
 	nodeAnnotation, title := types.GetNodeAnnotationTypeAndName(combinedTitle)
 	if nodeAnnotation == types.NOTE_TYPE_RT {
-		rt = widget.NewRichTextFromMarkdown(old)
+		rt = widget.NewRichTextWithText(old)
 	} else {
 		if nodeAnnotation == types.NOTE_TYPE_SL || nodeAnnotation == types.NOTE_TYPE_PO {
 			we = widget.NewEntry()
