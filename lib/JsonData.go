@@ -140,7 +140,7 @@ func (p *JsonData) AddUser(user string) error {
 	userO := parser.NewJsonObject(user)
 	addNoteToUser(userO, "note", "text")
 	addHintToUser(userO, "App1")
-	p.GetUserRoot().AddNode(userO)
+	p.GetUserRoot().Add(userO)
 	p.navIndex = *createNavIndex(p.dataMap)
 	p.dataMapUpdated("New User", GetUserFromPath(user), user, nil)
 	return nil
@@ -151,23 +151,14 @@ func (p *JsonData) Rename(uid string, newName string) error {
 	if err != nil {
 		return fmt.Errorf("the item to rename '%s' was not found in the data", uid)
 	}
-	_, parent, ok := parser.FindNode(p.dataMap, n)
+	parent, ok := parser.FindParentNode(p.dataMap, n)
 	if !ok {
-		return fmt.Errorf("the item to remove '%s' does not have a valid parent", uid)
+		return fmt.Errorf("the item to rename '%s' does not have a valid parent", uid)
 	}
-	if parent.GetNodeType() != parser.NT_OBJECT {
-		return fmt.Errorf("the item to remove '%s' does not have an object parent", uid)
-	}
-	parentObj := parent.(*parser.JsonObject)
-	parentObj.RemoveNode(p.dataMap, n)
-	if strings.Contains(n.GetName(), "!") {
-		n.SetName(n.GetName()[0:3] + newName)
-	} else {
-		n.SetName(newName)
-	}
-	parentObj.AddNode(n)
+	err = parser.Rename(p.dataMap, n, newName)
 	p.navIndex = *createNavIndex(p.dataMap)
-	if parentObj.GetName() == dataMapRootName {
+
+	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
 		p.dataMapUpdated("Rename", GetUserFromPath(newName), newName, nil)
 	} else {
 		p.dataMapUpdated("Rename", GetUserFromPath(uid), GetParentId(uid)+"."+newName, nil)
@@ -180,7 +171,7 @@ func (p *JsonData) Remove(uid string, min int) error {
 	if err != nil {
 		return fmt.Errorf("the item to remove '%s' was not found in the data", uid)
 	}
-	_, parent, ok := parser.FindNode(p.dataMap, n)
+	parent, ok := parser.FindParentNode(p.dataMap, n)
 	if !ok {
 		return fmt.Errorf("the item to remove '%s' does not have a valid parent", uid)
 	}
@@ -192,7 +183,7 @@ func (p *JsonData) Remove(uid string, min int) error {
 	if count <= min {
 		return fmt.Errorf("there must be at least %d element(s) remaining in this item", min)
 	}
-	parentObj.RemoveNode(p.dataMap, n)
+	parser.Remove(p.dataMap, n)
 	p.navIndex = *createNavIndex(p.dataMap)
 	p.dataMapUpdated("Removed", GetUserFromPath(uid), GetParentId(uid), nil)
 	return nil
@@ -291,7 +282,7 @@ func addStringIfDoesNotExist(obj *parser.JsonObject, name string) {
 	node := obj.GetNodeWithName(name)
 	if node == nil {
 		node = parser.NewJsonString(name, "")
-		obj.AddNode(node)
+		obj.Add(node)
 	}
 }
 
@@ -299,13 +290,13 @@ func addHintToUser(userO *parser.JsonObject, hintName string) {
 	pwHints := userO.GetNodeWithName(hintStr)
 	if pwHints == nil {
 		pwHints = parser.NewJsonObject(hintStr)
-		userO.AddNode(pwHints)
+		userO.Add(pwHints)
 	}
 	pwHintsO := pwHints.(*parser.JsonObject)
 	hint := pwHintsO.GetNodeWithName(hintName)
 	if hint == nil {
 		hint = parser.NewJsonObject(hintName)
-		pwHintsO.AddNode(hint)
+		pwHintsO.Add(hint)
 	}
 	hintO := hint.(*parser.JsonObject)
 	addDefaultHintItemsToHint(hintO)
@@ -315,13 +306,13 @@ func addNoteToUser(userO *parser.JsonObject, noteName, noteText string) {
 	notes := userO.GetNodeWithName(noteStr)
 	if notes == nil {
 		notes = parser.NewJsonObject(noteStr)
-		userO.AddNode(notes)
+		userO.Add(notes)
 	}
 	notesO := notes.(*parser.JsonObject)
 	note := notesO.GetNodeWithName(noteName)
 	if note == nil {
 		note = parser.NewJsonString(noteName, noteText)
-		notesO.AddNode(note)
+		notesO.Add(note)
 	}
 }
 
@@ -426,7 +417,7 @@ func GetParentId(uid string) string {
 	p := strings.LastIndexByte(uid, '.')
 	switch p {
 	case -1:
-		return "groups"
+		return uid
 	case 0:
 		return ""
 	default:

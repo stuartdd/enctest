@@ -34,18 +34,20 @@ func TestTreeMapping(t *testing.T) {
 	loadDataMap(dataFileName)
 	assertMapData("", "[Stuart UserA UserB]")
 	assertMapData("UserA", "[UserA.notes UserA.pwHints]")
-	assertMapData("UserA.notes", "[UserA.notes.note]")
-	assertMapData("UserA.pwHints", "[UserA.pwHints.GMailA UserA.pwHints.PrincipalityA]")
+	assertMapData("UserA.notes", "[]")
+	assertMapData("UserA.pwHints", "[UserA.pwHints.MyApp UserA.pwHints.PrincipalityA]")
 	assertMapData("UserB", "[UserB.notes UserB.pwHints]")
-	assertMapData("UserB.notes", "[UserB.notes.link UserB.notes.note]")
+	assertMapData("UserB.notes", "[]")
 	assertMapData("UserB.pwHints", "[UserB.pwHints.GMail B UserB.pwHints.Principality B]")
 }
 
 func assertMapData(id, val string) {
-	if fmt.Sprintf("%s", mapData.GetNavIndex(id)) != val {
-		log.Fatalf("Nav Map id:%s != %s. It is %s. file:%s\n", id, val, mapData.GetNavIndex(id), dataFileName)
+	s := mapData.GetNavIndex(id)
+	if fmt.Sprintf("%s", s) != val {
+		log.Fatalf("Nav Map id:%s != %s. It is %s. file:%s\n", id, val, s, dataFileName)
 	}
 }
+
 func TestGetLastId(t *testing.T) {
 	s := lib.GetLastId("")
 	if s != "" {

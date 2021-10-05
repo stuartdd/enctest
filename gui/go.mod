@@ -12,7 +12,7 @@ replace stuartdd.com/types => ../types
 
 require (
 	fyne.io/fyne/v2 v2.1.0
-	github.com/stuartdd/jsonParserGo/parser v0.0.0-20211002140023-711156b2ec0d
+	github.com/stuartdd/jsonParserGo/parser v0.0.0-20211005190924-f572fe585e06
 	stuartdd.com/lib v0.0.0-00010101000000-000000000000
 	stuartdd.com/pref v0.0.0
 	stuartdd.com/theme2 v0.0.0-00010101000000-000000000000
