@@ -263,8 +263,10 @@ func makeButtonBar() *fyne.Container {
 	saveShortcutButton = widget.NewButton("Save", func() {
 		commitAndSaveData(SAVE_AS_IS, true)
 	})
+	ffs := widget.NewButton("FULL SCREEN", flipFullScreen)
+	quit := widget.NewButton("EXIT", shouldClose)
 	updateButtonBar()
-	return container.NewHBox(saveShortcutButton)
+	return container.NewHBox(saveShortcutButton, quit, widget.NewSeparator(), ffs)
 }
 
 func makeMenus() *fyne.MainMenu {
@@ -755,19 +757,19 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 }
 
 func shouldClose() {
-	savePreferences()
 	if !shouldCloseLock {
-		shouldCloseLock = true
+		shouldCloseLock = true // shouldCloseLock is cleared in the saveChangesDialogAction.
+		savePreferences()
 		if searchWindow != nil {
 			searchWindow.Close()
 		}
 		count := countChangedItems()
 		if count > 0 {
-			fmt.Println("Nope!")
-			d := dialog.NewConfirm("Save Changes", "There are unsaved changes\nDo you want to save them before closing?", saveChangesConfirm, window)
+			d := dialog.NewConfirm("Close Warning", "There are unsaved changes\nDo you want to save them before closing?", saveChangesDialogAction, window)
 			d.Show()
 		} else {
 			fmt.Println("That's all folks")
+			shouldCloseLock = false
 			window.Close()
 		}
 	}
@@ -823,7 +825,7 @@ func setThemeById(varient string) {
 	preferences.PutString(themeVarPrefName, varient)
 }
 
-func saveChangesConfirm(option bool) {
+func saveChangesDialogAction(option bool) {
 	shouldCloseLock = false
 	if !option {
 		fmt.Println("Quit without saving changes")
