@@ -264,9 +264,10 @@ func makeButtonBar() *fyne.Container {
 		commitAndSaveData(SAVE_AS_IS, true)
 	})
 	ffs := widget.NewButton("FULL SCREEN", flipFullScreen)
+	edit := widget.NewButton("EDIT", flipPositionalData)
 	quit := widget.NewButton("EXIT", shouldClose)
 	updateButtonBar()
-	return container.NewHBox(saveShortcutButton, quit, widget.NewSeparator(), ffs)
+	return container.NewHBox(saveShortcutButton, quit, widget.NewSeparator(), ffs, edit)
 }
 
 func makeMenus() *fyne.MainMenu {

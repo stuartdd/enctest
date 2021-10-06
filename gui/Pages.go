@@ -149,7 +149,7 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		idd := details.Uid + "." + k
 		editEntry, ok := EditEntryList[idd]
 		if !ok {
-			editEntry = NewEditEntry(idd, k, v.StringValue(),
+			editEntry = NewEditEntry(idd, k, v.String(),
 				func(newWalue string, path string) {
 					entryChangedFunction(newWalue, path)
 					actionFunc(ACTION_UPDATED, path)
@@ -168,14 +168,29 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		}
 		fcre := container.New(&FixedLayout{10, 0}, editEntry.Remove)
 		fcna := container.New(&FixedLayout{10, 0}, editEntry.Rename)
+		na := editEntry.NodeAnnotation
+		dp := details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true)
+
 		cObj = append(cObj, widget.NewSeparator())
-		if editEntry.NodeAnnotation == types.NOTE_TYPE_RT {
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, editEntry.Rtx))
+		if na == types.NOTE_TYPE_RT && dp {
+			rt := widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, rt))
 		} else {
-			if editEntry.NodeAnnotation == types.NOTE_TYPE_PO && details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true) {
+			if na == types.NOTE_TYPE_PO && dp {
 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(editEntry.GetCurrentText())))
 			} else {
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, editEntry.Ent))
+				var we *widget.Entry
+				if na == types.NOTE_TYPE_SL {
+					we = widget.NewEntry()
+				} else {
+					we = widget.NewMultiLineEntry()
+				}
+				we.OnChanged = func(newWalue string) {
+					entryChangedFunction(newWalue, editEntry.Path)
+					actionFunc(ACTION_UPDATED, editEntry.Path)
+				}
+				we.SetText(editEntry.GetCurrentText())
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, we))
 			}
 		}
 

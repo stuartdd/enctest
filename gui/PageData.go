@@ -23,8 +23,7 @@ type EditEntry struct {
 	Old            string
 	New            string
 	Url            string
-	Ent            *widget.Entry
-	Rtx            *widget.RichText
+	We             *widget.Entry
 	Lab            *widget.Label
 	UnDo           *widget.Button
 	Link           *widget.Button
@@ -45,22 +44,7 @@ type DetailPage struct {
 }
 
 func NewEditEntry(path string, combinedTitle string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string)) *EditEntry {
-	var we *widget.Entry
-	var rt *widget.RichText
 	nodeAnnotation, title := types.GetNodeAnnotationTypeAndName(combinedTitle)
-	if nodeAnnotation == types.NOTE_TYPE_RT {
-		rt = widget.NewRichTextWithText(old)
-	} else {
-		if nodeAnnotation == types.NOTE_TYPE_SL || nodeAnnotation == types.NOTE_TYPE_PO {
-			we = widget.NewEntry()
-		} else {
-			we = widget.NewMultiLineEntry()
-		}
-		we.OnChanged = func(input string) {
-			onChangeFunc(input, path)
-		}
-		we.SetText(old)
-	}
 	l := widget.NewLabel(fmt.Sprintf(" %s ", title))
 	u := widget.NewButtonWithIcon("", theme.ContentUndoIcon(), func() {
 		unDoFunc(path)
@@ -76,7 +60,7 @@ func NewEditEntry(path string, combinedTitle string, old string, onChangeFunc fu
 	})
 	u.Disable()
 	i.Disable()
-	return &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, Ent: we, Rtx: rt, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
+	return &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, We: nil, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
 }
 
 func (p *EditEntry) RefreshButtons() {
@@ -127,8 +111,10 @@ func (p *EditEntry) CommitEdit(data parser.NodeI) bool {
 }
 
 func (p *EditEntry) RevertEdit() {
-	p.SetNew(p.Old)
-	p.Ent.SetText(p.Old)
+	if p.We != nil {
+		p.SetNew(p.Old)
+		p.We.SetText(p.Old)
+	}
 }
 
 func (p *EditEntry) String() string {
