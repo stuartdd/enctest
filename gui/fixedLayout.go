@@ -11,22 +11,25 @@ var Padding100 = container.New(NewFixedWLayout(100))
 //-----------------------------------------------------------------------------
 
 type FixedHLayout struct {
-	w float32
-	h float32
+	minW float32
+	h    float32
 }
 
-func NewFixedHLayout(h float32) *FixedHLayout {
-	return &FixedHLayout{w: 0, h: h}
+func NewFixedHLayout(minW, h float32) *FixedHLayout {
+	return &FixedHLayout{minW: minW, h: h}
 }
 
 func (d *FixedHLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
-	return fyne.NewSize(d.w, d.h)
+	return fyne.NewSize(d.minW, d.h)
 }
 
 func (d *FixedHLayout) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
 	for _, o := range objects {
-		d.w = containerSize.Width
-		o.Resize(fyne.NewSize(d.w, d.h))
+		if containerSize.Width < d.minW {
+			o.Resize(fyne.NewSize(d.minW, d.h))
+		} else {
+			o.Resize(fyne.NewSize(containerSize.Width, d.h))
+		}
 	}
 }
 

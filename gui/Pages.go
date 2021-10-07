@@ -23,7 +23,7 @@ const (
 	appDesc                  = "Welcome to Valt"
 	idNotes                  = "notes"
 	idPwDetails              = "pwHints"
-	DataPositionalPrefName   = "data.positional"
+	DataPresModePrefName     = "data.presentationmode"
 	DataHintIsCalledPrefName = "data.hintIsCalled"
 	DataNoteIsCalledPrefName = "data.noteIsCalled"
 
@@ -37,12 +37,12 @@ var (
 	preferedOrderReversed = []string{"notes", "positional", "post", "pre", "link", "userId"}
 )
 
-func NewModalEntryDialog(w fyne.Window, heading, txt string, isNote bool, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
-	return runModalEntryPopup(w, heading, txt, false, isNote, accept)
+func NewModalEntryDialog(w fyne.Window, heading, txt string, isNote bool, annotation types.NodeAnnotationEnum, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
+	return runModalEntryPopup(w, heading, txt, false, isNote, annotation, accept)
 }
 
 func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
-	return runModalEntryPopup(w, heading, txt, true, false, accept)
+	return runModalEntryPopup(w, heading, txt, true, false, types.NOTE_TYPE_SL, accept)
 }
 
 func GetWelcomePage(id string, preferences pref.PrefData) *DetailPage {
@@ -100,19 +100,19 @@ func positional(s string) fyne.CanvasObject {
 	return g1
 }
 
-func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject {
+func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		actionFunc(ACTION_REMOVE, details.Uid)
+		actionFunc(ACTION_REMOVE, details.Uid, "")
 	}))
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
-		actionFunc(ACTION_RENAME, details.Uid)
+		actionFunc(ACTION_RENAME, details.Uid, "")
 	}))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
 
-func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject {
+func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
 	logo := canvas.NewImageFromFile("background.png")
 	logo.FillMode = canvas.ImageFillContain
 	logo.SetMinSize(fyne.NewSize(228, 167))
@@ -134,13 +134,13 @@ func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, st
 		)))
 }
 
-func notesControls(_ fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject {
+func notesControls(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
 
-func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject {
+func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
 	data := details.GetObjectsForUid()
 	cObj := make([]fyne.CanvasObject, 0)
 	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
@@ -152,7 +152,7 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 			editEntry = NewEditEntry(idd, k, v.String(),
 				func(newWalue string, path string) {
 					entryChangedFunction(newWalue, path)
-					actionFunc(ACTION_UPDATED, path)
+					actionFunc(ACTION_UPDATED, path, "")
 				},
 				unDoFunction, actionFunc)
 			EditEntryList[idd] = editEntry
@@ -169,7 +169,7 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		fcre := container.New(&FixedLayout{10, 0}, editEntry.Remove)
 		fcna := container.New(&FixedLayout{10, 0}, editEntry.Rename)
 		na := editEntry.NodeAnnotation
-		dp := details.Preferences.GetBoolWithFallback(DataPositionalPrefName, true)
+		dp := details.Preferences.GetBoolWithFallback(DataPresModePrefName, true)
 
 		cObj = append(cObj, widget.NewSeparator())
 		if na == types.NOTE_TYPE_RT && dp {
@@ -193,25 +193,24 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 				}
 				we.OnChanged = func(newWalue string) {
 					entryChangedFunction(newWalue, editEntry.Path)
-					actionFunc(ACTION_UPDATED, editEntry.Path)
+					actionFunc(ACTION_UPDATED, editEntry.Path, "")
 				}
 				we.SetText(editEntry.GetCurrentText())
-
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, container.New(NewFixedHLayout(contHeight), we)))
+				editEntry.We = we
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, container.New(NewFixedHLayout(300, contHeight), we)))
 			}
 		}
-
 	}
-	return container.NewVBox(cObj...)
+	return container.NewScroll(container.NewVBox(cObj...))
 }
 
-func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(action string, uid string)) fyne.CanvasObject {
+func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		actionFunc(ACTION_REMOVE, details.Uid)
+		actionFunc(ACTION_REMOVE, details.Uid, "")
 	}))
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
-		actionFunc(ACTION_RENAME, details.Uid)
+		actionFunc(ACTION_RENAME, details.Uid, "")
 	}))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
@@ -257,7 +256,7 @@ func parseURL(urlStr string) *url.URL {
 	return link
 }
 
-func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
+func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, annotation types.NodeAnnotationEnum, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
 	var radioGroup *widget.RadioGroup
 	var styles *fyne.Container
 	var noteTypeId types.NodeAnnotationEnum = 0
@@ -278,7 +277,7 @@ func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNot
 
 	if isNote {
 		radioGroup = widget.NewRadioGroup(types.NodeAnnotationPrefixNames, radinGroupChanged)
-		radioGroup.SetSelected(types.NodeAnnotationPrefixNames[0])
+		radioGroup.SetSelected(types.NodeAnnotationPrefixNames[annotation])
 		styles = container.NewCenter(container.New(layout.NewHBoxLayout()), radioGroup)
 	}
 	entry := &widget.Entry{Text: txt, Password: password, OnChanged: func(s string) {}, OnSubmitted: submitInternal}

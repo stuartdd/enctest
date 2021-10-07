@@ -32,31 +32,31 @@ type EditEntry struct {
 	NodeAnnotation types.NodeAnnotationEnum
 	OnChangeFunc   func(input string, path string)
 	UnDoFunc       func(path string)
-	ActionFunc     func(action string, path string)
+	ActionFunc     func(action string, path string, extra string)
 }
 
 type DetailPage struct {
 	Uid, Heading, Title, User string
-	ViewFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject
-	CntlFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject
+	ViewFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject
+	CntlFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject
 	DataRootMap               parser.NodeI
 	Preferences               pref.PrefData
 }
 
-func NewEditEntry(path string, combinedTitle string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string)) *EditEntry {
+func NewEditEntry(path string, combinedTitle string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string, extra string)) *EditEntry {
 	nodeAnnotation, title := types.GetNodeAnnotationTypeAndName(combinedTitle)
 	l := widget.NewLabel(fmt.Sprintf(" %s ", title))
 	u := widget.NewButtonWithIcon("", theme.ContentUndoIcon(), func() {
 		unDoFunc(path)
 	})
 	i := widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
-		actionFunc(ACTION_LINK, "")
+		actionFunc(ACTION_LINK, "", "")
 	})
 	r := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		actionFunc(ACTION_REMOVE, path)
+		actionFunc(ACTION_REMOVE, path, "")
 	})
 	n := widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
-		actionFunc(ACTION_RENAME, path)
+		actionFunc(ACTION_RENAME, path, "")
 	})
 	u.Disable()
 	i.Disable()
@@ -68,13 +68,13 @@ func (p *EditEntry) RefreshButtons() {
 		p.UnDoFunc(p.Path)
 	})
 	p.Link = widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
-		p.ActionFunc(ACTION_LINK, p.Url)
+		p.ActionFunc(ACTION_LINK, p.Url, "")
 	})
 	p.Remove = widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		p.ActionFunc(ACTION_REMOVE, p.Path)
+		p.ActionFunc(ACTION_REMOVE, p.Path, "")
 	})
 	p.Rename = widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
-		p.ActionFunc(ACTION_RENAME, p.Path)
+		p.ActionFunc(ACTION_RENAME, p.Path, "")
 	})
 	p.updateButtons()
 }
@@ -162,8 +162,8 @@ func NewDetailPage(
 	uid string,
 	title string,
 	user string,
-	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject,
-	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string)) fyne.CanvasObject,
+	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject,
+	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject,
 	dataRootMap parser.NodeI,
 	preferences pref.PrefData) *DetailPage {
 

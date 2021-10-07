@@ -62,6 +62,8 @@ var (
 	preferences              *pref.PrefData
 	navTreeLHS               *widget.Tree
 	saveShortcutButton       *widget.Button
+	fullScreenShortcutButton *widget.Button
+	editModeShortcutButton   *widget.Button
 	splitContainer           *container.Split // So we can save the divider position to preferences.
 	splitContainerOffset     float64          = -1
 	splitContainerOffsetPref float64          = -1
@@ -257,17 +259,27 @@ func updateButtonBar() {
 	} else {
 		saveShortcutButton.Disable()
 	}
+	if preferences.GetBoolWithFallback(screenFullPrefName, false) {
+		fullScreenShortcutButton.SetText("Windowed")
+	} else {
+		fullScreenShortcutButton.SetText("Full Screen")
+	}
+	if preferences.GetBoolWithFallback(gui.DataPresModePrefName, true) {
+		editModeShortcutButton.SetText("Edit Data")
+	} else {
+		editModeShortcutButton.SetText("Present Data")
+	}
 }
 
 func makeButtonBar() *fyne.Container {
 	saveShortcutButton = widget.NewButton("Save", func() {
 		commitAndSaveData(SAVE_AS_IS, true)
 	})
-	ffs := widget.NewButton("FULL SCREEN", flipFullScreen)
-	edit := widget.NewButton("EDIT", flipPositionalData)
+	fullScreenShortcutButton = widget.NewButton("FULL SCREEN", flipFullScreen)
+	editModeShortcutButton = widget.NewButton("EDIT", flipPositionalData)
 	quit := widget.NewButton("EXIT", shouldClose)
 	updateButtonBar()
-	return container.NewHBox(quit, saveShortcutButton, gui.Padding100, ffs, edit)
+	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton)
 }
 
 func makeMenus() *fyne.MainMenu {
@@ -304,7 +316,7 @@ func makeMenus() *fyne.MainMenu {
 
 	viewItem := fyne.NewMenu("View",
 		fyne.NewMenuItem(oneOrTheOther(preferences.GetBoolWithFallback(screenFullPrefName, false), "View Windowed", "View Full Screen"), flipFullScreen),
-		fyne.NewMenuItem(oneOrTheOther(preferences.GetBoolWithFallback(gui.DataPositionalPrefName, true), "Hide Positional Data", "Show Positional Data"), flipPositionalData),
+		fyne.NewMenuItem(oneOrTheOther(preferences.GetBoolWithFallback(gui.DataPresModePrefName, true), "Edit Data", "Present Data"), flipPositionalData),
 		themeMenuItem,
 	)
 
@@ -402,8 +414,8 @@ func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 /**
 This is called when a heading button is pressed of the RH page
 */
-func controlActionFunction(action string, uid string) {
-	viewActionFunction(action, uid)
+func controlActionFunction(action string, uid string, extra string) {
+	viewActionFunction(action, uid, extra)
 }
 
 func dataPreferencesChanged(path, value, filter string) {
@@ -413,12 +425,12 @@ func dataPreferencesChanged(path, value, filter string) {
 /**
 This is called when a detail button is pressed of the RH page
 */
-func viewActionFunction(action string, uid string) {
+func viewActionFunction(action string, uid string, extra string) {
 	switch action {
 	case gui.ACTION_REMOVE:
 		removeAction(uid)
 	case gui.ACTION_RENAME:
-		renameAction(uid)
+		renameAction(uid, extra)
 	case gui.ACTION_LINK:
 		linkAction(uid)
 	case gui.ACTION_UPDATED:
@@ -442,8 +454,8 @@ func dataMapUpdated(desc, user, path string, err error) {
 }
 
 func flipPositionalData() {
-	p := preferences.GetBoolWithFallback(gui.DataPositionalPrefName, true)
-	preferences.PutBool(gui.DataPositionalPrefName, !p)
+	p := preferences.GetBoolWithFallback(gui.DataPresModePrefName, true)
+	preferences.PutBool(gui.DataPresModePrefName, !p)
 	futureReleaseTheBeast(500, MAIN_THREAD_RE_MENU)
 }
 
@@ -480,7 +492,7 @@ Remove a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
 func removeAction(uid string) {
-	removeName := types.GetNodeName(lib.GetLastId(uid))
+	_, removeName := types.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
 	dialog.NewConfirm("Remove entry", fmt.Sprintf("'%s'\nAre you sure?", removeName), func(ok bool) {
 		if ok {
 			err := dataRoot.Remove(uid, 1)
@@ -495,23 +507,25 @@ func removeAction(uid string) {
 Rename a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
-func renameAction(uid string) {
+func renameAction(uid string, extra string) {
 	m, _ := dataRoot.GetUserDataForUid(uid)
 	if m != nil {
-		fromName := types.GetNodeName(lib.GetLastId(uid))
-		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), "", false, func(accept bool, toName string, nt types.NodeAnnotationEnum) {
+		at, fromName := types.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
+		toName := ""
+		isNote := false
+		if dataRoot.IsStringNode(m) {
+			toName = fromName
+			isNote = true
+		}
+		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), toName, isNote, at, func(accept bool, toName string, nt types.NodeAnnotationEnum) {
 			if accept {
 				s, err := lib.ProcessEntityName(toName, nt)
 				if err != nil {
 					dialog.NewInformation("Name validation error", err.Error(), window).Show()
 				} else {
-					if fromName == s {
-						dialog.NewInformation("Rename item error", "Rename to the same name", window).Show()
-					} else {
-						err := dataRoot.Rename(uid, s)
-						if err != nil {
-							dialog.NewInformation("Rename item error", err.Error(), window).Show()
-						}
+					err := dataRoot.Rename(uid, s)
+					if err != nil {
+						dialog.NewInformation("Rename item error", err.Error(), window).Show()
 					}
 				}
 			}
@@ -641,7 +655,7 @@ Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a ch
 */
 func addNewEntity(head string, name string, addType int, isNote bool) {
 	cu := lib.GetUserFromPath(currentSelection)
-	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, func(accept bool, newName string, nt types.NodeAnnotationEnum) {
+	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, types.NOTE_TYPE_SL, func(accept bool, newName string, nt types.NodeAnnotationEnum) {
 		if accept {
 			s, err := lib.ProcessEntityName(newName, nt)
 			if err == nil {

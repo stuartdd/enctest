@@ -189,6 +189,10 @@ func (p *JsonData) Remove(uid string, min int) error {
 	return nil
 }
 
+func (p *JsonData) IsStringNode(n parser.NodeI) bool {
+	return n.GetNodeType() == parser.NT_STRING
+}
+
 func (p *JsonData) GetUserDataForUid(uid string) (parser.NodeI, error) {
 	return GetUserDataForUid(p.GetDataRoot(), uid)
 }
@@ -222,7 +226,7 @@ func ProcessEntityName(entry string, nt types.NodeAnnotationEnum) (string, error
 		}
 		return "", fmt.Errorf("input must not contain character '%c'. Only '0..9', 'a..z', 'A..Z' and '%s' chars are allowed", c, allowedCharsInName)
 	}
-	return types.GetNodeAnnotationPrefixName(nt) + entry, nil
+	return types.GetNodeAnnotationNameWithPrefix(nt, entry), nil
 }
 
 func searchUsers(addPath func(string, string), needle, user string, m *parser.JsonObject, matchCase bool) {
