@@ -2,7 +2,13 @@ package gui
 
 import (
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 )
+
+var Padding50 = container.New(NewFixedWLayout(50))
+var Padding100 = container.New(NewFixedWLayout(100))
+
+//-----------------------------------------------------------------------------
 
 type FixedHLayout struct {
 	w float32
@@ -20,6 +26,28 @@ func (d *FixedHLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 func (d *FixedHLayout) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
 	for _, o := range objects {
 		d.w = containerSize.Width
+		o.Resize(fyne.NewSize(d.w, d.h))
+	}
+}
+
+//-----------------------------------------------------------------------------
+
+type FixedWLayout struct {
+	w float32
+	h float32
+}
+
+func NewFixedWLayout(w float32) *FixedWLayout {
+	return &FixedWLayout{w: w, h: 0}
+}
+
+func (d *FixedWLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	return fyne.NewSize(d.w, d.h)
+}
+
+func (d *FixedWLayout) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
+	for _, o := range objects {
+		d.h = containerSize.Height
 		o.Resize(fyne.NewSize(d.w, d.h))
 	}
 }

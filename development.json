@@ -1,13 +1,13 @@
 {
     "data": {
-        "positional": "true"
+        "positional": "false"
     },
     "datafile": "libtest/TestDataTypes.json",
     "screen": {
         "fullScreen": "false",
-        "height": "585.714294",
-        "split": "0.383671",
-        "width": "1112.380981"
+        "height": "877.142883",
+        "split": "0.308890",
+        "width": "1345.238159"
     },
     "search": {
         "case": "true",

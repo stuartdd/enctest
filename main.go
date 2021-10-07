@@ -267,7 +267,7 @@ func makeButtonBar() *fyne.Container {
 	edit := widget.NewButton("EDIT", flipPositionalData)
 	quit := widget.NewButton("EXIT", shouldClose)
 	updateButtonBar()
-	return container.NewHBox(saveShortcutButton, quit, widget.NewSeparator(), ffs, edit)
+	return container.NewHBox(quit, saveShortcutButton, gui.Padding100, ffs, edit)
 }
 
 func makeMenus() *fyne.MainMenu {

@@ -175,22 +175,29 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		if na == types.NOTE_TYPE_RT && dp {
 			rt := widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())
 			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, rt))
+			editEntry.Rename.Disable()
+			editEntry.UnDo.Disable()
 		} else {
 			if na == types.NOTE_TYPE_PO && dp {
 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(editEntry.GetCurrentText())))
 			} else {
 				var we *widget.Entry
+				contHeight := editEntry.Lab.MinSize().Height
 				if na == types.NOTE_TYPE_SL {
 					we = widget.NewEntry()
 				} else {
 					we = widget.NewMultiLineEntry()
+					if na != types.NOTE_TYPE_PO {
+						contHeight = 250
+					}
 				}
 				we.OnChanged = func(newWalue string) {
 					entryChangedFunction(newWalue, editEntry.Path)
 					actionFunc(ACTION_UPDATED, editEntry.Path)
 				}
 				we.SetText(editEntry.GetCurrentText())
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, we))
+
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, container.New(NewFixedHLayout(contHeight), we)))
 			}
 		}
 
