@@ -2,6 +2,7 @@
 *.log
 *.txt
 *.exe
+tmp.*
 fyne-cross/tmp/
 data.json
 config.json

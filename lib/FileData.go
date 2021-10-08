@@ -86,12 +86,23 @@ func (r *FileData) RequiresDecryption() bool {
 
 func (r *FileData) IsRawJson() bool {
 	p := 0
-	for p = 0; p < (len(r.content) - 1); p++ {
-		if r.content[p] > 32 {
-			break
+	for p = 0; p < (len(r.content) - 12); p++ {
+		if r.content[p] == 't' { // t
+			if r.content[p+1] == 'i' && // i
+				r.content[p+2] == 'm' && // m
+				r.content[p+3] == 'e' && // e
+				r.content[p+4] == 'S' && // s
+				r.content[p+5] == 't' && // t
+				r.content[p+6] == 'a' && // a
+				r.content[p+7] == 'm' && // m
+				r.content[p+8] == 'p' && // p
+				r.content[p+9] == '"' && // "
+				r.content[p+10] == ':' { // :
+				return true
+			}
 		}
 	}
-	return (r.content[p] == '{') || (r.content[p] == '[')
+	return false
 }
 
 func (r *FileData) HasEncData() bool {

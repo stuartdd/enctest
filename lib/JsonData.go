@@ -156,6 +156,9 @@ func (p *JsonData) Rename(uid string, newName string) error {
 		return fmt.Errorf("the item to rename '%s' does not have a valid parent", uid)
 	}
 	err = parser.Rename(p.dataMap, n, newName)
+	if err != nil {
+		return fmt.Errorf("Rename '%s' failed. Error: '%s'", uid, err.Error())
+	}
 	p.navIndex = *createNavIndex(p.dataMap)
 
 	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed

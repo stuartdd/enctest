@@ -58,6 +58,10 @@ github.com/stuartdd/jsonParserGo/parser v0.0.0-20211005171012-36d614f2be54 h1:uY
 github.com/stuartdd/jsonParserGo/parser v0.0.0-20211005171012-36d614f2be54/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
 github.com/stuartdd/jsonParserGo/parser v0.0.0-20211005190924-f572fe585e06 h1:9FusJgecNvZIq1ez4CanXYNkV/98MGgEETmAZFEMFH8=
 github.com/stuartdd/jsonParserGo/parser v0.0.0-20211005190924-f572fe585e06/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20211008142103-d51bb6bbd06f h1:xocSkzLCMatLgipwUvok3+nggh/i1qyC6rZrT6qgE3k=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20211008142103-d51bb6bbd06f/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20211008150059-10d61318c076 h1:xQ6Zm4bVSOoEKrb/zm7YCdC5czq1/mYbSxyuNUFchkc=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20211008150059-10d61318c076/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/goldmark v1.3.8 h1:Nw158Q8QN+CPgTmVRByhVwapp8Mm1e2blinhmx4wx5E=
