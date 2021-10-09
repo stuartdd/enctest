@@ -105,14 +105,26 @@ func testNavIndexNot(t *testing.T, jd *lib.JsonData, name string) {
 func TestJsonDataNoTimeStamp(t *testing.T) {
 	_, err := lib.NewJsonData([]byte("{\"text\":\"This is NOT one of those times\"}"), updateMap)
 	if err == nil {
-		t.Errorf("Should have thrown err. timeStampStr does not exist in data root")
+		t.Errorf("Should have thrown err. groups does not exist in data root")
+	}
+	_, err = lib.NewJsonData([]byte("{\"groups\":\"This is NOT one of those times\"}"), updateMap)
+	if err == nil {
+		t.Errorf("Should have thrown err. groups is not an object node")
+	}
+	_, err = lib.NewJsonData([]byte("{\"groups\":{\"note\":\"This is NOT one of those times\"}}"), updateMap)
+	if err == nil {
+		t.Errorf("Should have thrown err. groups is not an object node")
+	}
+	_, err = lib.NewJsonData([]byte("{\"groups\":{\"note\":\"This is NOT one of those times\"}, \"timeStamp\":\"TS\"}"), updateMap)
+	if err == nil {
+		t.Errorf("Should have thrown err. groups is not an object node")
 	}
 }
 
 func updateMap(a, b, c string, e error) {
-	if e == nil {
-		fmt.Printf("Updated:%s, %s, %s\n", a, b, c)
-	} else {
-		fmt.Printf("UpdatedError:%s\n", e.Error())
-	}
+	// if e == nil {
+	// 	fmt.Printf("Updated:%s, %s, %s\n", a, b, c)
+	// } else {
+	// 	fmt.Printf("UpdatedError:%s\n", e.Error())
+	// }
 }

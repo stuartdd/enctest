@@ -1,13 +1,13 @@
 {
     "data": {
-        "presentationmode": "false"
+        "presentationmode": "true"
     },
-    "datafile": "tmp.json",
+    "datafile": "libtest/TestDataTypes.json",
     "screen": {
         "fullScreen": "false",
-        "height": "714.761963",
+        "height": "704.285767",
         "split": "0.261768",
-        "width": "1435.714355"
+        "width": "1315.714355"
     },
     "search": {
         "case": "true",

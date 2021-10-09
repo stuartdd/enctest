@@ -271,8 +271,8 @@ func TestLoadCache(t *testing.T) {
 	if v2 != v1 {
 		t.Error("cached data should return the same value")
 	}
-	if (tim1 % tim2) < 40 {
-		t.Error("cached data should read at least 40 * faster")
+	if (tim1 % tim2) < 30 {
+		t.Error("cached data should read at least 30 * faster")
 	}
 }
 
@@ -317,8 +317,8 @@ func TestLoadComplex(t *testing.T) {
 	if m == nil {
 		t.Error("groups should return a map")
 	}
-	if len(*m) != 2 {
-		t.Error("groups map is len 2")
+	if len(*m) != 3 {
+		t.Error("groups map is len 3")
 	}
 
 	m, s, ok = p.GetDataForPath("groups.UserA.notes")

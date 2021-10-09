@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	content1        = []byte("{\"text\":\"This is one of those times\"}")
-	content2        = []byte("{\"text\":\"This is NOT one of those times\"}")
-	content3        = []byte("\n  {}")
-	content4        = []byte("[]")
+	content1        = []byte("{\"text\":\"This is one of those times\",\" timeStamp\":\"TS\"}")
+	content2        = []byte("{\"text\":\"This is NOT one of those times\",\" timeStamp\":\"TS\"}")
+	content3        = []byte("\n  {\"timeStamp\":\"TS\"}")
+	content4        = []byte("[\"timeStamp\":\"TS\"]")
 	content5        = []byte("\n  F9")
 	password        = []byte("mysecretpassword")
 	testFileName    = "TempTestData.json"
@@ -39,7 +39,7 @@ func TestEncReload(t *testing.T) {
 		t.Errorf("err should be nil for file found. %s", err1)
 	}
 	if !fd1.IsRawJson() {
-		t.Errorf("Content should not be JSON:'%s'", string(fd1.GetContent()))
+		t.Errorf("Content should be JSON:'%s'", string(fd1.GetContent()))
 	}
 	storeCalledBack = false
 	fd1.StoreContentAsIs(storeCallMeBack)

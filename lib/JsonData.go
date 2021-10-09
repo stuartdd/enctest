@@ -41,10 +41,12 @@ func NewJsonData(j []byte, dataMapUpdated func(string, string, string, error)) (
 	rO := mIn.(*parser.JsonObject)
 
 	u := rO.GetNodeWithName(dataMapRootName)
+	if u == nil {
+		return nil, fmt.Errorf("root '%s' element is missing", dataMapRootName)
+	}
 	if u.GetNodeType() != parser.NT_OBJECT {
 		return nil, fmt.Errorf("root '%s' element is NOT a JsonObject", dataMapRootName)
 	}
-
 	ts, err := parser.Find(rO, timeStampStr)
 	if err != nil {
 		return nil, fmt.Errorf("'%s' does not exist in data root", timeStampStr)

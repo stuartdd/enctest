@@ -219,13 +219,15 @@ go test -v -run TestParseJson
 */
 func TestLoadAndParseJson(t *testing.T) {
 	loadDataMap(dataFileName)
-	testStructContains("1:  :groups")
-	testStructContains("2:    :UserA")
-	testStructContains("2:    :UserB")
-	testStructContains("3:      :pwHints")
-	testStructContains("4:        :GMail")
-	testStructContains("4:        -note = An")
-	testStructContains("5:          -notes = https:")
+	testStructContains("OBJECT: N:''")
+	testStructContains("OBJECT: N:'groups'")
+
+	testStructContains("OBJECT: N:'UserA'")
+	testStructContains("OBJECT: N:'UserB'")
+	testStructContains("STRING: N:'post' V:'123'")
+	testStructContains("STRING: N:'pre' V:'abc'")
+	testStructContains("STRING: N:'pre' V:'abc'")
+	testStructContains("STRING: N:'userId' V:'Buser'")
 	if mapData.GetTimeStamp().Format(time.UnixDate) != "Fri Jul 30 21:25:10 BST 2021" {
 		log.Fatalf("Timestamp dis not parse to UnixDate correctly. file:%s\n", dataFileName)
 	}
@@ -239,12 +241,12 @@ func loadDataMap(fileName string) {
 			log.Fatalf("error creating new DataRoot file:%s %v\n", fileName, err)
 		}
 		mapData = md
-		parser.DiagnosticList(mapData.GetDataRoot())
+		structData = parser.DiagnosticList(mapData.GetDataRoot())
 	}
 }
 
 func dataMapUpdated(desc, user, path string, err error) {
-	fmt.Printf("Updated: %s User: %s Path:%s Err:%s\n", desc, user, path, err.Error())
+	// fmt.Printf("Updated: %s User: %s Path:%s Err:%s\n", desc, user, path, err.Error())
 }
 
 func toJson(m parser.NodeI) string {
@@ -253,7 +255,7 @@ func toJson(m parser.NodeI) string {
 
 func testStructContains(s string) {
 	if !strings.Contains(structData, s) {
-		log.Fatalf("error missing data: '%s'. file:%s\n", s, dataFileName)
+		log.Fatalf("error missing data: '%s'. file:%s\nStructure Data: %s", s, dataFileName, structData)
 	}
 }
 
