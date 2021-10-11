@@ -356,20 +356,23 @@ func createNavIndexDetail(id string, uids *map[string][]string, nodeI parser.Nod
 		if user.GetNodeType() == parser.NT_OBJECT {
 			userO := user.(*parser.JsonObject)
 			id := userO.GetName()
-			l, ll := keysToList2(id, userO)
+			l, ll := keysToList(id, userO)
 			(*uids)[id] = ll
 			for ii2, id2 := range l {
 				m2 := userO.GetNodeWithName(id2).(*parser.JsonObject)
 				for _, v2 := range m2.GetValuesSorted() {
 					if v2.GetNodeType() == parser.NT_OBJECT {
-						l2, ll2 := keysToList2(ll[ii2], m2)
+						l2, ll2 := keysToList(ll[ii2], m2)
 						(*uids)[ll[ii2]] = ll2
 						for ii3, id3 := range l2 {
-							m3 := m2.GetNodeWithName(id3).(*parser.JsonObject)
-							for _, v3 := range m3.GetValuesSorted() {
-								if v3.GetNodeType() == parser.NT_OBJECT {
-									_, ll3 := keysToList2(ll2[ii3], m3)
-									(*uids)[ll2[ii3]] = ll3
+							m3 := m2.GetNodeWithName(id3)
+							if m3.GetNodeType() == parser.NT_OBJECT {
+								m3O := m3.(*parser.JsonObject)
+								for _, v3 := range m3O.GetValuesSorted() {
+									if v3.GetNodeType() == parser.NT_OBJECT {
+										_, ll3 := keysToList(ll2[ii3], m3O)
+										(*uids)[ll2[ii3]] = ll3
+									}
 								}
 							}
 						}
@@ -380,7 +383,7 @@ func createNavIndexDetail(id string, uids *map[string][]string, nodeI parser.Nod
 	}
 }
 
-func keysToList2(id string, m *parser.JsonObject) ([]string, []string) {
+func keysToList(id string, m *parser.JsonObject) ([]string, []string) {
 	l := make([]string, 0)
 	ll := make([]string, 0)
 	for _, k := range m.GetSortedKeys() {
