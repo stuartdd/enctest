@@ -251,6 +251,11 @@ func TestLoadCache(t *testing.T) {
 	sta1 := time.Now().UnixNano()
 	_, v1, ok1 := p.GetDataForPath("groups.UserA.notes.note")
 	tim1 := time.Now().UnixNano() - sta1
+
+	for i := 0; i < 5; i++ {
+		p.GetDataForPath("groups.UserA.notes.note")
+	}
+
 	sta2 := time.Now().UnixNano()
 	_, v2, ok2 := p.GetDataForPath("groups.UserA.notes.note")
 	tim2 := time.Now().UnixNano() - sta2
@@ -271,8 +276,8 @@ func TestLoadCache(t *testing.T) {
 	if v2 != v1 {
 		t.Error("cached data should return the same value")
 	}
-	if (tim1 % tim2) < 30 {
-		t.Error("cached data should read at least 30 * faster")
+	if (tim1 % tim2) < 5 {
+		t.Errorf("cached data should read at least 5 * faster. Actual: %d", tim1%tim2)
 	}
 }
 
