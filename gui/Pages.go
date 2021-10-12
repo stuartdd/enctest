@@ -150,7 +150,7 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		editEntry, ok := EditEntryList[idd]
 		if !ok {
 			editEntry = NewEditEntry(idd, k, v.String(),
-				func(newWalue string, path string) {
+				func(newWalue string, path string) { //onChangeFunction
 					entryChangedFunction(newWalue, path)
 					actionFunc(ACTION_UPDATED, path, "")
 				},

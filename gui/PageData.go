@@ -15,7 +15,7 @@ import (
 	"stuartdd.com/types"
 )
 
-var EditEntryList = make(map[string]*EditEntry)
+var editEntryList = make(map[string]*EditEntry)
 
 type EditEntry struct {
 	Path           string
@@ -63,29 +63,29 @@ func NewEditEntry(path string, combinedTitle string, old string, onChangeFunc fu
 	return &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, We: nil, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
 }
 
-func (p *EditEntry) RefreshButtons() {
-	p.UnDo = widget.NewButtonWithIcon("", theme.ContentUndoIcon(), func() {
-		p.UnDoFunc(p.Path)
-	})
-	p.Link = widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
-		p.ActionFunc(ACTION_LINK, p.Url, "")
-	})
-	p.Remove = widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
-		p.ActionFunc(ACTION_REMOVE, p.Path, "")
-	})
-	p.Rename = widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
-		p.ActionFunc(ACTION_RENAME, p.Path, "")
-	})
-	p.updateButtons()
-}
-
 func (p *EditEntry) SetNew(s string) {
 	if p.Old == s {
 		p.New = ""
 	} else {
 		p.New = s
 	}
-	p.updateButtons()
+	p.RefreshButtons()
+}
+
+func (p *EditEntry) RefreshButtons() {
+	l, ok := p.HasLink()
+	if ok {
+		p.Url = l
+		p.Link.Enable()
+	} else {
+		p.Url = ""
+		p.Link.Disable()
+	}
+	if p.IsChanged() {
+		p.UnDo.Enable()
+	} else {
+		p.UnDo.Disable()
+	}
 }
 
 func (p *EditEntry) CommitEdit(data parser.NodeI) bool {
@@ -132,22 +132,6 @@ func (p *EditEntry) IsChanged() bool {
 func (p *EditEntry) HasLink() (string, bool) {
 	lnk, ok := parseStringForLink(p.GetCurrentText())
 	return lnk, ok
-}
-
-func (p *EditEntry) updateButtons() {
-	l, ok := p.HasLink()
-	if ok {
-		p.Url = l
-		p.Link.Enable()
-	} else {
-		p.Url = ""
-		p.Link.Disable()
-	}
-	if p.IsChanged() {
-		p.UnDo.Enable()
-	} else {
-		p.UnDo.Disable()
-	}
 }
 
 func (p *EditEntry) GetCurrentText() string {
