@@ -15,13 +15,15 @@ import (
 	"stuartdd.com/types"
 )
 
-var editEntryList = make(map[string]*EditEntry)
+type EditEntryList struct {
+	editEntryList map[string]*EditEntry
+}
 
 type EditEntry struct {
 	Path           string
 	Title          string
-	Old            string
-	New            string
+	OldTxt         string
+	NewTxt         string
 	Url            string
 	We             *widget.Entry
 	Lab            *widget.Label
@@ -43,7 +45,49 @@ type DetailPage struct {
 	Preferences               pref.PrefData
 }
 
-func NewEditEntry(path string, combinedTitle string, old string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string, extra string)) *EditEntry {
+func NewEditEntryList() *EditEntryList {
+	return &EditEntryList{editEntryList: make(map[string]*EditEntry)}
+}
+
+func (p *EditEntryList) Clear() {
+	p.editEntryList = make(map[string]*EditEntry)
+}
+
+func (p *EditEntryList) Add(ee *EditEntry) {
+	p.editEntryList[ee.Path] = ee
+}
+
+func (p *EditEntryList) Get(path string) (*EditEntry, bool) {
+	ee := p.editEntryList[path]
+	if ee == nil {
+		return nil, false
+	}
+	return p.editEntryList[path], true
+}
+
+func (p *EditEntryList) Commit(dataRoot parser.NodeI) int {
+	count := 0
+	for _, v := range p.editEntryList {
+		if v.IsChanged() {
+			if v.CommitEdit(dataRoot) {
+				count++
+			}
+		}
+	}
+	return count
+}
+
+func (p *EditEntryList) Count() int {
+	count := 0
+	for _, v := range p.editEntryList {
+		if v.IsChanged() {
+			count++
+		}
+	}
+	return count
+}
+
+func NewEditEntry(path string, combinedTitle string, currentTxt string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string, extra string)) *EditEntry {
 	nodeAnnotation, title := types.GetNodeAnnotationTypeAndName(combinedTitle)
 	l := widget.NewLabel(fmt.Sprintf(" %s ", title))
 	u := widget.NewButtonWithIcon("", theme.ContentUndoIcon(), func() {
@@ -60,19 +104,18 @@ func NewEditEntry(path string, combinedTitle string, old string, onChangeFunc fu
 	})
 	u.Disable()
 	i.Disable()
-	return &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, We: nil, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, Old: old, New: "", OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
+	return &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, We: nil, Lab: l, UnDo: u, Link: i, Remove: r, Rename: n, OldTxt: currentTxt, NewTxt: currentTxt, OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
 }
 
 func (p *EditEntry) SetNew(s string) {
-	if p.Old == s {
-		p.New = ""
-	} else {
-		p.New = s
-	}
-	p.RefreshButtons()
+	p.NewTxt = s
+	p.RefreshData()
 }
 
-func (p *EditEntry) RefreshButtons() {
+func (p *EditEntry) RefreshData() {
+	if p.We != nil {
+		p.We.SetText(p.NewTxt)
+	}
 	l, ok := p.HasLink()
 	if ok {
 		p.Url = l
@@ -93,40 +136,37 @@ func (p *EditEntry) CommitEdit(data parser.NodeI) bool {
 	if m != nil {
 		switch m.GetNodeType() {
 		case parser.NT_STRING:
-			m.(*parser.JsonString).SetValue(p.New)
+			m.(*parser.JsonString).SetValue(p.NewTxt)
 		case parser.NT_BOOL:
-			m.(*parser.JsonBool).SetValue(p.New == "true")
+			m.(*parser.JsonBool).SetValue(p.NewTxt == "true")
 		case parser.NT_NUMBER:
-			f, err := strconv.ParseFloat(p.New, 64)
+			f, err := strconv.ParseFloat(p.NewTxt, 64)
 			if err != nil {
 				return false
 			}
 			m.(*parser.JsonNumber).SetValue(f)
 		}
-		p.Old = p.New
-		p.New = ""
+		p.OldTxt = p.NewTxt
+		p.RefreshData()
 		return true
 	}
 	return false
 }
 
 func (p *EditEntry) RevertEdit() {
-	if p.We != nil {
-		p.SetNew(p.Old)
-		p.We.SetText(p.Old)
-	}
+	p.SetNew(p.OldTxt)
 }
 
 func (p *EditEntry) String() string {
 	if p.IsChanged() {
-		return fmt.Sprintf("Item:'%s' Is updated from '%s' to '%s'", p.Path, p.Old, p.New)
+		return fmt.Sprintf("Item:'%s' Is updated from '%s' to '%s'", p.Path, p.OldTxt, p.NewTxt)
 	} else {
 		return fmt.Sprintf("Item:'%s' Is unchanged", p.Path)
 	}
 }
 
 func (p *EditEntry) IsChanged() bool {
-	return p.New != ""
+	return p.NewTxt != p.OldTxt
 }
 
 func (p *EditEntry) HasLink() (string, bool) {
@@ -135,11 +175,7 @@ func (p *EditEntry) HasLink() (string, bool) {
 }
 
 func (p *EditEntry) GetCurrentText() string {
-	if p.IsChanged() {
-		return p.New
-	} else {
-		return p.Old
-	}
+	return p.NewTxt
 }
 
 func NewDetailPage(

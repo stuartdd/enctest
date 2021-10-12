@@ -791,12 +791,7 @@ func shouldClose() {
 }
 
 func countChangedItems() int {
-	count := 0
-	for _, v := range gui.EditEntryList {
-		if v.IsChanged() {
-			count++
-		}
-	}
+	count := gui.EditEntryListCache.Count()
 	if hasDataChanges {
 		count++
 	}
@@ -804,14 +799,7 @@ func countChangedItems() int {
 }
 
 func commitChangedItems() (int, error) {
-	count := 0
-	for _, v := range gui.EditEntryList {
-		if v.IsChanged() {
-			if v.CommitEdit(dataRoot.GetDataRoot()) {
-				count++
-			}
-		}
-	}
+	count := gui.EditEntryListCache.Commit(dataRoot.GetDataRoot())
 	c := dataRoot.ToJson()
 	fileData.SetContentString(c)
 	return count, nil

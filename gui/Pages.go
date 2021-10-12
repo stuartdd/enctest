@@ -35,6 +35,7 @@ const (
 
 var (
 	preferedOrderReversed = []string{"notes", "positional", "post", "pre", "link", "userId"}
+	EditEntryListCache    = NewEditEntryList()
 )
 
 func NewModalEntryDialog(w fyne.Window, heading, txt string, isNote bool, annotation types.NodeAnnotationEnum, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
@@ -78,8 +79,8 @@ func GetDetailPage(id string, dataRootMap parser.NodeI, preferences pref.PrefDat
 }
 
 func entryChangedFunction(newWalue string, path string) {
-	ee := EditEntryList[path]
-	if ee != nil {
+	ee, ok := EditEntryListCache.Get(path)
+	if ok {
 		ee.SetNew(newWalue)
 	}
 }
@@ -147,7 +148,7 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 	for _, k := range keys {
 		v := data.GetNodeWithName(k)
 		idd := details.Uid + "." + k
-		editEntry, ok := EditEntryList[idd]
+		editEntry, ok := EditEntryListCache.Get(idd)
 		if !ok {
 			editEntry = NewEditEntry(idd, k, v.String(),
 				func(newWalue string, path string) { //onChangeFunction
@@ -155,9 +156,9 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 					actionFunc(ACTION_UPDATED, path, "")
 				},
 				unDoFunction, actionFunc)
-			EditEntryList[idd] = editEntry
+			EditEntryListCache.Add(editEntry)
 		}
-		editEntry.RefreshButtons()
+		editEntry.RefreshData()
 		fcl := container.New(&FixedLayout{100, 1}, editEntry.Lab)
 		fcbl := container.New(&FixedLayout{10, 0}, editEntry.Link)
 		fcbr := container.New(&FixedLayout{10, 0}, editEntry.UnDo)
@@ -241,8 +242,8 @@ func contains(s []string, str string) (int, bool) {
 }
 
 func unDoFunction(path string) {
-	ee := EditEntryList[path]
-	if ee != nil {
+	ee, ok := EditEntryListCache.Get(path)
+	if ok {
 		ee.RevertEdit()
 	}
 }
