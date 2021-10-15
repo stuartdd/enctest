@@ -61,6 +61,8 @@ const (
 	fallbackDataFile        = "data.json"
 
 	dataFilePrefName       = "datafile"
+	getUrlPrefName         = "getDataUrl"
+	postUrlPrefName        = "postDataUrl"
 	themeVarPrefName       = "theme"
 	screenWidthPrefName    = "screen.width"
 	screenHeightPrefName   = "screen.height"
@@ -84,13 +86,12 @@ var (
 	splitContainerOffset     float64          = -1
 	splitContainerOffsetPref float64          = -1
 
-	findCaseSensitive  = binding.NewBool()
-	pendingSelection   = ""
-	currentSelection   = ""
-	shouldCloseLock    = false
-	loadThreadFileName = ""
-	hasDataChanges     = false
-	releaseTheBeast    = make(chan int, 5)
+	findCaseSensitive = binding.NewBool()
+	pendingSelection  = ""
+	currentSelection  = ""
+	shouldCloseLock   = false
+	hasDataChanges    = false
+	releaseTheBeast   = make(chan int, 5)
 )
 
 func abortWithUsage(message string) {
@@ -115,7 +116,9 @@ func main() {
 	preferences = p
 	preferences.AddChangeListener(dataPreferencesChanged, "data.")
 
-	loadThreadFileName = p.GetStringForPathWithFallback(dataFilePrefName, fallbackDataFile)
+	loadThreadFileName := p.GetStringForPathWithFallback(dataFilePrefName, fallbackDataFile)
+	getDataUrl := p.GetStringForPathWithFallback(getUrlPrefName, "")
+	postDataUrl := p.GetStringForPathWithFallback(postUrlPrefName, "")
 
 	a := app.NewWithID("stuartdd.enctest")
 	a.Settings().SetTheme(theme2.NewAppTheme(preferences.GetStringForPathWithFallback(themeVarPrefName, "dark")))
@@ -182,9 +185,9 @@ func main() {
 			case MAIN_THREAD_LOAD:
 				// Load the file and decrypt it if required
 				fmt.Println("Load State")
-				fd, err := lib.NewFileData(loadThreadFileName)
+				fd, err := lib.NewFileData(loadThreadFileName, getDataUrl, postDataUrl)
 				if err != nil {
-					abortWithUsage(fmt.Sprintf("Failed to load data file %s\n", loadThreadFileName))
+					abortWithUsage(fmt.Sprintf("Failed to load data file %s. Error: %s\n", loadThreadFileName, err.Error()))
 				}
 				/*
 					While file is ENCRYPTED
@@ -357,7 +360,7 @@ func makeMenus() *fyne.MainMenu {
 
 	saveAsItem := fyne.NewMenuItem("Undefined", func() {})
 	if fileData != nil {
-		if fileData.IsEncryptedOnDisk() {
+		if fileData.IsEncrypted() {
 			saveAsItem = fyne.NewMenuItem("Save Un-Encrypted", func() {
 				commitAndSaveData(SAVE_UN_ENCRYPTED, false)
 			})

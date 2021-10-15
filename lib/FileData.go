@@ -20,18 +20,23 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"io/ioutil"
+
+	"github.com/stuartdd/jsonParserGo/parser"
 
 	"golang.org/x/crypto/scrypt"
 )
 
 type FileData struct {
-	fileName        string
-	key             []byte
-	content         []byte
-	isEmpty         bool
-	encryptedOnDisk bool
+	fileName    string
+	postDataUrl string
+	getDataUrl  string
+	key         []byte
+	content     []byte
+	isEmpty     bool
 }
 
 /**
@@ -44,13 +49,13 @@ var (
 	encSalt       = []byte("SQhMXVt8rQED2MxHTHxmuZLMxdJz5DQI") // Keep as 32 randomly generated chars
 )
 
-func NewFileData(fName string) (*FileData, error) {
-	fd := FileData{fileName: fName, content: make([]byte, 0), key: make([]byte, 0), isEmpty: false, encryptedOnDisk: false}
+func NewFileData(fName string, getUrl string, postUrl string) (*FileData, error) {
+	fd := FileData{fileName: fName, getDataUrl: getUrl, postDataUrl: postUrl, content: make([]byte, 0), isEmpty: true, key: make([]byte, 0)}
 	return &fd, fd.loadData()
 }
 
 func (r *FileData) DecryptContents(encKey []byte) error {
-	if r.isEmpty {
+	if r.IsEmpty() {
 		return errors.New("cannot decrypt empty content data")
 	}
 	cont, err := decrypt(encKey, r.content)
@@ -64,6 +69,7 @@ func (r *FileData) DecryptContents(encKey []byte) error {
 
 func (r *FileData) StoreContentEncrypted(encKey []byte, callbackWhenDone func()) error {
 	cont, err := encrypt(encKey, r.content)
+
 	if err != nil {
 		return err
 	}
@@ -71,7 +77,6 @@ func (r *FileData) StoreContentEncrypted(encKey []byte, callbackWhenDone func())
 	if err != nil {
 		return err
 	}
-	r.encryptedOnDisk = true
 	r.key = encKey
 	callbackWhenDone()
 	return nil
@@ -79,7 +84,6 @@ func (r *FileData) StoreContentEncrypted(encKey []byte, callbackWhenDone func())
 
 func (r *FileData) StoreContentUnEncrypted(callbackWhenDone func()) error {
 	r.key = make([]byte, 0)
-	r.encryptedOnDisk = false
 	err := r.storeData(r.content)
 	if err != nil {
 		return err
@@ -141,30 +145,40 @@ func (r *FileData) IsEmpty() bool {
 	return r.isEmpty
 }
 
-func (r *FileData) IsEncryptedOnDisk() bool {
-	return r.encryptedOnDisk
+func (r *FileData) IsEncrypted() bool {
+	return !r.IsRawJson()
 }
 
 func (r *FileData) SetContent(data []byte) {
+	r.isEmpty = false
 	r.content = data
 }
 
 func (r *FileData) SetContentString(content string) {
-	r.isEmpty = false
 	r.SetContent([]byte(content))
 }
 
 func (r *FileData) storeData(data []byte) error {
-	return ioutil.WriteFile(r.fileName, data, 0644)
+	if r.postDataUrl != "" {
+		_, err := parser.PostJsonBytes(fmt.Sprintf("%s/%s", r.postDataUrl, r.fileName), data)
+		return err
+	} else {
+		return ioutil.WriteFile(r.fileName, data, 0644)
+	}
 }
 
 func (r *FileData) loadData() error {
-	dat, err := ioutil.ReadFile(r.fileName)
+	var dat []byte
+	var err error
+	if r.getDataUrl != "" {
+		dat, err = parser.GetJson(fmt.Sprintf("%s/%s", r.getDataUrl, r.fileName))
+	} else {
+		dat, err = ioutil.ReadFile(r.fileName)
+	}
 	if err != nil {
 		return err
 	}
-	r.content = dat
-	r.encryptedOnDisk = !r.IsRawJson()
+	r.SetContent(dat)
 	return nil
 }
 
@@ -185,7 +199,12 @@ func decrypt(key []byte, data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	nonce, ciphertext := data[:gcm.NonceSize()], data[gcm.NonceSize():]
+	dd, err := base64.StdEncoding.DecodeString(string(data))
+	if err != nil {
+		return nil, err
+	}
+	
+	nonce, ciphertext := dd[:gcm.NonceSize()], dd[gcm.NonceSize():]
 
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
@@ -219,7 +238,7 @@ func encrypt(key, data []byte) ([]byte, error) {
 
 	ciphertext := gcm.Seal(nonce, nonce, data, nil)
 
-	return ciphertext, nil
+	return []byte(base64.StdEncoding.EncodeToString(ciphertext)), nil
 }
 
 func deriveKey(key []byte) ([]byte, error) {

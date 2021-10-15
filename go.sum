@@ -70,6 +70,10 @@ github.com/stuartdd/jsonParserGo/parser v0.0.0-20211008150059-10d61318c076 h1:xQ
 github.com/stuartdd/jsonParserGo/parser v0.0.0-20211008150059-10d61318c076/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
 github.com/stuartdd/jsonParserGo/parser v0.0.0-20211008235448-73dbb353f76f h1:iaGxW9de4FfhzCi1u1gSv0/vkxamYmLEG6Sm3gGRHM4=
 github.com/stuartdd/jsonParserGo/parser v0.0.0-20211008235448-73dbb353f76f/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20211014181504-9dab7aa6634b h1:PdwaxNyvu0ZnWQzN2Uacx9f7OnTickO5tbB2xmh4byM=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20211014181504-9dab7aa6634b/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20211015151209-a023a580fd14 h1:DIZhpesacUlhy899zxDxgwqlCzHseGXbKRGJb83GhBg=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20211015151209-a023a580fd14/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/goldmark v1.3.8 h1:Nw158Q8QN+CPgTmVRByhVwapp8Mm1e2blinhmx4wx5E=
@@ -94,6 +98,8 @@ golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6 h1:Z04ewVs7JhXaYkmDhBERPi41g
 golang.org/x/net v0.0.0-20210929193557-e81a3d93ecf6/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.0.0-20211011170408-caeb26a5c8c0 h1:qOfNqBm5gk93LjGZo1MJaKY6Bph39zOKz1Hz2ogHj1w=
 golang.org/x/net v0.0.0-20211011170408-caeb26a5c8c0/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
+golang.org/x/net v0.0.0-20211014222326-fd004c51d1d6 h1:XKcOi662tO09NMIfjF2bhAKD/sRnfDS6uK7GyZ2TsL8=
+golang.org/x/net v0.0.0-20211014222326-fd004c51d1d6/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20210220032951-036812b2e83c/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
