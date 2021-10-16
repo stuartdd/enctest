@@ -37,6 +37,7 @@ type FileData struct {
 	key         []byte
 	content     []byte
 	isEmpty     bool
+	isEncrypted bool
 }
 
 /**
@@ -50,7 +51,7 @@ var (
 )
 
 func NewFileData(fName string, getUrl string, postUrl string) (*FileData, error) {
-	fd := FileData{fileName: fName, getDataUrl: getUrl, postDataUrl: postUrl, content: make([]byte, 0), isEmpty: true, key: make([]byte, 0)}
+	fd := FileData{fileName: fName, getDataUrl: getUrl, postDataUrl: postUrl, content: make([]byte, 0), isEmpty: true, isEncrypted: false, key: make([]byte, 0)}
 	return &fd, fd.loadData()
 }
 
@@ -146,7 +147,7 @@ func (r *FileData) IsEmpty() bool {
 }
 
 func (r *FileData) IsEncrypted() bool {
-	return !r.IsRawJson()
+	return r.isEncrypted
 }
 
 func (r *FileData) SetContent(data []byte) {
@@ -175,6 +176,7 @@ func (r *FileData) loadData() error {
 		return err
 	}
 	r.SetContent(dat)
+	r.isEncrypted = !r.IsRawJson()
 	return nil
 }
 
