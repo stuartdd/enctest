@@ -40,7 +40,6 @@ var (
 )
 
 type JsonData struct {
-	timeStamp      time.Time
 	dataMap        *parser.JsonObject
 	navIndex       map[string][]string
 	dataMapUpdated func(string, string, string, error)
@@ -67,16 +66,12 @@ func NewJsonData(j []byte, dataMapUpdated func(string, string, string, error)) (
 	if err != nil {
 		return nil, fmt.Errorf("'%s' does not exist in data root", timeStampStr)
 	}
-	tim, err := parseTime((ts.(*parser.JsonString)).GetValue())
+	_, err = parseTime((ts.(*parser.JsonString)).GetValue())
 	if err != nil {
 		return nil, fmt.Errorf("'%s' could not be parsed", timeStampStr)
 	}
-	dr := &JsonData{timeStamp: tim, dataMap: rO, navIndex: *createNavIndex(rO), dataMapUpdated: dataMapUpdated}
+	dr := &JsonData{dataMap: rO, navIndex: *createNavIndex(rO), dataMapUpdated: dataMapUpdated}
 	return dr, nil
-}
-
-func (p *JsonData) GetTimeStamp() time.Time {
-	return p.timeStamp
 }
 
 func (p *JsonData) GetNavIndex(id string) []string {
@@ -102,8 +97,23 @@ func (p *JsonData) GetUserNode(user string) *parser.JsonObject {
 	return u.(*parser.JsonObject)
 }
 
+func (p *JsonData) SetDateTime() {
+	dtNode, err := parser.Find(p.dataMap, "timeStamp")
+	if err == nil {
+		dtNode.(*parser.JsonString).SetValue(time.Now().Format("Mon Jan 2 15:04:05 MST 2006"))
+	}
+}
+
+func (p *JsonData) GetTimeStampString() string {
+	dtNode, err := parser.Find(p.dataMap, "timeStamp")
+	if err == nil {
+		return dtNode.String()
+	}
+	return "Undefined"
+}
+
 func (p *JsonData) ToJson() string {
-	return p.dataMap.String()
+	return p.dataMap.JsonValue()
 }
 
 func (p *JsonData) Search(addPath func(string, string), needle string, matchCase bool) {

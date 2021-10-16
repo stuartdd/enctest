@@ -82,6 +82,7 @@ var (
 	saveShortcutButton       *widget.Button
 	fullScreenShortcutButton *widget.Button
 	editModeShortcutButton   *widget.Button
+	timeStampLabel           *widget.Label
 	splitContainer           *container.Split // So we can save the divider position to preferences.
 	splitContainerOffset     float64          = -1
 	splitContainerOffsetPref float64          = -1
@@ -288,6 +289,11 @@ func updateButtonBar() {
 	} else {
 		editModeShortcutButton.SetText("Present Data")
 	}
+	if dataRoot == nil {
+		timeStampLabel.SetText("  File Not loaded")
+	} else {
+		timeStampLabel.SetText("  Last Updated -> " + dataRoot.GetTimeStampString())
+	}
 }
 
 func makeButtonBar() *fyne.Container {
@@ -297,8 +303,9 @@ func makeButtonBar() *fyne.Container {
 	fullScreenShortcutButton = widget.NewButton("FULL SCREEN", flipFullScreen)
 	editModeShortcutButton = widget.NewButton("EDIT", flipPositionalData)
 	quit := widget.NewButton("EXIT", shouldClose)
+	timeStampLabel = widget.NewLabel("  File Not loaded")
 	updateButtonBar()
-	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton)
+	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton, timeStampLabel)
 }
 
 func makeMenus() *fyne.MainMenu {
@@ -819,8 +826,9 @@ func countChangedItems() int {
 
 func commitChangedItems() (int, error) {
 	count := gui.EditEntryListCache.Commit(dataRoot.GetDataRoot())
+	dataRoot.SetDateTime()
 	c := dataRoot.ToJson()
-	fileData.SetContentString(c)
+	fileData.SetContent([]byte(c))
 	return count, nil
 }
 

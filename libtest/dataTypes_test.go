@@ -6,7 +6,6 @@ import (
 	"log"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stuartdd/jsonParserGo/parser"
 	"stuartdd.com/lib"
@@ -228,7 +227,7 @@ func TestLoadAndParseJson(t *testing.T) {
 	testStructContains("STRING: N:'pre' V:'abc'")
 	testStructContains("STRING: N:'pre' V:'abc'")
 	testStructContains("STRING: N:'userId' V:'Buser'")
-	if mapData.GetTimeStamp().Format(time.UnixDate) != "Fri Jul 30 21:25:10 BST 2021" {
+	if mapData.GetTimeStampString() != "Fri Jul 30 21:25:10 BST 2021" {
 		log.Fatalf("Timestamp dis not parse to UnixDate correctly. file:%s\n", dataFileName)
 	}
 }

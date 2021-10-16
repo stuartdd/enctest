@@ -154,10 +154,6 @@ func (r *FileData) SetContent(data []byte) {
 	r.content = data
 }
 
-func (r *FileData) SetContentString(content string) {
-	r.SetContent([]byte(content))
-}
-
 func (r *FileData) storeData(data []byte) error {
 	if r.postDataUrl != "" {
 		_, err := parser.PostJsonBytes(fmt.Sprintf("%s/%s", r.postDataUrl, r.fileName), data)
@@ -203,7 +199,7 @@ func decrypt(key []byte, data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	nonce, ciphertext := dd[:gcm.NonceSize()], dd[gcm.NonceSize():]
 
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
