@@ -1,21 +1,13 @@
 
     {
-        "data": {
-            "presentationmode": "false"
-        },
+        "datafile": "libtest/TestDataTypes.json",
         "search": {
-            "lastGoodList": [
-                "note",
-                "user"
-            ],
-            "case": "true"
+            "case": true
         },
         "screen": {
-            "height": "479.166656",
-            "fullScreen": "false",
-            "split": "0.200000",
-            "width": "757.500000"
-        },
-        "datafile": "libtest/TestDataTypes.json",
-        "theme": "light"
+            "fullScreen": false,
+            "split": 0.403562,
+            "width": 795.833313,
+            "height": 590
+        }
     }

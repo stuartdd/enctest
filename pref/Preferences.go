@@ -19,7 +19,6 @@ package pref
 import (
 	"fmt"
 	"io/ioutil"
-	"strconv"
 	"strings"
 
 	"github.com/stuartdd/jsonParserGo/parser"
@@ -104,38 +103,49 @@ func (p *PrefData) PutString(path, value string) error {
 }
 
 func (p *PrefData) PutBool(path string, value bool) error {
-	return p.PutString(path, fmt.Sprintf("%t", value))
+	n, _, err := p.createAndReturnNodeAtPath(path, parser.NT_BOOL)
+	if err != nil {
+		return err
+	}
+	(n.(*parser.JsonBool)).SetValue(value)
+	return nil
 }
 
 func (p *PrefData) PutFloat32(path string, value float32) error {
-	return p.PutString(path, fmt.Sprintf("%f", value))
+	return p.PutFloat64(path, float64(value))
 }
 
 func (p *PrefData) PutFloat64(path string, value float64) error {
-	return p.PutString(path, fmt.Sprintf("%f", value))
+	n, _, err := p.createAndReturnNodeAtPath(path, parser.NT_NUMBER)
+	if err != nil {
+		return err
+	}
+	(n.(*parser.JsonNumber)).SetValue(value)
+	return nil
 }
 
 func (p *PrefData) GetBoolWithFallback(path string, fb bool) bool {
-	s := strings.ToLower(p.GetStringForPathWithFallback(path, fmt.Sprintf("%t", fb)))
-	return strings.HasPrefix(s, "tr")
+	n, _, ok := p.getNodeForPath(path, true)
+	if ok {
+		if n.GetNodeType() == parser.NT_BOOL {
+			return (n.(*parser.JsonBool)).GetValue()
+		}
+	}
+	return fb
 }
 
 func (p *PrefData) GetFloat64WithFallback(path string, fb float64) float64 {
-	s := p.GetStringForPathWithFallback(path, fmt.Sprintf("%f", fb))
-	f, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return fb
+	n, _, ok := p.getNodeForPath(path, true)
+	if ok {
+		if n.GetNodeType() == parser.NT_NUMBER {
+			return (n.(*parser.JsonNumber)).GetValue()
+		}
 	}
-	return f
+	return fb
 }
 
 func (p *PrefData) GetFloat32WithFallback(path string, fb float32) float32 {
-	s := p.GetStringForPathWithFallback(path, fmt.Sprintf("%f", fb))
-	f, err := strconv.ParseFloat(s, 32)
-	if err != nil {
-		return fb
-	}
-	return float32(f)
+	return float32(p.GetFloat64WithFallback(path, float64(fb)))
 }
 
 func (p *PrefData) GetStringForPathWithFallback(path, fb string) string {
