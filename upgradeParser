@@ -1,0 +1,19 @@
+#!/bin/bash
+
+go get github.com/stuartdd/jsonParserGo/parser@$1
+go mod tidy
+
+cd gui
+go get github.com/stuartdd/jsonParserGo/parser@$1
+go mod tidy
+cd ..
+
+cd lib
+go get github.com/stuartdd/jsonParserGo/parser@$1
+go mod tidy
+cd ..
+
+cd pref
+go get github.com/stuartdd/jsonParserGo/parser@$1
+go mod tidy
+cd ..

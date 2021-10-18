@@ -17,19 +17,18 @@
 package pref
 
 import (
-	"encoding/json"
 	"fmt"
-	"reflect"
+	"io/ioutil"
 	"strconv"
 	"strings"
 
-	"io/ioutil"
+	"github.com/stuartdd/jsonParserGo/parser"
 )
 
 type PrefData struct {
 	fileName        string
-	data            map[string]interface{}
-	cache           map[string]string
+	data            *parser.JsonObject
+	cache           map[string]*parser.NodeI
 	changeListeners map[string]func(string, string, string)
 }
 
@@ -38,14 +37,16 @@ func NewPrefData(fileName string) (*PrefData, error) {
 	if err != nil {
 		return nil, err
 	}
-	var m map[string]interface{}
-	err = json.Unmarshal([]byte(j), &m)
+	data, err := parser.Parse(j)
 	if err != nil {
 		return nil, err
 	}
-	c := make(map[string]string)
-	cl := make(map[string]func(string, string, string), 0)
-	return &PrefData{fileName: fileName, data: m, cache: c, changeListeners: cl}, nil
+	if data.GetNodeType() != parser.NT_OBJECT {
+		return nil, fmt.Errorf("error reading '%s'. Config data root node MUST be a JsonObject type", fileName)
+	}
+	c := make(map[string]*parser.NodeI)
+	cl := make(map[string]func(string, string, string))
+	return &PrefData{fileName: fileName, data: data.(*parser.JsonObject), cache: c, changeListeners: cl}, nil
 }
 
 func (p *PrefData) AddChangeListener(cl func(string, string, string), filter string) {
@@ -70,7 +71,7 @@ func (p *PrefData) Save() error {
 	return p.SaveAs(p.fileName)
 }
 func (p *PrefData) SaveAs(fileName string) error {
-	return ioutil.WriteFile(fileName, []byte(p.String()), 0644)
+	return ioutil.WriteFile(fileName, []byte(p.data.JsonValueIndented(4)), 0644)
 }
 
 func (p *PrefData) GetFileName() string {
@@ -78,80 +79,28 @@ func (p *PrefData) GetFileName() string {
 }
 
 func (p *PrefData) String() string {
-	output, err := json.MarshalIndent(p.data, "", "    ")
-	if err != nil {
-		return ""
-	}
-	return string(output)
+	return string(p.data.JsonValueIndented(4))
 }
 
 func (p *PrefData) PutStringList(path, value string, maxLen int) error {
-	m, name, err := p.createNoteAndReturnNode(path, true)
+	m, _, err := p.createAndReturnNodeAtPath(path, parser.NT_LIST)
 	if err != nil {
 		return err
 	}
-	l := (*m)[name]
-	if l == nil {
-		t := make([]string, 1)
-		t[0] = value
-		(*m)[name] = t
-	} else {
-		tm := make(map[string]bool)
-		tm[value] = true
-		switch x := l.(type) {
-		case []interface{}:
-			for _, v := range x {
-				tm[fmt.Sprintf("%s", v)] = true
-			}
-		case []string:
-			for _, v := range x {
-				tm[v] = true
-			}
-		}
-		t := make([]string, 0)
-		for k := range tm {
-			t = append(t, k)
-			if len(t) >= maxLen {
-				break
-			}
-		}
-		(*m)[name] = t
-	}
+	mL := m.(*parser.JsonList)
+	mL.Add(parser.NewJsonString("", value))
 	return nil
 }
 
 func (p *PrefData) PutString(path, value string) error {
-	m, name, err := p.createNoteAndReturnNode(path, true)
+	m, _, err := p.createAndReturnNodeAtPath(path, parser.NT_STRING)
 	if err != nil {
 		return err
 	}
-	(*m)[name] = value
-	p.cache[path] = value
+	m.(*parser.JsonString).SetValue(value)
+	p.cache[path] = &m
 	p.callChangeListeners(path, value)
 	return nil
-}
-
-func (p *PrefData) createNoteAndReturnNode(path string, parent bool) (*map[string]interface{}, string, error) {
-	var target string
-	name := ""
-	if parent {
-		target, name = getParentAndName(path)
-	} else {
-		target = path
-	}
-	m, s, ok := p.getMapDataForPath(target, false)
-	if ok && s != "" && parent {
-		return nil, "", fmt.Errorf("parent path %s exists but is a leaf node", target)
-	}
-	if m != nil {
-		return m, name, nil
-	}
-	p.makePath(target)
-	m, _, _ = p.getMapDataForPath(target, false)
-	if m == nil {
-		return nil, "", fmt.Errorf("failed to create node for path %s", target)
-	}
-	return m, name, nil
 }
 
 func (p *PrefData) PutBool(path string, value bool) error {
@@ -190,110 +139,91 @@ func (p *PrefData) GetFloat32WithFallback(path string, fb float32) float32 {
 }
 
 func (p *PrefData) GetStringForPathWithFallback(path, fb string) string {
-	_, v, ok := p.getMapDataForPath(path, true)
+	_, v, ok := p.getNodeForPath(path, true)
 	if ok {
 		return v
 	}
 	return fb
 }
 
+func (p *PrefData) GetDataForPath(path string) (parser.NodeI, string, bool) {
+	return p.getNodeForPath(path, true)
+}
+
 func (p *PrefData) GetStringList(path string) []string {
-	l := p.getListDataForPath(path)
-	if l != nil {
-		return l
-	} else {
-		ll := make([]string, 1)
-		ll[0] = ""
-		return ll
+	n, _, found := p.getNodeForPath(path, false)
+	if !found {
+		list := make([]string, 1)
+		list[0] = ""
+		return list
 	}
-}
-
-func (p *PrefData) GetDataForPath(path string) (*map[string]interface{}, string, bool) {
-	return p.getMapDataForPath(path, true)
-}
-
-func (p *PrefData) makePath(path string) error {
-	nodes := strings.Split(path, ".")
-	x := p.data
-	for _, v := range nodes {
-		y := x[v]
-		if y == nil {
-			x[v] = make(map[string]interface{})
-			y = x[v]
-			x = y.(map[string]interface{})
-		} else {
-			x = y.(map[string]interface{})
+	if n.GetNodeType() == parser.NT_OBJECT {
+		return n.(*parser.JsonObject).GetSortedKeys()
+	}
+	if n.GetNodeType() == parser.NT_LIST {
+		list := make([]string, 0)
+		l := n.(*parser.JsonList).GetValues()
+		for _, v := range l {
+			list = append(list, v.String())
 		}
+		return list
 	}
-	return nil
+	list := make([]string, 1)
+	list[0] = n.String()
+	return list
 }
 
-func (p *PrefData) getListDataForPath(path string) []string {
-	list := make([]string, 0)
-	nodes := strings.Split(path, ".")
-	if nodes[0] == "" {
-		return nil
+func (p *PrefData) createAndReturnNodeAtPath(path string, nodeType parser.NodeType) (parser.NodeI, string, error) {
+	if path == "" {
+		return nil, "", fmt.Errorf("cannot create a node from an empty path")
 	}
-	x := p.data
-	for _, v := range nodes {
-		y := x[v]
-		if y == nil {
-			return nil
-		}
-		if reflect.TypeOf(y).Kind() == reflect.Slice {
-			if reflect.TypeOf(y).Elem().Kind() == reflect.String {
-				s := y.([]string)
-				list = append(list, s...)
-			} else {
-				s := y.([]interface{})
-				for _, v := range s {
-					list = append(list, fmt.Sprintf("%s", v))
-				}
-			}
-			return list
-		} else {
-			if reflect.TypeOf(y).Kind() == reflect.String {
-				list = append(list, y.(string))
-				return list
-			}
-			x = y.(map[string]interface{})
-		}
+	rootPath, name := getParentAndNameFromPath(path)
+	if rootPath == "" {
+		ret := parser.NewJsonType(name, nodeType)
+		p.data.Add(ret)
+		return ret, name, nil
 	}
-	return nil
+	cNode := p.data
+	paths := strings.Split(rootPath, ".")
+
+	for _, nn := range paths {
+		n := cNode.GetNodeWithName(nn)
+		if n == nil {
+			n = parser.NewJsonObject(nn)
+			cNode.Add(n)
+		}
+		if n.GetNodeType() != parser.NT_OBJECT {
+			return nil, "", fmt.Errorf("found node at [%s] but it is not a container node", nn)
+		}
+		cNode = n.(*parser.JsonObject)
+	}
+	ret := cNode.GetNodeWithName(name)
+	if ret == nil {
+		ret = parser.NewJsonType(name, nodeType)
+		cNode.Add(ret)
+	}
+	return ret, name, nil
 }
 
-func (p *PrefData) getMapDataForPath(path string, cache bool) (*map[string]interface{}, string, bool) {
+func (p *PrefData) getNodeForPath(path string, cache bool) (parser.NodeI, string, bool) {
 	if cache {
 		cached, ok := p.cache[path]
 		if ok {
-			return nil, cached, true
+			return *cached, (*cached).String(), true
 		}
 	}
-	nodes := strings.Split(path, ".")
-	if nodes[0] == "" {
-		return &p.data, "", true
-	}
-	x := p.data
-	for _, v := range nodes {
-		y := x[v]
-		if y == nil {
-			return nil, "", false
-		}
-		if reflect.TypeOf(y).Kind() == reflect.Map {
-			x = y.(map[string]interface{})
-		} else {
-			val := fmt.Sprintf("%v", y)
-			p.cache[path] = val
-			return nil, val, true
-		}
-	}
-	if x == nil {
+	n, err := parser.Find(p.data, path)
+	if err != nil {
 		return nil, "", false
 	}
-	return &x, "", true
+	p.cache[path] = &n
+	if n.GetNodeType() == parser.NT_LIST || n.GetNodeType() == parser.NT_OBJECT {
+		return n, "", true
+	}
+	return n, n.String(), true
 }
 
-func getParentAndName(path string) (string, string) {
+func getParentAndNameFromPath(path string) (string, string) {
 	if path == "" {
 		return "", ""
 	}

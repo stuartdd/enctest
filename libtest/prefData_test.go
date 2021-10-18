@@ -132,7 +132,7 @@ func TestPutString(t *testing.T) {
 	p, _ := pref.NewPrefData("TestDataTypes.json")
 	err := p.PutString("groups.UserA.notes.note.hi", "val")
 	if err == nil {
-		t.Error("should return error 'Path x is an end")
+		t.Error("should return error 'not a container node'")
 	}
 	v := p.GetStringForPathWithFallback("groups.UserA.notes.note", "bla")
 	if v == "" || v == "bla" {
@@ -250,7 +250,7 @@ func TestLoadCache(t *testing.T) {
 	}
 	sta1 := time.Now().UnixNano()
 	_, v1, ok1 := p.GetDataForPath("groups.UserA.notes.note")
-	tim1 := time.Now().UnixNano() - sta1
+	timUnCached := time.Now().UnixNano() - sta1
 
 	for i := 0; i < 5; i++ {
 		p.GetDataForPath("groups.UserA.notes.note")
@@ -258,7 +258,7 @@ func TestLoadCache(t *testing.T) {
 
 	sta2 := time.Now().UnixNano()
 	_, v2, ok2 := p.GetDataForPath("groups.UserA.notes.note")
-	tim2 := time.Now().UnixNano() - sta2
+	timCached := time.Now().UnixNano() - sta2
 
 	if v1 == "" {
 		t.Error("v1 groups.UserA.notes.note should return a string")
@@ -276,8 +276,9 @@ func TestLoadCache(t *testing.T) {
 	if v2 != v1 {
 		t.Error("cached data should return the same value")
 	}
-	if (tim1 % tim2) < 5 {
-		t.Errorf("cached data should read at least 5 * faster. Actual: %d", tim1%tim2)
+	diff := timUnCached / timCached
+	if (diff) < 5 {
+		t.Errorf("cached data should read at least 5 * faster. Actual: %d", diff)
 	}
 }
 
@@ -322,9 +323,6 @@ func TestLoadComplex(t *testing.T) {
 	if m == nil {
 		t.Error("groups should return a map")
 	}
-	if len(*m) != 3 {
-		t.Error("groups map is len 3")
-	}
 
 	m, s, ok = p.GetDataForPath("groups.UserA.notes")
 	if !ok {
@@ -336,13 +334,6 @@ func TestLoadComplex(t *testing.T) {
 	if m == nil {
 		t.Error("groups should return a map")
 	}
-	if len(*m) != 2 {
-		t.Error("groups map is len 2")
-	}
-	note := (*m)["note"]
-	if note != "An amazing A note (dont panic) fdf" {
-		t.Error("groups map is len 2")
-	}
 	m, s, ok = p.GetDataForPath("groups.UserA.notes.note")
 	if !ok {
 		t.Error("ok groups.UserA.notes.not should return true")
@@ -350,8 +341,8 @@ func TestLoadComplex(t *testing.T) {
 	if s != "An amazing A note (dont panic) fdf" {
 		t.Error("groups.UserA.notes.note should return  'An amazing A note (dont panic) fdf'")
 	}
-	if m != nil {
-		t.Error("groups should return a map")
+	if m == nil {
+		t.Error("groups should return a node")
 	}
 }
 
@@ -370,8 +361,8 @@ func TestLoadSinglePath(t *testing.T) {
 	if s != "true" {
 		t.Error("boolean should return 'true'")
 	}
-	if m != nil {
-		t.Error("boolean should return nil map")
+	if m == nil {
+		t.Error("boolean should return node")
 	}
 	m, s, ok = p.GetDataForPath("split")
 	if !ok {
@@ -380,8 +371,8 @@ func TestLoadSinglePath(t *testing.T) {
 	if s != "0.2" {
 		t.Error("split should return '0.2'")
 	}
-	if m != nil {
-		t.Error("split should return nil map")
+	if m == nil {
+		t.Error("split should return node")
 	}
 	m, s, ok = p.GetDataForPath("integer")
 	if !ok {
@@ -390,8 +381,8 @@ func TestLoadSinglePath(t *testing.T) {
 	if s != "830" {
 		t.Error("integer should return '830'")
 	}
-	if m != nil {
-		t.Error("integer should return nil map")
+	if m == nil {
+		t.Error("integer should return node")
 	}
 	m, s, ok = p.GetDataForPath("float")
 	if !ok {
@@ -400,8 +391,8 @@ func TestLoadSinglePath(t *testing.T) {
 	if s != "479.52" {
 		t.Error("float should return '479.52'")
 	}
-	if m != nil {
-		t.Error("float should return nil map")
+	if m == nil {
+		t.Error("float should return node")
 	}
 }
 

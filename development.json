@@ -1,25 +1,21 @@
-{
-    "data": {
-        "presentationmode": "true"
-    },
-    "datafile": "libtest/TestDataTypes.json",
-    "screen": {
-        "fullScreen": "false",
-        "height": "660.952393",
-        "split": "0.184206",
-        "width": "893.333374"
-    },
-    "search": {
-        "case": "true",
-        "lastGoodList": [
-            "application",
-            "ll",
-            "LLOYDS TSB",
-            "post",
-            "userId",
-            "Lizzie",
-            "note"
-        ]
-    },
-    "theme": "dark"
-}
+
+    {
+        "data": {
+            "presentationmode": "false"
+        },
+        "search": {
+            "lastGoodList": [
+                "note",
+                "user"
+            ],
+            "case": "true"
+        },
+        "screen": {
+            "height": "479.166656",
+            "fullScreen": "false",
+            "split": "0.200000",
+            "width": "757.500000"
+        },
+        "datafile": "libtest/TestDataTypes.json",
+        "theme": "light"
+    }
