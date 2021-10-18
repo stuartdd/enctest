@@ -235,13 +235,10 @@ func (p *PrefData) getNodeForPath(path string, cache bool) (parser.NodeI, bool) 
 		}
 	}
 	n, err := parser.Find(p.data, path)
-	if err != nil {
+	if err != nil || n == nil {
 		return nil, false
 	}
 	p.cache[path] = &n
-	if n.GetNodeType() == parser.NT_LIST || n.GetNodeType() == parser.NT_OBJECT {
-		return n, true
-	}
 	return n, true
 }
 
