@@ -83,7 +83,7 @@ func (p *PrefData) String() string {
 }
 
 func (p *PrefData) PutStringList(path, value string, maxLen int) error {
-	n, err := p.createAndReturnNodeAtPath(path, parser.NT_LIST)
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_LIST)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (p *PrefData) PutStringList(path, value string, maxLen int) error {
 }
 
 func (p *PrefData) PutString(path, value string) error {
-	n, err := p.createAndReturnNodeAtPath(path, parser.NT_STRING)
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_STRING)
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (p *PrefData) PutString(path, value string) error {
 }
 
 func (p *PrefData) PutBool(path string, value bool) error {
-	n, err := p.createAndReturnNodeAtPath(path, parser.NT_BOOL)
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_BOOL)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (p *PrefData) PutFloat32(path string, value float32) error {
 }
 
 func (p *PrefData) PutFloat64(path string, value float64) error {
-	n, err := p.createAndReturnNodeAtPath(path, parser.NT_NUMBER)
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_NUMBER)
 	if err != nil {
 		return err
 	}
@@ -189,10 +189,6 @@ func (p *PrefData) GetStringList(path string) []string {
 	list := make([]string, 1)
 	list[0] = n.String()
 	return list
-}
-
-func (p *PrefData) createAndReturnNodeAtPath(path string, nodeType parser.NodeType) (parser.NodeI, error) {
-	return parser.CreateAndReturnNodeAtPath(p.data, path, nodeType)
 }
 
 func (p *PrefData) getNodeForPath(path string, cache bool) (parser.NodeI, bool) {
