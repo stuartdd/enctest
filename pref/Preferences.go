@@ -192,39 +192,7 @@ func (p *PrefData) GetStringList(path string) []string {
 }
 
 func (p *PrefData) createAndReturnNodeAtPath(path string, nodeType parser.NodeType) (parser.NodeI, error) {
-	if path == "" {
-		return nil, fmt.Errorf("cannot create a node from an empty path")
-	}
-	rootPath, name := getParentAndNameFromPath(path)
-	if rootPath == "" {
-		ret := parser.NewJsonType(name, nodeType)
-		p.data.Add(ret)
-		return ret, nil
-	}
-	cNode := p.data
-	paths := strings.Split(rootPath, ".")
-
-	for _, nn := range paths {
-		n := cNode.GetNodeWithName(nn)
-		if n == nil {
-			n = parser.NewJsonObject(nn)
-			cNode.Add(n)
-		}
-		if n.GetNodeType() != parser.NT_OBJECT {
-			return nil, fmt.Errorf("found node at [%s] but it is not a container node", nn)
-		}
-		cNode = n.(*parser.JsonObject)
-	}
-	ret := cNode.GetNodeWithName(name)
-	if ret == nil {
-		ret = parser.NewJsonType(name, nodeType)
-		cNode.Add(ret)
-	} else {
-		if ret.GetNodeType() != nodeType {
-			return nil, fmt.Errorf("found node at [%s] but it is not a %s node", path, parser.GetNodeTypeName(nodeType))
-		}
-	}
-	return ret, nil
+	return parser.CreateAndReturnNodeAtPath(p.data, path, nodeType)
 }
 
 func (p *PrefData) getNodeForPath(path string, cache bool) (parser.NodeI, bool) {
@@ -240,17 +208,4 @@ func (p *PrefData) getNodeForPath(path string, cache bool) (parser.NodeI, bool) 
 	}
 	p.cache[path] = &n
 	return n, true
-}
-
-func getParentAndNameFromPath(path string) (string, string) {
-	if path == "" {
-		return "", ""
-	}
-	p := strings.LastIndexByte(path, '.')
-	switch p {
-	case -1:
-		return "", path
-	default:
-		return path[0:p], path[p+1:]
-	}
 }
