@@ -16,6 +16,8 @@ github.com/stuartdd/jsonParserGo/parser v0.0.0-20211015151209-a023a580fd14 h1:DI
 github.com/stuartdd/jsonParserGo/parser v0.0.0-20211015151209-a023a580fd14/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
 github.com/stuartdd/jsonParserGo/parser v0.0.0-20211015234340-a8070e20a271 h1:BSxmlAv64z//TXaCPqDvf5SzND+5gWb2YEfFla+YxyQ=
 github.com/stuartdd/jsonParserGo/parser v0.0.0-20211015234340-a8070e20a271/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20211019172056-78b407826a60 h1:d0iehRcsl0w07FzMBq7D3jZBmJgc1NNShg2vhMogHD8=
+github.com/stuartdd/jsonParserGo/parser v0.0.0-20211019172056-78b407826a60/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
 golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 h1:/UOmuWzQfxxo9UtlXMwuQU8CMgg1eZXqTRwkSQJWKOI=
 golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 h1:7I4JAnoQBe7ZtJcBaYHi5UtiO8tQHbUSXxL+pnGRANg=
