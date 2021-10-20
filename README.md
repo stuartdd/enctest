@@ -57,18 +57,12 @@ fyne cli version: v2.1.0
 ### Fyne-cross
 
 ```bash
-fyne version fyne cli version: v2.1.0
+fyne-cross windows -arch=amd64
 ```
 
+Copy to root path
 
-
-
-
-
-
-
-
-
-
-
+```bash
+cp fyne-cross/dist/windows-amd64/enctest.exe.zip .
+```
 
