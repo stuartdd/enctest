@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stuartdd/jsonParserGo/parser"
 	"stuartdd.com/pref"
 )
 
@@ -132,7 +133,7 @@ func TestPutString(t *testing.T) {
 	p, _ := pref.NewPrefData("TestDataTypes.json")
 	err := p.PutString("groups.UserA.notes.note.hi", "val")
 	if err == nil {
-		t.Error("should return error 'Path x is an end")
+		t.Error("should return error 'not a container node'")
 	}
 	v := p.GetStringForPathWithFallback("groups.UserA.notes.note", "bla")
 	if v == "" || v == "bla" {
@@ -206,12 +207,12 @@ func TestLoadFallback(t *testing.T) {
 	if p.GetFileName() != "TestDataTypes.json" {
 		t.Error("file name was not stored correctly")
 	}
-	_, s1, _ := p.GetDataForPath("groups.UserA.notes.note")
-	if s1 == "" {
+	m, _ := p.GetDataForPath("groups.UserA.notes.note")
+	if m.String() == "" {
 		t.Error("groups.UserA.notes.note should return a value")
 	}
 	s2 := p.GetStringForPathWithFallback("groups.UserA.notes.note", "x")
-	if s1 != s2 {
+	if m.String() != s2 {
 		t.Error("GetStringForPathWithFallback should return same as GetDataForPath")
 	}
 	s3 := p.GetStringForPathWithFallback("groups.UserA.notes.not", "fallback")
@@ -249,21 +250,21 @@ func TestLoadCache(t *testing.T) {
 		t.Error("file name was not stored correctly")
 	}
 	sta1 := time.Now().UnixNano()
-	_, v1, ok1 := p.GetDataForPath("groups.UserA.notes.note")
-	tim1 := time.Now().UnixNano() - sta1
+	m1, ok1 := p.GetDataForPath("groups.UserA.notes.note")
+	timUnCached := time.Now().UnixNano() - sta1
 
 	for i := 0; i < 5; i++ {
 		p.GetDataForPath("groups.UserA.notes.note")
 	}
 
 	sta2 := time.Now().UnixNano()
-	_, v2, ok2 := p.GetDataForPath("groups.UserA.notes.note")
-	tim2 := time.Now().UnixNano() - sta2
+	m2, ok2 := p.GetDataForPath("groups.UserA.notes.note")
+	timCached := time.Now().UnixNano() - sta2
 
-	if v1 == "" {
+	if m1.String() == "" {
 		t.Error("v1 groups.UserA.notes.note should return a string")
 	}
-	if v2 == "" {
+	if m2.String() == "" {
 		t.Error("v2 groups.UserA.notes.note should return a string")
 	}
 	if !ok1 {
@@ -273,11 +274,12 @@ func TestLoadCache(t *testing.T) {
 		t.Error("ok2 groups.UserA.notes.note should return true")
 	}
 
-	if v2 != v1 {
+	if m1 != m2 {
 		t.Error("cached data should return the same value")
 	}
-	if (tim1 % tim2) < 5 {
-		t.Errorf("cached data should read at least 5 * faster. Actual: %d", tim1%tim2)
+	diff := timUnCached / timCached
+	if (diff) < 5 {
+		t.Errorf("cached data should read at least 5 * faster. Actual: %d", diff)
 	}
 }
 
@@ -290,8 +292,8 @@ func TestLoadComplex(t *testing.T) {
 		t.Error("file name was not stored correctly")
 	}
 
-	m, s, ok := p.GetDataForPath("groups.fred")
-	if s != "" {
+	m, ok := p.GetDataForPath("groups.fred")
+	if m != nil {
 		t.Error("groups.fred should return empty string")
 	}
 	if ok {
@@ -301,8 +303,8 @@ func TestLoadComplex(t *testing.T) {
 		t.Error("groups should not return a map")
 	}
 
-	m, s, ok = p.GetDataForPath("groups.UserA.notes.fred")
-	if s != "" {
+	m, ok = p.GetDataForPath("groups.UserA.notes.fred")
+	if m != nil {
 		t.Error("groups.UserA.notes.fred should return empty string")
 	}
 	if ok {
@@ -312,9 +314,9 @@ func TestLoadComplex(t *testing.T) {
 		t.Error("groups.UserA.notes.fred should not return a map")
 	}
 
-	m, s, ok = p.GetDataForPath("groups")
-	if s != "" {
-		t.Error("groups should return empty string")
+	m, ok = p.GetDataForPath("groups")
+	if m.GetNodeType() != parser.NT_OBJECT {
+		t.Error("groups should be a JsonObject")
 	}
 	if !ok {
 		t.Error("ok groups should return true")
@@ -322,36 +324,26 @@ func TestLoadComplex(t *testing.T) {
 	if m == nil {
 		t.Error("groups should return a map")
 	}
-	if len(*m) != 3 {
-		t.Error("groups map is len 3")
-	}
 
-	m, s, ok = p.GetDataForPath("groups.UserA.notes")
+	m, ok = p.GetDataForPath("groups.UserA.notes")
 	if !ok {
 		t.Error("ok groups.UserA.notes should return true")
 	}
-	if s != "" {
-		t.Error("groups should return empty string")
+	if m.GetNodeType() != parser.NT_OBJECT {
+		t.Error("groups should  be a JsonObject")
 	}
 	if m == nil {
 		t.Error("groups should return a map")
 	}
-	if len(*m) != 2 {
-		t.Error("groups map is len 2")
-	}
-	note := (*m)["note"]
-	if note != "An amazing A note (dont panic) fdf" {
-		t.Error("groups map is len 2")
-	}
-	m, s, ok = p.GetDataForPath("groups.UserA.notes.note")
+	m, ok = p.GetDataForPath("groups.UserA.notes.note")
 	if !ok {
 		t.Error("ok groups.UserA.notes.not should return true")
 	}
-	if s != "An amazing A note (dont panic) fdf" {
+	if m.String() != "An amazing A note (dont panic) fdf" {
 		t.Error("groups.UserA.notes.note should return  'An amazing A note (dont panic) fdf'")
 	}
-	if m != nil {
-		t.Error("groups should return a map")
+	if m == nil {
+		t.Error("groups should return a node")
 	}
 }
 
@@ -363,45 +355,45 @@ func TestLoadSinglePath(t *testing.T) {
 	if p.GetFileName() != "config_001.json" {
 		t.Error("file name was not stored correctly")
 	}
-	m, s, ok := p.GetDataForPath("boolean")
+	m, ok := p.GetDataForPath("boolean")
 	if !ok {
 		t.Error("ok boolean should return true")
 	}
-	if s != "true" {
+	if m.String() != "true" {
 		t.Error("boolean should return 'true'")
 	}
-	if m != nil {
-		t.Error("boolean should return nil map")
+	if m == nil {
+		t.Error("boolean should return node")
 	}
-	m, s, ok = p.GetDataForPath("split")
+	m, ok = p.GetDataForPath("split")
 	if !ok {
 		t.Error("ok split should return true")
 	}
-	if s != "0.2" {
+	if m.String() != "0.2" {
 		t.Error("split should return '0.2'")
 	}
-	if m != nil {
-		t.Error("split should return nil map")
+	if m == nil {
+		t.Error("split should return node")
 	}
-	m, s, ok = p.GetDataForPath("integer")
+	m, ok = p.GetDataForPath("integer")
 	if !ok {
 		t.Error("ok integer should return true")
 	}
-	if s != "830" {
+	if m.String() != "830" {
 		t.Error("integer should return '830'")
 	}
-	if m != nil {
-		t.Error("integer should return nil map")
+	if m == nil {
+		t.Error("integer should return node")
 	}
-	m, s, ok = p.GetDataForPath("float")
+	m, ok = p.GetDataForPath("float")
 	if !ok {
 		t.Error("ok float should return true")
 	}
-	if s != "479.52" {
+	if m.String() != "479.52" {
 		t.Error("float should return '479.52'")
 	}
-	if m != nil {
-		t.Error("float should return nil map")
+	if m == nil {
+		t.Error("float should return node")
 	}
 }
 

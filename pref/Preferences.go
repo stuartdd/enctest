@@ -17,19 +17,17 @@
 package pref
 
 import (
-	"encoding/json"
 	"fmt"
-	"reflect"
-	"strconv"
+	"io/ioutil"
 	"strings"
 
-	"io/ioutil"
+	"github.com/stuartdd/jsonParserGo/parser"
 )
 
 type PrefData struct {
 	fileName        string
-	data            map[string]interface{}
-	cache           map[string]string
+	data            *parser.JsonObject
+	cache           map[string]*parser.NodeI
 	changeListeners map[string]func(string, string, string)
 }
 
@@ -38,14 +36,16 @@ func NewPrefData(fileName string) (*PrefData, error) {
 	if err != nil {
 		return nil, err
 	}
-	var m map[string]interface{}
-	err = json.Unmarshal([]byte(j), &m)
+	data, err := parser.Parse(j)
 	if err != nil {
 		return nil, err
 	}
-	c := make(map[string]string)
-	cl := make(map[string]func(string, string, string), 0)
-	return &PrefData{fileName: fileName, data: m, cache: c, changeListeners: cl}, nil
+	if data.GetNodeType() != parser.NT_OBJECT {
+		return nil, fmt.Errorf("error reading '%s'. Config data root node MUST be a JsonObject type", fileName)
+	}
+	c := make(map[string]*parser.NodeI)
+	cl := make(map[string]func(string, string, string))
+	return &PrefData{fileName: fileName, data: data.(*parser.JsonObject), cache: c, changeListeners: cl}, nil
 }
 
 func (p *PrefData) AddChangeListener(cl func(string, string, string), filter string) {
@@ -69,8 +69,9 @@ func (p *PrefData) callChangeListeners(path, value string) {
 func (p *PrefData) Save() error {
 	return p.SaveAs(p.fileName)
 }
+
 func (p *PrefData) SaveAs(fileName string) error {
-	return ioutil.WriteFile(fileName, []byte(p.String()), 0644)
+	return ioutil.WriteFile(fileName, []byte(p.data.JsonValueIndented(4)), 0644)
 }
 
 func (p *PrefData) GetFileName() string {
@@ -78,230 +79,129 @@ func (p *PrefData) GetFileName() string {
 }
 
 func (p *PrefData) String() string {
-	output, err := json.MarshalIndent(p.data, "", "    ")
-	if err != nil {
-		return ""
-	}
-	return string(output)
+	return string(p.data.JsonValueIndented(4))
 }
 
 func (p *PrefData) PutStringList(path, value string, maxLen int) error {
-	m, name, err := p.createNoteAndReturnNode(path, true)
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_LIST)
 	if err != nil {
 		return err
 	}
-	l := (*m)[name]
-	if l == nil {
-		t := make([]string, 1)
-		t[0] = value
-		(*m)[name] = t
-	} else {
-		tm := make(map[string]bool)
-		tm[value] = true
-		switch x := l.(type) {
-		case []interface{}:
-			for _, v := range x {
-				tm[fmt.Sprintf("%s", v)] = true
-			}
-		case []string:
-			for _, v := range x {
-				tm[v] = true
-			}
-		}
-		t := make([]string, 0)
-		for k := range tm {
-			t = append(t, k)
-			if len(t) >= maxLen {
-				break
-			}
-		}
-		(*m)[name] = t
-	}
-	return nil
-}
-
-func (p *PrefData) PutString(path, value string) error {
-	m, name, err := p.createNoteAndReturnNode(path, true)
-	if err != nil {
-		return err
-	}
-	(*m)[name] = value
-	p.cache[path] = value
+	n.(*parser.JsonList).Add(parser.NewJsonString("", value))
+	p.cache[path] = &n
 	p.callChangeListeners(path, value)
 	return nil
 }
 
-func (p *PrefData) createNoteAndReturnNode(path string, parent bool) (*map[string]interface{}, string, error) {
-	var target string
-	name := ""
-	if parent {
-		target, name = getParentAndName(path)
-	} else {
-		target = path
+func (p *PrefData) PutString(path, value string) error {
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_STRING)
+	if err != nil {
+		return err
 	}
-	m, s, ok := p.getMapDataForPath(target, false)
-	if ok && s != "" && parent {
-		return nil, "", fmt.Errorf("parent path %s exists but is a leaf node", target)
-	}
-	if m != nil {
-		return m, name, nil
-	}
-	p.makePath(target)
-	m, _, _ = p.getMapDataForPath(target, false)
-	if m == nil {
-		return nil, "", fmt.Errorf("failed to create node for path %s", target)
-	}
-	return m, name, nil
+	n.(*parser.JsonString).SetValue(value)
+	p.cache[path] = &n
+	p.callChangeListeners(path, value)
+	return nil
 }
 
 func (p *PrefData) PutBool(path string, value bool) error {
-	return p.PutString(path, fmt.Sprintf("%t", value))
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_BOOL)
+	if err != nil {
+		return err
+	}
+	(n.(*parser.JsonBool)).SetValue(value)
+	p.cache[path] = &n
+	p.callChangeListeners(path, fmt.Sprintf("%t", value))
+	return nil
 }
 
 func (p *PrefData) PutFloat32(path string, value float32) error {
-	return p.PutString(path, fmt.Sprintf("%f", value))
+	return p.PutFloat64(path, float64(value))
 }
 
 func (p *PrefData) PutFloat64(path string, value float64) error {
-	return p.PutString(path, fmt.Sprintf("%f", value))
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_NUMBER)
+	if err != nil {
+		return err
+	}
+	(n.(*parser.JsonNumber)).SetValue(value)
+	p.cache[path] = &n
+	p.callChangeListeners(path, fmt.Sprintf("%f", value))
+	return nil
 }
 
 func (p *PrefData) GetBoolWithFallback(path string, fb bool) bool {
-	s := strings.ToLower(p.GetStringForPathWithFallback(path, fmt.Sprintf("%t", fb)))
-	return strings.HasPrefix(s, "tr")
-}
-
-func (p *PrefData) GetFloat64WithFallback(path string, fb float64) float64 {
-	s := p.GetStringForPathWithFallback(path, fmt.Sprintf("%f", fb))
-	f, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return fb
-	}
-	return f
-}
-
-func (p *PrefData) GetFloat32WithFallback(path string, fb float32) float32 {
-	s := p.GetStringForPathWithFallback(path, fmt.Sprintf("%f", fb))
-	f, err := strconv.ParseFloat(s, 32)
-	if err != nil {
-		return fb
-	}
-	return float32(f)
-}
-
-func (p *PrefData) GetStringForPathWithFallback(path, fb string) string {
-	_, v, ok := p.getMapDataForPath(path, true)
+	n, ok := p.getNodeForPath(path, true)
 	if ok {
-		return v
+		if n.GetNodeType() == parser.NT_BOOL {
+			return (n.(*parser.JsonBool)).GetValue()
+		}
 	}
 	return fb
 }
 
+func (p *PrefData) GetFloat64WithFallback(path string, fb float64) float64 {
+	n, ok := p.getNodeForPath(path, true)
+	if ok {
+		if n.GetNodeType() == parser.NT_NUMBER {
+			return (n.(*parser.JsonNumber)).GetValue()
+		}
+	}
+	return fb
+}
+
+func (p *PrefData) GetFloat32WithFallback(path string, fb float32) float32 {
+	return float32(p.GetFloat64WithFallback(path, float64(fb)))
+}
+
+func (p *PrefData) GetStringForPathWithFallback(path, fb string) string {
+	n, ok := p.getNodeForPath(path, true)
+	if ok {
+		if n.GetNodeType() == parser.NT_STRING {
+			return (n.(*parser.JsonString)).GetValue()
+		}
+	}
+	return fb
+}
+
+func (p *PrefData) GetDataForPath(path string) (parser.NodeI, bool) {
+	return p.getNodeForPath(path, true)
+}
+
 func (p *PrefData) GetStringList(path string) []string {
-	l := p.getListDataForPath(path)
-	if l != nil {
-		return l
-	} else {
-		ll := make([]string, 1)
-		ll[0] = ""
-		return ll
+	n, found := p.getNodeForPath(path, false)
+	if !found {
+		list := make([]string, 1)
+		list[0] = ""
+		return list
 	}
-}
-
-func (p *PrefData) GetDataForPath(path string) (*map[string]interface{}, string, bool) {
-	return p.getMapDataForPath(path, true)
-}
-
-func (p *PrefData) makePath(path string) error {
-	nodes := strings.Split(path, ".")
-	x := p.data
-	for _, v := range nodes {
-		y := x[v]
-		if y == nil {
-			x[v] = make(map[string]interface{})
-			y = x[v]
-			x = y.(map[string]interface{})
-		} else {
-			x = y.(map[string]interface{})
+	if n.GetNodeType() == parser.NT_OBJECT {
+		return n.(*parser.JsonObject).GetSortedKeys()
+	}
+	if n.GetNodeType() == parser.NT_LIST {
+		list := make([]string, 0)
+		l := n.(*parser.JsonList).GetValues()
+		for _, v := range l {
+			list = append(list, v.String())
 		}
+		return list
 	}
-	return nil
+	list := make([]string, 1)
+	list[0] = n.String()
+	return list
 }
 
-func (p *PrefData) getListDataForPath(path string) []string {
-	list := make([]string, 0)
-	nodes := strings.Split(path, ".")
-	if nodes[0] == "" {
-		return nil
-	}
-	x := p.data
-	for _, v := range nodes {
-		y := x[v]
-		if y == nil {
-			return nil
-		}
-		if reflect.TypeOf(y).Kind() == reflect.Slice {
-			if reflect.TypeOf(y).Elem().Kind() == reflect.String {
-				s := y.([]string)
-				list = append(list, s...)
-			} else {
-				s := y.([]interface{})
-				for _, v := range s {
-					list = append(list, fmt.Sprintf("%s", v))
-				}
-			}
-			return list
-		} else {
-			if reflect.TypeOf(y).Kind() == reflect.String {
-				list = append(list, y.(string))
-				return list
-			}
-			x = y.(map[string]interface{})
-		}
-	}
-	return nil
-}
-
-func (p *PrefData) getMapDataForPath(path string, cache bool) (*map[string]interface{}, string, bool) {
+func (p *PrefData) getNodeForPath(path string, cache bool) (parser.NodeI, bool) {
 	if cache {
 		cached, ok := p.cache[path]
 		if ok {
-			return nil, cached, true
+			return *cached, true
 		}
 	}
-	nodes := strings.Split(path, ".")
-	if nodes[0] == "" {
-		return &p.data, "", true
+	n, err := parser.Find(p.data, path)
+	if err != nil || n == nil {
+		return nil, false
 	}
-	x := p.data
-	for _, v := range nodes {
-		y := x[v]
-		if y == nil {
-			return nil, "", false
-		}
-		if reflect.TypeOf(y).Kind() == reflect.Map {
-			x = y.(map[string]interface{})
-		} else {
-			val := fmt.Sprintf("%v", y)
-			p.cache[path] = val
-			return nil, val, true
-		}
-	}
-	if x == nil {
-		return nil, "", false
-	}
-	return &x, "", true
-}
-
-func getParentAndName(path string) (string, string) {
-	if path == "" {
-		return "", ""
-	}
-	p := strings.LastIndexByte(path, '.')
-	switch p {
-	case -1:
-		return "", path
-	default:
-		return path[0:p], path[p+1:]
-	}
+	p.cache[path] = &n
+	return n, true
 }

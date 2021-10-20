@@ -837,7 +837,6 @@ func savePreferences() {
 	if splitContainer != nil {
 		preferences.PutFloat64(screenSplitPrefName, splitContainer.Offset)
 	}
-
 	if !window.FullScreen() {
 		// Ensure that 0.0 is never stored.
 		if window.Canvas().Size().Width > 1 && window.Canvas().Size().Height > 1 {
@@ -845,7 +844,6 @@ func savePreferences() {
 			preferences.PutFloat32(screenHeightPrefName, window.Canvas().Size().Height)
 		}
 	}
-
 	preferences.Save()
 }
 
