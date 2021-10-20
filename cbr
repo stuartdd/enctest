@@ -1,0 +1,11 @@
+#!/bin/bash
+echo CLEANING
+go clean -modcache
+go clean -cache
+go clean
+
+echo BUILDING
+go build
+
+echo RUNNING
+./enctest development.json
