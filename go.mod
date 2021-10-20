@@ -16,13 +16,18 @@ replace stuartdd.com/types => ./types
 
 require (
 	fyne.io/fyne/v2 v2.1.0
+	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-gl/gl v0.0.0-20210905235341-f7a045908259 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210727001814-0db043d8d5be // indirect
+	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.0.5 // indirect
+	github.com/josephspurrier/goversioninfo v1.3.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/stuartdd/jsonParserGo/parser v0.0.0-20211019172056-78b407826a60
-	golang.org/x/sys v0.0.0-20211013075003-97ac67df715c // indirect
+	golang.org/x/mod v0.5.1 // indirect
+	golang.org/x/sys v0.0.0-20211020064051-0ec99a608a1b // indirect
+	golang.org/x/tools v0.1.7 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	stuartdd.com/gui v0.0.0-00010101000000-000000000000
 	stuartdd.com/lib v0.0.0-00010101000000-000000000000

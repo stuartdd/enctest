@@ -3,7 +3,7 @@
 *.txt
 *.exe
 tmp.*
-fyne-cross/tmp/
+fyne-cross/**
 data.json
 config.json
-enctest
+/enctest

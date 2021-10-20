@@ -33,3 +33,42 @@ lib
 
 libtest/TestDataTypes.json
 
+## Cross Compiling
+
+### Docker
+
+https://hub.docker.com/r/fyneio/fyne-cross/tags
+
+Copy the pull for the latest image for windows
+
+E.G. ```docker pull fyneio/fyne-cross:1.1-windows-21.10.05```
+
+### Fyne command
+
+```go get -u fyne.io/fyne/v2/cmd/fyne```
+
+fyne version fyne cli version: v2.1.0
+
+```bash
+fyne version 
+fyne cli version: v2.1.0
+```
+
+### Fyne-cross
+
+```bash
+fyne version fyne cli version: v2.1.0
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
