@@ -126,7 +126,6 @@ func main() {
 	a.SetIcon(theme2.AppLogo())
 
 	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", loadThreadFileName))
-
 	splitContainerOffsetPref = preferences.GetFloat64WithFallback(screenSplitPrefName, 0.2)
 	splitContainerOffset = -1
 
@@ -461,6 +460,8 @@ func viewActionFunction(action string, uid string, extra string) {
 		linkAction(uid)
 	case gui.ACTION_UPDATED:
 		updateButtonBar()
+	case gui.ACTION_COPIED:
+		go gui.TimedNotification(window, "Copied item text to clipboard", uid)
 	}
 }
 

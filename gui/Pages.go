@@ -21,10 +21,12 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -43,6 +45,7 @@ const (
 	DataHintIsCalledPrefName = "data.hintIsCalled"
 	DataNoteIsCalledPrefName = "data.noteIsCalled"
 
+	ACTION_COPIED  = "copied"
 	ACTION_REMOVE  = "remove"
 	ACTION_RENAME  = "rename"
 	ACTION_LINK    = "link"
@@ -150,7 +153,7 @@ func notesControls(_ fyne.Window, details DetailPage, actionFunc func(string, st
 	return container.NewHBox(cObj...)
 }
 
-func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
+func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
 	data := details.GetObjectsForUid()
 	cObj := make([]fyne.CanvasObject, 0)
 	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
@@ -168,6 +171,12 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 			EditEntryListCache.Add(editEntry)
 		}
 		editEntry.RefreshData()
+
+		clip := widget.NewButtonWithIcon("", theme.ContentCopyIcon(), func() {
+			w.Clipboard().SetContent(editEntry.GetCurrentText())
+			actionFunc(ACTION_COPIED, editEntry.Path, editEntry.GetCurrentText())
+		})
+		flClipboard := container.New(&FixedLayout{10, 1}, clip)
 		flLab := container.New(&FixedLayout{100, 1}, editEntry.Lab)
 		flLink := container.New(&FixedLayout{10, 0}, editEntry.Link)
 		flUnDo := container.New(&FixedLayout{10, 0}, editEntry.UnDo)
@@ -180,34 +189,36 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		flRename := container.New(&FixedLayout{10, 0}, editEntry.Rename)
 		na := editEntry.NodeAnnotation
 		dp := details.Preferences.GetBoolWithFallback(DataPresModePrefName, true)
-
 		cObj = append(cObj, widget.NewSeparator())
 		if na == types.NOTE_TYPE_RT && dp {
 			rt := widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab), nil, rt))
-			editEntry.Rename.Disable()
-			editEntry.UnDo.Disable()
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, rt))
 		} else {
 			if na == types.NOTE_TYPE_PO && dp {
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab), nil, positional(editEntry.GetCurrentText())))
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
 			} else {
-				var we *widget.Entry
-				contHeight := editEntry.Lab.MinSize().Height
-				if na == types.NOTE_TYPE_SL {
-					we = widget.NewEntry()
+				if dp {
+					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
 				} else {
-					we = widget.NewMultiLineEntry()
-					if na != types.NOTE_TYPE_PO {
-						contHeight = 250
+					var we *widget.Entry
+					editEntry.Rename.Enable()
+					contHeight := editEntry.Lab.MinSize().Height
+					if na == types.NOTE_TYPE_SL {
+						we = widget.NewEntry()
+					} else {
+						we = widget.NewMultiLineEntry()
+						if na != types.NOTE_TYPE_PO {
+							contHeight = 250
+						}
 					}
+					we.OnChanged = func(newWalue string) {
+						entryChangedFunction(newWalue, editEntry.Path)
+						actionFunc(ACTION_UPDATED, editEntry.Path, "")
+					}
+					we.SetText(editEntry.GetCurrentText())
+					editEntry.We = we
+					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
 				}
-				we.OnChanged = func(newWalue string) {
-					entryChangedFunction(newWalue, editEntry.Path)
-					actionFunc(ACTION_UPDATED, editEntry.Path, "")
-				}
-				we.SetText(editEntry.GetCurrentText())
-				editEntry.We = we
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
 			}
 		}
 	}
@@ -271,6 +282,13 @@ func parseURL(urlStr string) *url.URL {
 	}
 
 	return link
+}
+
+func TimedNotification(w fyne.Window, title, message string) {
+	dia := dialog.NewInformation(title, message, w)
+	dia.Show()
+	time.Sleep(time.Duration(2000) * time.Millisecond)
+	dia.Hide()
 }
 
 func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, annotation types.NodeAnnotationEnum, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
