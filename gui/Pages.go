@@ -184,12 +184,12 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 		cObj = append(cObj, widget.NewSeparator())
 		if na == types.NOTE_TYPE_RT && dp {
 			rt := widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, rt))
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab), nil, rt))
 			editEntry.Rename.Disable()
 			editEntry.UnDo.Disable()
 		} else {
 			if na == types.NOTE_TYPE_PO && dp {
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, positional(editEntry.GetCurrentText())))
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab), nil, positional(editEntry.GetCurrentText())))
 			} else {
 				var we *widget.Entry
 				contHeight := editEntry.Lab.MinSize().Height
