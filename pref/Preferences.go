@@ -130,6 +130,17 @@ func (p *PrefData) PutFloat64(path string, value float64) error {
 	return nil
 }
 
+func (p *PrefData) PutInt64(path string, value int64) error {
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_NUMBER)
+	if err != nil {
+		return err
+	}
+	(n.(*parser.JsonNumber)).SetValue(float64(value))
+	p.cache[path] = &n
+	p.callChangeListeners(path, fmt.Sprintf("%d", value))
+	return nil
+}
+
 func (p *PrefData) GetBoolWithFallback(path string, fb bool) bool {
 	n, ok := p.getNodeForPath(path, true)
 	if ok {
@@ -137,6 +148,7 @@ func (p *PrefData) GetBoolWithFallback(path string, fb bool) bool {
 			return (n.(*parser.JsonBool)).GetValue()
 		}
 	}
+	p.PutBool(path, fb)
 	return fb
 }
 
@@ -147,6 +159,18 @@ func (p *PrefData) GetFloat64WithFallback(path string, fb float64) float64 {
 			return (n.(*parser.JsonNumber)).GetValue()
 		}
 	}
+	p.PutFloat64(path, fb)
+	return fb
+}
+
+func (p *PrefData) GetInt64WithFallback(path string, fb int64) int64 {
+	n, ok := p.getNodeForPath(path, true)
+	if ok {
+		if n.GetNodeType() == parser.NT_NUMBER {
+			return (n.(*parser.JsonNumber)).GetIntValue()
+		}
+	}
+	p.PutInt64(path, fb)
 	return fb
 }
 
@@ -161,6 +185,7 @@ func (p *PrefData) GetStringForPathWithFallback(path, fb string) string {
 			return (n.(*parser.JsonString)).GetValue()
 		}
 	}
+	p.PutString(path, fb)
 	return fb
 }
 

@@ -83,9 +83,6 @@ func NewEditEntry(path string, titleWithAnnotation string, currentTxt string, on
 	undo := widget.NewButtonWithIcon("", theme.ContentUndoIcon(), func() {
 		unDoFunc(path)
 	})
-	link := widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
-		actionFunc(ACTION_LINK, "", "")
-	})
 	remove := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, path, "")
 	})
@@ -93,8 +90,13 @@ func NewEditEntry(path string, titleWithAnnotation string, currentTxt string, on
 		actionFunc(ACTION_RENAME, path, "")
 	})
 	undo.Disable()
+	ee := &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, We: nil, Lab: lab, UnDo: undo, Link: nil, Remove: remove, Rename: rename, OldTxt: currentTxt, NewTxt: currentTxt, OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
+	link := widget.NewButtonWithIcon("", theme2.LinkToWebIcon(), func() {
+		actionFunc(ACTION_LINK, path, ee.Url)
+	})
 	link.Disable()
-	return &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, We: nil, Lab: lab, UnDo: undo, Link: link, Remove: remove, Rename: rename, OldTxt: currentTxt, NewTxt: currentTxt, OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc}
+	ee.Link = link
+	return ee
 }
 
 func (p *EditEntry) SetNew(s string) {

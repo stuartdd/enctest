@@ -284,11 +284,13 @@ func parseURL(urlStr string) *url.URL {
 	return link
 }
 
-func TimedNotification(w fyne.Window, title, message string) {
-	dia := dialog.NewInformation(title, message, w)
-	dia.Show()
-	time.Sleep(time.Duration(2000) * time.Millisecond)
-	dia.Hide()
+func TimedNotification(w fyne.Window, msDelay int64, title, message string) {
+	go func() {
+		dia := dialog.NewInformation(title, message, w)
+		dia.Show()
+		time.Sleep(time.Duration(msDelay) * time.Millisecond)
+		dia.Hide()
+	}()
 }
 
 func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, annotation types.NodeAnnotationEnum, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {

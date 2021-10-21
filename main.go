@@ -61,6 +61,9 @@ const (
 	fallbackDataFile        = "data.json"
 
 	dataFilePrefName       = "datafile"
+	copyDialogTimePrefName = "dialog.copyTimeOutMS"
+	linkDialogTimePrefName = "dialog.linkTimeOutMS"
+	saveDialogTimePrefName = "dialog.saveTimeOutMS"
 	getUrlPrefName         = "getDataUrl"
 	postUrlPrefName        = "postDataUrl"
 	themeVarPrefName       = "theme"
@@ -457,11 +460,11 @@ func viewActionFunction(action string, uid string, extra string) {
 	case gui.ACTION_RENAME:
 		renameAction(uid, extra)
 	case gui.ACTION_LINK:
-		linkAction(uid)
+		linkAction(uid, extra)
 	case gui.ACTION_UPDATED:
 		updateButtonBar()
 	case gui.ACTION_COPIED:
-		go gui.TimedNotification(window, "Copied item text to clipboard", uid)
+		gui.TimedNotification(window, preferences.GetInt64WithFallback(copyDialogTimePrefName, 2500), "Copied item text to clipboard", uid)
 	}
 }
 
@@ -563,9 +566,9 @@ func renameAction(uid string, extra string) {
 /**
 Activate a link in a browser if it is contained in a note or hint
 */
-func linkAction(s string) {
-	if s != "" {
-		s, err := url.Parse(s)
+func linkAction(uid, urlStr string) {
+	if urlStr != "" {
+		s, err := url.Parse(urlStr)
 		if err != nil {
 			dialog.NewInformation("Link is invalid", err.Error(), window).Show()
 		} else {
@@ -573,6 +576,7 @@ func linkAction(s string) {
 			if err != nil {
 				dialog.NewInformation("ink could not be opened", err.Error(), window).Show()
 			}
+			gui.TimedNotification(window, preferences.GetInt64WithFallback(linkDialogTimePrefName, 2500), "Opening Link (URL)", urlStr)
 		}
 	}
 }
@@ -581,6 +585,9 @@ func linkAction(s string) {
 The search button has been pressed
 */
 func search(s string) {
+	if s == "" {
+		return
+	}
 	matchCase, _ := findCaseSensitive.Get()
 
 	// Do the search. The map contains the returned search entries
@@ -741,6 +748,7 @@ func getPasswordAndDecrypt(fd *lib.FileData, message string, fail func(string)) 
 }
 
 func callbackAfterSave() {
+	gui.TimedNotification(window, preferences.GetInt64WithFallback(saveDialogTimePrefName, 3000), "Saved", fileData.GetFileName())
 	futureReleaseTheBeast(500, MAIN_THREAD_RE_MENU)
 }
 
