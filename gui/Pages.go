@@ -94,13 +94,6 @@ func GetDetailPage(id string, dataRootMap parser.NodeI, preferences pref.PrefDat
 	return NewDetailPage(id, id, "", welcomeScreen, notesControls, dataRootMap, preferences)
 }
 
-func entryChangedFunction(newWalue string, path string) {
-	ee, ok := EditEntryListCache.Get(path)
-	if ok {
-		ee.SetNew(newWalue)
-	}
-}
-
 func positional(s string) fyne.CanvasObject {
 	g1 := container.NewHBox()
 	g1.Add(widget.NewSeparator())
@@ -175,28 +168,28 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 			EditEntryListCache.Add(editEntry)
 		}
 		editEntry.RefreshData()
-		fcl := container.New(&FixedLayout{100, 1}, editEntry.Lab)
-		fcbl := container.New(&FixedLayout{10, 0}, editEntry.Link)
-		fcbr := container.New(&FixedLayout{10, 0}, editEntry.UnDo)
+		flLab := container.New(&FixedLayout{100, 1}, editEntry.Lab)
+		flLink := container.New(&FixedLayout{10, 0}, editEntry.Link)
+		flUnDo := container.New(&FixedLayout{10, 0}, editEntry.UnDo)
 		if len(keys) < 2 {
 			editEntry.Remove.Disable()
 		} else {
 			editEntry.Remove.Enable()
 		}
-		fcre := container.New(&FixedLayout{10, 0}, editEntry.Remove)
-		fcna := container.New(&FixedLayout{10, 0}, editEntry.Rename)
+		flRemove := container.New(&FixedLayout{10, 0}, editEntry.Remove)
+		flRename := container.New(&FixedLayout{10, 0}, editEntry.Rename)
 		na := editEntry.NodeAnnotation
 		dp := details.Preferences.GetBoolWithFallback(DataPresModePrefName, true)
 
 		cObj = append(cObj, widget.NewSeparator())
 		if na == types.NOTE_TYPE_RT && dp {
 			rt := widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, rt))
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, rt))
 			editEntry.Rename.Disable()
 			editEntry.UnDo.Disable()
 		} else {
 			if na == types.NOTE_TYPE_PO && dp {
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, positional(editEntry.GetCurrentText())))
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, positional(editEntry.GetCurrentText())))
 			} else {
 				var we *widget.Entry
 				contHeight := editEntry.Lab.MinSize().Height
@@ -214,11 +207,25 @@ func notesScreen(_ fyne.Window, details DetailPage, actionFunc func(string, stri
 				}
 				we.SetText(editEntry.GetCurrentText())
 				editEntry.We = we
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(fcre, fcna, fcbl, fcl), fcbr, container.New(NewFixedHLayout(300, contHeight), we)))
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
 			}
 		}
 	}
 	return container.NewScroll(container.NewVBox(cObj...))
+}
+
+func entryChangedFunction(newWalue string, path string) {
+	ee, ok := EditEntryListCache.Get(path)
+	if ok {
+		ee.SetNew(newWalue)
+	}
+}
+
+func unDoFunction(path string) {
+	ee, ok := EditEntryListCache.Get(path)
+	if ok {
+		ee.RevertEdit()
+	}
 }
 
 func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
@@ -255,13 +262,6 @@ func contains(s []string, str string) (int, bool) {
 		}
 	}
 	return 0, false
-}
-
-func unDoFunction(path string) {
-	ee, ok := EditEntryListCache.Get(path)
-	if ok {
-		ee.RevertEdit()
-	}
 }
 
 func parseURL(urlStr string) *url.URL {

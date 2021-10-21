@@ -1,26 +1,13 @@
 
     {
-        "data": {
-            "presentationmode": "true"
-        },
         "datafile": "libtest/TestDataTypes.json",
-        "screen": {
-            "fullScreen": "false",
-            "height": "660.952393",
-            "split": "0.184206",
-            "width": "893.333374"
-        },
         "search": {
-            "case": "true",
-            "lastGoodList": [
-                "application",
-                "ll",
-                "LLOYDS TSB",
-                "post",
-                "userId",
-                "Lizzie",
-                "note"
-            ]
+            "case": true
         },
-        "theme": "dark"
+        "screen": {
+            "fullScreen": false,
+            "split": 0.2,
+            "width": 728.571472,
+            "height": 479.047638
+        }
     }
