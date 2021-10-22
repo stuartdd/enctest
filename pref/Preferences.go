@@ -188,6 +188,22 @@ func (p *PrefData) GetFloat32WithFallback(path string, fb float32) float32 {
 	return float32(p.GetFloat64WithFallback(path, float64(fb)))
 }
 
+func (p *PrefData) GetFloat32WithFallbackAndMin(path string, fb, min float32) float32 {
+	v := float32(p.GetFloat64WithFallback(path, float64(fb)))
+	if v < min {
+		return min
+	}
+	return v
+}
+
+func (p *PrefData) GetFloat64WithFallbackAndMin(path string, fb, min float64) float64 {
+	v := p.GetFloat64WithFallback(path, fb)
+	if v < min {
+		return min
+	}
+	return v
+}
+
 func (p *PrefData) GetStringForPathWithFallback(path, fb string) string {
 	n, ok := p.getNodeForPath(path, true)
 	if ok {

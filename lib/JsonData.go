@@ -41,7 +41,7 @@ var (
 
 type JsonData struct {
 	dataMap        *parser.JsonObject
-	navIndex       map[string][]string
+	navIndex       *map[string][]string
 	dataMapUpdated func(string, string, string, error)
 }
 
@@ -70,12 +70,13 @@ func NewJsonData(j []byte, dataMapUpdated func(string, string, string, error)) (
 	if err != nil {
 		return nil, fmt.Errorf("'%s' could not be parsed", timeStampStr)
 	}
-	dr := &JsonData{dataMap: rO, navIndex: *createNavIndex(rO), dataMapUpdated: dataMapUpdated}
+	dr := &JsonData{dataMap: rO, navIndex: createNavIndex(rO), dataMapUpdated: dataMapUpdated}
 	return dr, nil
 }
 
 func (p *JsonData) GetNavIndex(id string) []string {
-	return p.navIndex[id]
+	ni := *p.navIndex
+	return ni[id]
 }
 
 func (p *JsonData) GetDataRoot() *parser.JsonObject {
@@ -133,7 +134,7 @@ func (p *JsonData) AddHintItem(user, path, hintItemName string) error {
 	}
 	hO := h.(*parser.JsonObject)
 	addStringIfDoesNotExist(hO, hintItemName)
-	p.navIndex = *createNavIndex(p.dataMap)
+	p.navIndex = createNavIndex(p.dataMap)
 	p.dataMapUpdated("Add Note Item", GetUserFromPath(user), path, nil)
 	return nil
 }
@@ -144,7 +145,7 @@ func (p *JsonData) AddHint(user, hintName string) error {
 		return fmt.Errorf("the user '%s' cannot be found", user)
 	}
 	addHintToUser(u, hintName)
-	p.navIndex = *createNavIndex(p.dataMap)
+	p.navIndex = createNavIndex(p.dataMap)
 	p.dataMapUpdated("Add Note Item", GetUserFromPath(user), user+"."+hintStr+"."+hintName, nil)
 	return nil
 }
@@ -155,7 +156,7 @@ func (p *JsonData) AddNoteItem(user, itemName string) error {
 		return fmt.Errorf("the user '%s' cannot be found", user)
 	}
 	addNoteToUser(u, itemName, "")
-	p.navIndex = *createNavIndex(p.dataMap)
+	p.navIndex = createNavIndex(p.dataMap)
 	p.dataMapUpdated("Add Note Item", GetUserFromPath(user), user+"."+noteStr, nil)
 	return nil
 }
@@ -169,7 +170,7 @@ func (p *JsonData) AddUser(user string) error {
 	addNoteToUser(userO, "note", "text")
 	addHintToUser(userO, "App1")
 	p.GetUserRoot().Add(userO)
-	p.navIndex = *createNavIndex(p.dataMap)
+	p.navIndex = createNavIndex(p.dataMap)
 	p.dataMapUpdated("New User", GetUserFromPath(user), user, nil)
 	return nil
 }
@@ -187,8 +188,7 @@ func (p *JsonData) Rename(uid string, newName string) error {
 	if err != nil {
 		return fmt.Errorf("Rename '%s' failed. Error: '%s'", uid, err.Error())
 	}
-	p.navIndex = *createNavIndex(p.dataMap)
-
+	p.navIndex = createNavIndex(p.dataMap)
 	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
 		p.dataMapUpdated("Rename", GetUserFromPath(newName), newName, nil)
 	} else {
@@ -215,7 +215,7 @@ func (p *JsonData) Remove(uid string, min int) error {
 		return fmt.Errorf("there must be at least %d element(s) remaining in this item", min)
 	}
 	parser.Remove(p.dataMap, n)
-	p.navIndex = *createNavIndex(p.dataMap)
+	p.navIndex = createNavIndex(p.dataMap)
 	p.dataMapUpdated("Removed", GetUserFromPath(uid), GetParentId(uid), nil)
 	return nil
 }
@@ -364,6 +364,7 @@ func containsWithCase(haystack, needle string, matchCase bool) bool {
 func createNavIndex(m parser.NodeI) *map[string][]string {
 	var uids = make(map[string][]string)
 	createNavIndexDetail("", &uids, m)
+
 	return &uids
 }
 
@@ -502,17 +503,18 @@ func GetFirstPathElements(path string, count int) string {
 }
 
 func (p *JsonData) GetRootUidOrCurrentUid(currentUid string) string {
+	ni := *p.navIndex
 	if currentUid != "" {
 		for i := 4; i > 0; i-- {
 			x := GetFirstPathElements(currentUid, i)
-			_, ok := p.navIndex[x]
+			_, ok := ni[x]
 			if ok {
 				return currentUid
 			}
 		}
 	}
 	l := make([]string, 0)
-	for k := range p.navIndex {
+	for k := range ni {
 		if k != "" {
 			l = append(l, k)
 		}

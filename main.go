@@ -67,6 +67,9 @@ const (
 	getUrlPrefName         = "getDataUrl"
 	postUrlPrefName        = "postDataUrl"
 	themeVarPrefName       = "theme"
+	logShowingPrefName     = "log.showing"
+	logWidthPrefName       = "log.width"
+	logHeightPrefName      = "log.height"
 	screenWidthPrefName    = "screen.width"
 	screenHeightPrefName   = "screen.height"
 	screenFullPrefName     = "screen.fullScreen"
@@ -78,6 +81,7 @@ const (
 var (
 	window                   fyne.Window
 	searchWindow             fyne.Window
+	logWindow                *gui.LogData
 	fileData                 *lib.FileData
 	dataRoot                 *lib.JsonData
 	preferences              *pref.PrefData
@@ -155,12 +159,14 @@ func main() {
 	layoutRHS := container.NewBorder(title, nil, nil, nil, contentRHS)
 	buttonBar := makeButtonBar()
 
+	logWindow = gui.NewLogData(closeLogWindow)
 	/*
 		function called when a selection is made in the LHS tree.
 		This updates the contentRHS which is the RHS page for editing data
 	*/
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
 		currentSelection = detailPage.Uid
+		log(fmt.Sprintf("Page User:'%s' Uid:'%s'", lib.GetUserFromPath(currentSelection), currentSelection))
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), lib.GetUserFromPath(currentSelection)))
 		window.SetMainMenu(makeMenus())
 		navTreeLHS.OpenBranch(currentSelection)
@@ -186,12 +192,16 @@ func main() {
 
 			switch taskForTheBeast {
 			case MAIN_THREAD_LOAD:
+				if preferences.GetBoolWithFallback(logShowingPrefName, false) {
+					logWindow.Show(preferences.GetFloat32WithFallbackAndMin(logWidthPrefName, 500, 200),
+						preferences.GetFloat32WithFallbackAndMin(logHeightPrefName, 500, 300))
+				}
 				// Load the file and decrypt it if required
-				fmt.Println("Load State")
 				fd, err := lib.NewFileData(loadThreadFileName, getDataUrl, postDataUrl)
 				if err != nil {
 					abortWithUsage(fmt.Sprintf("Failed to load data file %s. Error: %s\n", loadThreadFileName, err.Error()))
 				}
+				log(fmt.Sprintf("Loaded:'%s'", loadThreadFileName))
 				/*
 					While file is ENCRYPTED
 						Get PW and decrypt
@@ -199,9 +209,11 @@ func main() {
 				*/
 				message := ""
 				for fd.RequiresDecryption() {
+					log(fmt.Sprintf("Requires Decryption:'%s'", loadThreadFileName))
 					getPasswordAndDecrypt(fd, message, func(s string) {
 						// FAIL
 						message = "Error: " + strings.TrimSpace(s) + ". Please try again"
+						log(fmt.Sprintf("Decryption Error:'%s'", message))
 						time.Sleep(1000 * time.Millisecond)
 					})
 				}
@@ -225,6 +237,7 @@ func main() {
 				// Populate the window and we are done!
 				navTreeLHS = makeNavTree(setPageRHSFunc)
 				uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
+				log(fmt.Sprintf("Re-build nav tree. Sel:'%s' uid:'%s'", currentSelection, uid))
 				selectTreeElement(uid)
 				if splitContainerOffset < 0 {
 					splitContainerOffset = splitContainerOffsetPref
@@ -236,11 +249,13 @@ func main() {
 				window.SetContent(container.NewBorder(buttonBar, nil, nil, nil, splitContainer))
 				futureReleaseTheBeast(0, MAIN_THREAD_RE_MENU)
 			case MAIN_THREAD_RESELECT:
+				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentSelection))
 				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRoot(), *preferences)
 				setPageRHSFunc(*t)
 			case MAIN_THREAD_SELECT:
 				selectTreeElement(pendingSelection)
 			case MAIN_THREAD_RE_MENU:
+				log("Refresh menu and buttons")
 				updateButtonBar()
 				window.SetMainMenu(makeMenus())
 			}
@@ -259,6 +274,7 @@ We need to open the parent branches or we will never see the selected element
 func selectTreeElement(uid string) {
 	user := lib.GetUserFromPath(uid)
 	parent := lib.GetParentId(uid)
+	log(fmt.Sprintf("selectTreeElement: User:'%s' Parent:'%s' Uid:'%s'", user, parent, uid))
 	navTreeLHS.OpenBranch(user)
 	navTreeLHS.OpenBranch(parent)
 	navTreeLHS.Select(uid)
@@ -298,16 +314,37 @@ func updateButtonBar() {
 	}
 }
 
+func log(l string) {
+	if logWindow != nil {
+		logWindow.Log(l)
+	}
+}
+
+func closeLogWindow() {
+	if logWindow != nil {
+		preferences.PutFloat32(logWidthPrefName, logWindow.Width())
+		preferences.PutFloat32(logHeightPrefName, logWindow.Height())
+		preferences.PutBool(logShowingPrefName, logWindow.Showing())
+		logWindow.Close()
+	}
+}
+
 func makeButtonBar() *fyne.Container {
 	saveShortcutButton = widget.NewButton("Save", func() {
 		commitAndSaveData(SAVE_AS_IS, true)
 	})
 	fullScreenShortcutButton = widget.NewButton("FULL SCREEN", flipFullScreen)
 	editModeShortcutButton = widget.NewButton("EDIT", flipPositionalData)
+	logButton := widget.NewButton("LOG", func() {
+		if logWindow != nil {
+			logWindow.Show(preferences.GetFloat32WithFallbackAndMin(logWidthPrefName, 500, 200),
+				preferences.GetFloat32WithFallbackAndMin(logHeightPrefName, 500, 300))
+		}
+	})
 	quit := widget.NewButton("EXIT", shouldClose)
 	timeStampLabel = widget.NewLabel("  File Not loaded")
 	updateButtonBar()
-	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton, timeStampLabel)
+	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton, logButton, timeStampLabel)
 }
 
 func makeMenus() *fyne.MainMenu {
@@ -625,7 +662,7 @@ func search(s string) {
 			pendingSelection = mapPaths[paths[id]]
 			futureReleaseTheBeast(100, MAIN_THREAD_SELECT)
 		}
-		go showSearchResultsWindow(window.Canvas().Size().Width/2, window.Canvas().Size().Height/2, list)
+		showSearchResultsWindow(window.Canvas().Size().Width/2, window.Canvas().Size().Height/2, list)
 	} else {
 		dialog.NewInformation("Search results", fmt.Sprintf("Nothing found for search '%s'", s), window).Show()
 	}
@@ -635,16 +672,18 @@ func search(s string) {
 Display the search results in a NON modal window
 */
 func showSearchResultsWindow(w float32, h float32, list *widget.List) {
-	if searchWindow != nil {
-		searchWindow.Close()
-		searchWindow = nil
-	}
-	c := container.NewScroll(list)
-	searchWindow = fyne.CurrentApp().NewWindow("Search List")
-	searchWindow.SetContent(c)
-	searchWindow.Resize(fyne.NewSize(w, h))
-	searchWindow.SetFixedSize(true)
-	searchWindow.Show()
+	go func(w float32, h float32, list *widget.List) {
+		if searchWindow != nil {
+			searchWindow.Close()
+			searchWindow = nil
+		}
+		c := container.NewScroll(list)
+		searchWindow = fyne.CurrentApp().NewWindow("Search List")
+		searchWindow.SetContent(c)
+		searchWindow.Resize(fyne.NewSize(w, h))
+		searchWindow.SetFixedSize(true)
+		searchWindow.Show()
+	}(w, h, list)
 }
 
 /**
@@ -812,6 +851,9 @@ func shouldClose() {
 		savePreferences()
 		if searchWindow != nil {
 			searchWindow.Close()
+		}
+		if logWindow != nil {
+			logWindow.Close()
 		}
 		count := countChangedItems()
 		if count > 0 {
