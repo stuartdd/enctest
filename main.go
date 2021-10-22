@@ -510,12 +510,15 @@ Called if there is a structural change in the model
 */
 func dataMapUpdated(desc, user, path string, err error) {
 	if err == nil {
+		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' Path:'%s'", desc, user, path))
 		pp := lib.GetParentId(path)
 		if dataRoot.GetNavIndex(pp) == nil {
 			path = pp
 		}
 		currentSelection = path
 		hasDataChanges = true
+	} else {
+		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' Path:'%s', Err:'%s'", desc, user, path, err.Error()))
 	}
 	futureReleaseTheBeast(100, MAIN_THREAD_RELOAD_TREE)
 }
@@ -559,6 +562,7 @@ Remove a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
 func removeAction(uid string) {
+	log(fmt.Sprintf("removeAction Uid:'%s'", uid))
 	_, removeName := types.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
 	dialog.NewConfirm("Remove entry", fmt.Sprintf("'%s'\nAre you sure?", removeName), func(ok bool) {
 		if ok {
@@ -575,6 +579,7 @@ Rename a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
 func renameAction(uid string, extra string) {
+	log(fmt.Sprintf("renameAction Uid:'%s'  Extra:'%s'", uid, extra))
 	m, _ := dataRoot.GetUserDataForUid(uid)
 	if m != nil {
 		at, fromName := types.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
@@ -604,6 +609,7 @@ func renameAction(uid string, extra string) {
 Activate a link in a browser if it is contained in a note or hint
 */
 func linkAction(uid, urlStr string) {
+	log(fmt.Sprintf("linkAction Uid:'%s' Url:%s", uid, urlStr))
 	if urlStr != "" {
 		s, err := url.Parse(urlStr)
 		if err != nil {
@@ -787,6 +793,7 @@ func getPasswordAndDecrypt(fd *lib.FileData, message string, fail func(string)) 
 }
 
 func callbackAfterSave() {
+	log("Saved")
 	gui.TimedNotification(window, preferences.GetInt64WithFallback(saveDialogTimePrefName, 3000), "Saved", fileData.GetFileName())
 	futureReleaseTheBeast(500, MAIN_THREAD_RE_MENU)
 }
