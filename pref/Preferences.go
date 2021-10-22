@@ -87,6 +87,16 @@ func (p *PrefData) PutStringList(path, value string, maxLen int) error {
 	if err != nil {
 		return err
 	}
+	nL := n.(*parser.JsonList)
+	var nRem parser.NodeI
+	for _, v := range nL.GetValues() {
+		if v.String() == value {
+			nRem = v
+		}
+	}
+	if nRem != nil {
+		nL.Remove(nRem)
+	}
 	n.(*parser.JsonList).Add(parser.NewJsonString("", value))
 	p.cache[path] = &n
 	p.callChangeListeners(path, value)
@@ -202,14 +212,21 @@ func (p *PrefData) GetStringList(path string) []string {
 	}
 	if n.GetNodeType() == parser.NT_OBJECT {
 		return n.(*parser.JsonObject).GetSortedKeys()
-	}
-	if n.GetNodeType() == parser.NT_LIST {
-		list := make([]string, 0)
-		l := n.(*parser.JsonList).GetValues()
-		for _, v := range l {
-			list = append(list, v.String())
+	} else {
+		if n.GetNodeType() == parser.NT_LIST {
+			mapS := make(map[string]string)
+			list := make([]string, 0)
+			l := n.(*parser.JsonList).GetValues()
+			for i := len(l) - 1; i >= 0; i-- {
+				vS := l[i].String()
+				_, ok := mapS[vS]
+				if !ok {
+					mapS[vS] = ""
+					list = append(list, vS)
+				}
+			}
+			return list
 		}
-		return list
 	}
 	list := make([]string, 1)
 	list[0] = n.String()

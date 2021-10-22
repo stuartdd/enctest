@@ -1,16 +1,25 @@
 
     {
+        "postDataUrl": "",
+        "theme": "dark",
         "screen": {
-            "width": 967.142883,
-            "height": 552.857178,
+            "height": 546.190491,
             "fullScreen": false,
-            "split": 0.2
+            "split": 0.2,
+            "width": 960.476257
         },
         "datafile": "libtest/TestDataTypes.json",
         "search": {
-            "case": true
+            "case": true,
+            "lastGoodList": [
+                "note",
+                "app"
+            ]
         },
         "data": {
-            "presentationmode": false
-        }
+            "presentationmode": false,
+            "hintIsCalled": "Hint",
+            "noteIsCalled": "Note"
+        },
+        "getDataUrl": ""
     }
