@@ -103,7 +103,7 @@ func positional(s string) fyne.CanvasObject {
 	for i, c := range s {
 		v1 := container.NewVBox()
 		v1.Add(widget.NewSeparator())
-		v1.Add(container.New(NewFixedWHLayout(20, 15), widget.NewLabel(fmt.Sprintf("%d", i))))
+		v1.Add(container.New(NewFixedWHLayout(20, 15), widget.NewLabel(fmt.Sprintf("%d", i+1))))
 		v1.Add(widget.NewSeparator())
 		v1.Add(container.New(NewFixedWHLayout(20, 15), widget.NewLabel(string(c))))
 		v1.Add(widget.NewSeparator())
