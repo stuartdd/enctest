@@ -1,34 +1,34 @@
 
     {
+        "postDataUrl": "",
+        "screen": {
+            "split": 0.2,
+            "width": 872.380981,
+            "height": 504.761932,
+            "fullScreen": false
+        },
+        "getDataUrl": "",
+        "theme": "dark",
         "data": {
             "noteIsCalled": "Note",
             "presentationmode": false,
             "hintIsCalled": "Hint"
         },
+        "datafile": "libtest/TestDataTypes.json",
         "search": {
-            "case": true,
             "lastGoodList": [
                 "app",
                 "note",
                 "notes"
-            ]
+            ],
+            "case": true
         },
-        "screen": {
-            "split": 0.2,
-            "width": 890.476257,
-            "height": 466.666687,
-            "fullScreen": false
+        "log": {
+            "width": 906.666687,
+            "height": 512.857178,
+            "showing": false
         },
-        "getDataUrl": "",
         "dialog": {
             "copyTimeOutMS": 2500
-        },
-        "theme": "dark",
-        "log": {
-            "showing": true,
-            "width": 906.666687,
-            "height": 512.857178
-        },
-        "postDataUrl": "",
-        "datafile": "libtest/TestDataTypes.json"
+        }
     }

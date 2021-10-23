@@ -333,7 +333,7 @@ func logDataRequest(action string) {
 		case "copy":
 			gui.TimedNotification(logWindow.Window(), preferences.GetInt64WithFallback(copyDialogTimePrefName, 1500), "Copied to Clipboard", "Log text")
 		case "navmap":
-			log(fmt.Sprintf("NavMap:\n%s", dataRoot.GetNavIndexAsString()))
+			log(fmt.Sprintf("NavMap: ----------------\n%s", dataRoot.GetNavIndexAsString()))
 		case "select":
 			m, err := lib.GetUserDataForUid(dataRoot.GetDataRoot(), currentSelection)
 			if err != nil {
@@ -354,7 +354,7 @@ func logCloseWindow() {
 	if logWindow != nil {
 		preferences.PutFloat32(logWidthPrefName, logWindow.Width())
 		preferences.PutFloat32(logHeightPrefName, logWindow.Height())
-		preferences.PutBool(logShowingPrefName, logWindow.Showing())
+		preferences.PutBool(logShowingPrefName, false)
 		logWindow.Close()
 	}
 }
@@ -369,6 +369,7 @@ func makeButtonBar() *fyne.Container {
 		if logWindow != nil {
 			logWindow.Show(preferences.GetFloat32WithFallbackAndMin(logWidthPrefName, 500, 200),
 				preferences.GetFloat32WithFallbackAndMin(logHeightPrefName, 500, 300))
+			preferences.PutBool(logShowingPrefName, true)
 		}
 	})
 	quit := widget.NewButton("EXIT", shouldClose)

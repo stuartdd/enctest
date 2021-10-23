@@ -89,9 +89,9 @@ func (p *JsonData) GetNavIndexAsString() string {
 	list := make([]string, 0)
 	for n, v := range *p.navIndex {
 		if n == "" {
-			root = fmt.Sprintf("root = %s", v)
+			root = vToStr(v)
 		} else {
-			list = append(list, fmt.Sprintf("\n%s = %s", n, v))
+			list = append(list, fmt.Sprintf("\n%s = \n%s", n, vToStr(v)))
 		}
 	}
 	sort.Strings(list)
@@ -100,6 +100,14 @@ func (p *JsonData) GetNavIndexAsString() string {
 		sb.WriteString(n)
 	}
 	return sb.String()
+}
+
+func vToStr(v []string) string {
+	var sb strings.Builder
+	for _, v := range v {
+		sb.WriteString(fmt.Sprintf("    %s,\n", v))
+	}
+	return strings.Trim(sb.String(), "\n")
 }
 
 /*
