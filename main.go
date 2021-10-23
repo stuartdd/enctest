@@ -66,9 +66,8 @@ const (
 	getUrlPrefName         = "getDataUrl"
 	postUrlPrefName        = "postDataUrl"
 	themeVarPrefName       = "theme"
-	logShowingPrefName     = "log.showing"
-	logWidthPrefName       = "log.width"
-	logHeightPrefName      = "log.height"
+	logFileNamePrefName    = "log.fileName"
+	logActivePrefName      = "log.active"
 	screenWidthPrefName    = "screen.width"
 	screenHeightPrefName   = "screen.height"
 	screenFullPrefName     = "screen.fullScreen"
@@ -85,6 +84,7 @@ var (
 	dataRoot                 *lib.JsonData
 	preferences              *pref.PrefData
 	navTreeLHS               *widget.Tree
+	logStartStopButton       *widget.Button
 	saveShortcutButton       *widget.Button
 	fullScreenShortcutButton *widget.Button
 	editModeShortcutButton   *widget.Button
@@ -123,6 +123,10 @@ func main() {
 	preferences = p
 	preferences.AddChangeListener(dataPreferencesChanged, "data.")
 
+	logWindow = gui.NewLogData(
+		preferences.GetStringForPathWithFallback(logFileNamePrefName, "enctest.log"),
+		preferences.GetBoolWithFallback(logActivePrefName, false))
+
 	loadThreadFileName := p.GetStringForPathWithFallback(dataFilePrefName, fallbackDataFile)
 	getDataUrl := p.GetStringForPathWithFallback(getUrlPrefName, "")
 	postDataUrl := p.GetStringForPathWithFallback(postUrlPrefName, "")
@@ -158,7 +162,6 @@ func main() {
 	layoutRHS := container.NewBorder(title, nil, nil, nil, contentRHS)
 	buttonBar := makeButtonBar()
 
-	logWindow = gui.NewLogData(logCloseWindow, logDataRequest)
 	searchWindow = gui.NewSearchDataWindow(closeSearchWindow, selectSearchPath)
 	/*
 		function called when a selection is made in the LHS tree.
@@ -192,9 +195,10 @@ func main() {
 
 			switch taskForTheBeast {
 			case MAIN_THREAD_LOAD:
-				if preferences.GetBoolWithFallback(logShowingPrefName, false) {
-					logWindow.Show(preferences.GetFloat32WithFallbackAndMin(logWidthPrefName, 500, 200),
-						preferences.GetFloat32WithFallbackAndMin(logHeightPrefName, 500, 300))
+				if logWindow != nil {
+					if logWindow.IsWarning() {
+						gui.TimedNotification(window, 5000, "Log file error", logWindow.GetErr().Error())
+					}
 				}
 				// Load the file and decrypt it if required
 				fd, err := lib.NewFileData(loadThreadFileName, getDataUrl, postDataUrl)
@@ -279,7 +283,7 @@ We need to open the parent branches or we will never see the selected element
 func selectTreeElement(desc, uid string) {
 	user := lib.GetUserFromPath(uid)
 	parent := lib.GetParentId(uid)
-	log(fmt.Sprintf("selectTreeElement: Desc:'%s'\n    User:'%s' Parent:'%s' Uid:'%s'", desc, user, parent, uid))
+	log(fmt.Sprintf("selectTreeElement: Desc:'%s' User:'%s' Parent:'%s' Uid:'%s'", desc, user, parent, uid))
 	navTreeLHS.OpenBranch(user)
 	navTreeLHS.OpenBranch(parent)
 	navTreeLHS.Select(uid)
@@ -317,6 +321,18 @@ func updateButtonBar() {
 	} else {
 		timeStampLabel.SetText("  Last Updated -> " + dataRoot.GetTimeStampString())
 	}
+	if logWindow == nil {
+		logStartStopButton.Disable()
+		logStartStopButton.SetText("LOG ?")
+	} else {
+		if !logWindow.IsReady() {
+			logStartStopButton.Disable()
+			logStartStopButton.SetText("LOG ?")
+		} else {
+			logStartStopButton.Enable()
+			logStartStopButton.SetText(oneOrTheOther(logWindow.IsLogging(), "LOG Stop", "LOG Start"))
+		}
+	}
 }
 
 func log(l string) {
@@ -328,10 +344,6 @@ func log(l string) {
 func logDataRequest(action string) {
 	if logWindow != nil {
 		switch action {
-		case "close":
-			logCloseWindow()
-		case "copy":
-			gui.TimedNotification(logWindow.Window(), preferences.GetInt64WithFallback(copyDialogTimePrefName, 1500), "Copied to Clipboard", "Log text")
 		case "navmap":
 			log(fmt.Sprintf("NavMap: ----------------\n%s", dataRoot.GetNavIndexAsString()))
 		case "select":
@@ -350,32 +362,27 @@ func logDataRequest(action string) {
 	}
 }
 
-func logCloseWindow() {
-	if logWindow != nil {
-		preferences.PutFloat32(logWidthPrefName, logWindow.Width())
-		preferences.PutFloat32(logHeightPrefName, logWindow.Height())
-		preferences.PutBool(logShowingPrefName, false)
-		logWindow.Close()
-	}
-}
-
 func makeButtonBar() *fyne.Container {
 	saveShortcutButton = widget.NewButton("Save", func() {
 		commitAndSaveData(SAVE_AS_IS, true)
 	})
 	fullScreenShortcutButton = widget.NewButton("FULL SCREEN", flipFullScreen)
 	editModeShortcutButton = widget.NewButton("EDIT", flipPositionalData)
-	logButton := widget.NewButton("LOG", func() {
+	logStartStopButton = widget.NewButton("LOG ?", func() {
 		if logWindow != nil {
-			logWindow.Show(preferences.GetFloat32WithFallbackAndMin(logWidthPrefName, 500, 200),
-				preferences.GetFloat32WithFallbackAndMin(logHeightPrefName, 500, 300))
-			preferences.PutBool(logShowingPrefName, true)
+			if logWindow.IsLogging() {
+				logWindow.Stop()
+			} else {
+				logWindow.Start()
+			}
+			futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
 		}
 	})
+
 	quit := widget.NewButton("EXIT", shouldClose)
 	timeStampLabel = widget.NewLabel("  File Not loaded")
 	updateButtonBar()
-	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton, logButton, timeStampLabel)
+	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton, logStartStopButton, timeStampLabel)
 }
 
 func makeMenus() *fyne.MainMenu {
@@ -429,7 +436,15 @@ func makeMenus() *fyne.MainMenu {
 		fyne.NewMenuItem("Sponsor", func() {
 			u, _ := url.Parse("https://github.com/sponsors/fyne-io")
 			_ = fyne.CurrentApp().OpenURL(u)
-		}))
+		}),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("Log Selection", func() {
+			logDataRequest("select")
+		}),
+		fyne.NewMenuItem("Log Nav Map", func() {
+			logDataRequest("navmap")
+		}),
+	)
 
 	saveItem := fyne.NewMenuItem("Save", func() {
 		commitAndSaveData(SAVE_AS_IS, true)
@@ -903,6 +918,9 @@ func savePreferences() {
 			preferences.PutFloat32(screenWidthPrefName, window.Canvas().Size().Width)
 			preferences.PutFloat32(screenHeightPrefName, window.Canvas().Size().Height)
 		}
+	}
+	if logWindow.GetErr() == nil {
+		preferences.PutBool(logActivePrefName, logWindow.IsLogging())
 	}
 	preferences.Save()
 }

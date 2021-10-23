@@ -1,120 +1,68 @@
 package gui
 
 import (
-	"strings"
-
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
+	"fmt"
+	"log"
+	"os"
 )
 
 type LogData struct {
-	text           strings.Builder
-	grid           *widget.TextGrid
-	scroll         *container.Scroll
-	logWindow      fyne.Window
-	closeIntercept func()
-	logDataRequest func(string)
+	logger   *log.Logger
+	err      error
+	fileName string
+	active   bool
+	warning  bool
 }
 
-func NewLogData(closeIntercept func(), logDataRequest func(string)) *LogData {
-	ld := &LogData{grid: nil, logWindow: nil, closeIntercept: closeIntercept, logDataRequest: logDataRequest}
-	ld.Reset()
-	return ld
+func NewLogData(fileName string, active bool) *LogData {
+	if fileName == "" {
+		err := fmt.Errorf("log is active but log file name was not provided")
+		return &LogData{active: active, logger: nil, err: err, warning: active}
+	}
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		return &LogData{active: active, logger: nil, err: err, warning: true}
+	}
+	l := log.New(file, "INFO: ", log.Ldate|log.Ltime)
+	return &LogData{active: active, fileName: fileName, logger: l, err: nil, warning: false}
 }
 
-func (lw *LogData) Reset() {
-	lw.text.Reset()
-	if lw.grid != nil {
-		lw.grid.SetText(lw.text.String())
+func (lw *LogData) IsWarning() bool {
+	return lw.warning
+}
+
+func (lw *LogData) GetErr() error {
+	return lw.err
+}
+
+func (lw *LogData) Start() {
+	if lw.IsReady() {
+		lw.active = true
 	}
 }
 
-func (lw *LogData) Log(l string) {
-	lw.text.WriteString(l)
-	lw.text.WriteString("\n")
-	go func() {
-		if lw.grid != nil {
-			lw.grid.SetText(lw.text.String())
-		}
-		if lw.scroll != nil {
-			lw.scroll.ScrollToBottom()
-		}
-		if lw.grid != nil {
-			lw.grid.Refresh()
-		}
-	}()
-}
-
-func (lw *LogData) Window() fyne.Window {
-	return lw.logWindow
-}
-
-func (lw *LogData) Width() float32 {
-	if lw.logWindow != nil {
-		return lw.logWindow.Canvas().Size().Width
+func (lw *LogData) Stop() {
+	if lw.IsReady() {
+		lw.active = false
 	}
-	return 500
 }
 
-func (lw *LogData) Height() float32 {
-	if lw.logWindow != nil {
-		return lw.logWindow.Canvas().Size().Height
+func (lw *LogData) IsLogging() bool {
+	if lw.IsReady() {
+		return lw.active
 	}
-	return 500
+	return false
 }
 
-func (lw *LogData) Showing() bool {
-	return lw.logWindow != nil
-}
-
-func (lw *LogData) Show(w, h float32) {
-	go func(w, h float32) {
-		if lw.logWindow == nil {
-			win := fyne.CurrentApp().NewWindow("Log Window")
-			win.Resize(fyne.NewSize(w, h))
-			win.SetCloseIntercept(lw.closeIntercept)
-			tg := widget.NewTextGridFromString(lw.text.String())
-			sb := container.NewScroll(tg)
-
-			bClear := widget.NewButton("Clear", func() { lw.Reset() })
-			bCopy := widget.NewButton("Copy to Clipboard", func() {
-				go func() {
-					lw.logWindow.Clipboard().SetContent(lw.text.String())
-					lw.logDataRequest("copy")
-				}()
-			})
-			bClose := widget.NewButton("Close", func() {
-				go func() {
-					lw.logDataRequest("close")
-				}()
-			})
-			bSelect := widget.NewButton("Selected", func() {
-				go func() {
-					lw.logDataRequest("select")
-				}()
-			})
-			bNavMap := widget.NewButton("Nav Map", func() {
-				go func() {
-					lw.logDataRequest("navmap")
-				}()
-			})
-			hb := container.NewHBox(bClose, bClear, bCopy, widget.NewSeparator(), widget.NewLabel("Log: "), bSelect, bNavMap)
-
-			bl := container.NewBorder(hb, nil, nil, nil, sb)
-			win.SetContent(bl)
-			lw.grid = tg
-			lw.logWindow = win
-			lw.scroll = sb
-		}
-		lw.logWindow.Show()
-	}(w, h)
+func (lw *LogData) IsReady() bool {
+	return lw.logger != nil
 }
 
 func (lw *LogData) Close() {
-	if lw.logWindow != nil {
-		lw.grid.SetText("")
-		lw.logWindow.Close()
-		lw.logWindow = nil
+}
+
+func (lw *LogData) Log(l string) {
+	if lw.IsLogging() {
+		go lw.logger.Println(l)
 	}
 }
