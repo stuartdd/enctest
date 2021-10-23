@@ -98,7 +98,7 @@ var (
 	currentSelection  = ""
 	shouldCloseLock   = false
 	hasDataChanges    = false
-	releaseTheBeast   = make(chan int, 5)
+	releaseTheBeast   = make(chan int, 1)
 )
 
 func abortWithUsage(message string) {
@@ -648,6 +648,7 @@ func search(s string) {
 	// The map key is the human readable results e.g. 'User [Hint] app: noteName'
 	// The values are paths within the model! user.pwHints.app.noteName
 	searchWindow.Reset()
+	searchWindow.Close()
 	dataRoot.Search(func(path, desc string) {
 		searchWindow.Add(desc, path)
 	}, s, matchCase)
@@ -656,7 +657,7 @@ func search(s string) {
 	if searchWindow.Len() > 0 {
 		preferences.PutStringList(searchLastGoodPrefName, s, 10)
 		defer futureReleaseTheBeast(200, MAIN_THREAD_RELOAD_TREE)
-		searchWindow.Show(300, 300)
+		searchWindow.Show(500, 300)
 	} else {
 		dialog.NewInformation("Search results", fmt.Sprintf("Nothing found for search '%s'", s), window).Show()
 	}
