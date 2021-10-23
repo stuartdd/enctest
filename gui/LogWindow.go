@@ -14,32 +14,37 @@ type LogData struct {
 	scroll         *container.Scroll
 	logWindow      fyne.Window
 	closeIntercept func()
+	logDataRequest func(string)
 }
 
-func NewLogData(closeIntercept func()) *LogData {
-	ld := &LogData{grid: nil, logWindow: nil, closeIntercept: closeIntercept}
+func NewLogData(closeIntercept func(), logDataRequest func(string)) *LogData {
+	ld := &LogData{grid: nil, logWindow: nil, closeIntercept: closeIntercept, logDataRequest: logDataRequest}
 	ld.Reset()
 	return ld
 }
 
-func (lw *LogData) Reset() *LogData {
+func (lw *LogData) Reset() {
 	lw.text.Reset()
 	if lw.grid != nil {
 		lw.grid.SetText(lw.text.String())
 	}
-	return lw
 }
 
-func (lw *LogData) Log(l string) *LogData {
+func (lw *LogData) Log(l string) {
 	lw.text.WriteString(l)
 	lw.text.WriteString("\n")
-	if lw.grid != nil {
-		lw.grid.SetText(lw.text.String())
-	}
-	if lw.scroll != nil {
-		lw.scroll.ScrollToBottom()
-	}
-	return lw
+	go func() {
+		if lw.grid != nil {
+			lw.grid.SetText(lw.text.String())
+		}
+		if lw.scroll != nil {
+			lw.scroll.ScrollToBottom()
+		}
+	}()
+}
+
+func (lw *LogData) Window() fyne.Window {
+	return lw.logWindow
 }
 
 func (lw *LogData) Width() float32 {
@@ -68,7 +73,28 @@ func (lw *LogData) Show(w, h float32) {
 			win.SetCloseIntercept(lw.closeIntercept)
 			tg := widget.NewTextGridFromString(lw.text.String())
 			sb := container.NewScroll(tg)
-			win.SetContent(sb)
+
+			bClear := widget.NewButton("Clear", func() { lw.Reset() })
+			bCopy := widget.NewButton("Copy", func() {
+				go func() {
+					lw.logWindow.Clipboard().SetContent(lw.text.String())
+					lw.logDataRequest("copy")
+				}()
+			})
+			bClose := widget.NewButton("Close", func() {
+				go func() {
+					lw.logDataRequest("close")
+				}()
+			})
+			bSelect := widget.NewButton("Selected", func() {
+				go func() {
+					lw.logDataRequest("select")
+				}()
+			})
+			hb := container.NewHBox(bClose, bClear, bSelect, bCopy)
+
+			bl := container.NewBorder(hb, nil, nil, nil, sb)
+			win.SetContent(bl)
 			lw.grid = tg
 			lw.logWindow = win
 			lw.scroll = sb

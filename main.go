@@ -158,7 +158,7 @@ func main() {
 	layoutRHS := container.NewBorder(title, nil, nil, nil, contentRHS)
 	buttonBar := makeButtonBar()
 
-	logWindow = gui.NewLogData(closeLogWindow)
+	logWindow = gui.NewLogData(logCloseWindow, logDataRequest)
 	searchWindow = gui.NewSearchDataWindow(closeSearchWindow, selectSearchPath)
 	/*
 		function called when a selection is made in the LHS tree.
@@ -201,7 +201,11 @@ func main() {
 				if err != nil {
 					abortWithUsage(fmt.Sprintf("Failed to load data file %s. Error: %s\n", loadThreadFileName, err.Error()))
 				}
-				log(fmt.Sprintf("Loaded:'%s'", loadThreadFileName))
+				if getDataUrl != "" {
+					log(fmt.Sprintf("Remote File:'%s/%s'", getDataUrl, loadThreadFileName))
+				} else {
+					log(fmt.Sprintf("Local File:'%s'", loadThreadFileName))
+				}
 				/*
 					While file is ENCRYPTED
 						Get PW and decrypt
@@ -228,6 +232,7 @@ func main() {
 				}
 				fileData = fd
 				dataRoot = dr
+				log(fmt.Sprintf("Data Parsed OK: File:'%s' DateTime:'%s'", loadThreadFileName, dataRoot.GetTimeStampString()))
 				// Follow on action to rebuild the Tree and re-display it
 				futureReleaseTheBeast(0, MAIN_THREAD_RELOAD_TREE)
 			case MAIN_THREAD_RELOAD_TREE:
@@ -320,7 +325,30 @@ func log(l string) {
 	}
 }
 
-func closeLogWindow() {
+func logDataRequest(action string) {
+	if logWindow != nil {
+		switch action {
+		case "close":
+			logCloseWindow()
+		case "copy":
+			gui.TimedNotification(logWindow.Window(), preferences.GetInt64WithFallback(copyDialogTimePrefName, 1500), "Copied to Clipboard", "Log text")
+		case "select":
+			m, err := lib.GetUserDataForUid(dataRoot.GetDataRoot(), currentSelection)
+			if err != nil {
+				log(fmt.Sprintf("Data for uid [%s] not found. %s", currentSelection, err.Error()))
+			}
+			if m != nil {
+				log(fmt.Sprintf("UID:'%s'. Json:%s", currentSelection, m.JsonValueIndented(4)))
+			} else {
+				log(fmt.Sprintf("Data for uid [%s] returned null", currentSelection))
+			}
+		default:
+			log(fmt.Sprintf("Log Action: '%s' unknown", action))
+		}
+	}
+}
+
+func logCloseWindow() {
 	if logWindow != nil {
 		preferences.PutFloat32(logWidthPrefName, logWindow.Width())
 		preferences.PutFloat32(logHeightPrefName, logWindow.Height())

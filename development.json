@@ -1,5 +1,28 @@
 
     {
+        "dialog": {
+            "copyTimeOutMS": 2500
+        },
+        "screen": {
+            "fullScreen": false,
+            "split": 0.2,
+            "width": 903.80957,
+            "height": 480.952393
+        },
+        "postDataUrl": "",
+        "datafile": "libtest/TestDataTypes.json",
+        "log": {
+            "height": 512.857178,
+            "showing": true,
+            "width": 907.142883
+        },
+        "data": {
+            "hintIsCalled": "Hint",
+            "noteIsCalled": "Note",
+            "presentationmode": false
+        },
+        "theme": "dark",
+        "getDataUrl": "",
         "search": {
             "lastGoodList": [
                 "app",
@@ -7,28 +30,5 @@
                 "notes"
             ],
             "case": true
-        },
-        "log": {
-            "height": 513.333374,
-            "showing": true,
-            "width": 987.61908
-        },
-        "theme": "dark",
-        "data": {
-            "hintIsCalled": "Hint",
-            "noteIsCalled": "Note",
-            "presentationmode": false
-        },
-        "datafile": "libtest/TestDataTypes.json",
-        "getDataUrl": "",
-        "postDataUrl": "",
-        "dialog": {
-            "copyTimeOutMS": 2500
-        },
-        "screen": {
-            "width": 920.952393,
-            "height": 498.095276,
-            "fullScreen": false,
-            "split": 0.2
         }
     }
