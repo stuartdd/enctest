@@ -108,9 +108,12 @@ func (p *PrefData) PutString(path, value string) error {
 	if err != nil {
 		return err
 	}
-	n.(*parser.JsonString).SetValue(value)
-	p.cache[path] = &n
-	p.callChangeListeners(path, value)
+	nS := n.(*parser.JsonString)
+	if nS.GetValue() != value {
+		nS.SetValue(value)
+		p.cache[path] = &n
+		p.callChangeListeners(path, value)
+	}
 	return nil
 }
 
@@ -119,9 +122,12 @@ func (p *PrefData) PutBool(path string, value bool) error {
 	if err != nil {
 		return err
 	}
-	(n.(*parser.JsonBool)).SetValue(value)
-	p.cache[path] = &n
-	p.callChangeListeners(path, fmt.Sprintf("%t", value))
+	nB := n.(*parser.JsonBool)
+	if nB.GetValue() != value {
+		nB.SetValue(value)
+		p.cache[path] = &n
+		p.callChangeListeners(path, fmt.Sprintf("%t", value))
+	}
 	return nil
 }
 
@@ -134,9 +140,12 @@ func (p *PrefData) PutFloat64(path string, value float64) error {
 	if err != nil {
 		return err
 	}
-	(n.(*parser.JsonNumber)).SetValue(value)
-	p.cache[path] = &n
-	p.callChangeListeners(path, fmt.Sprintf("%f", value))
+	nF := n.(*parser.JsonNumber)
+	if nF.GetValue() != value {
+		nF.SetValue(value)
+		p.cache[path] = &n
+		p.callChangeListeners(path, fmt.Sprintf("%f", value))
+	}
 	return nil
 }
 
@@ -145,9 +154,12 @@ func (p *PrefData) PutInt64(path string, value int64) error {
 	if err != nil {
 		return err
 	}
-	(n.(*parser.JsonNumber)).SetValue(float64(value))
-	p.cache[path] = &n
-	p.callChangeListeners(path, fmt.Sprintf("%d", value))
+	nI := n.(*parser.JsonNumber)
+	if nI.GetIntValue() != value {
+		(n.(*parser.JsonNumber)).SetValue(float64(value))
+		p.cache[path] = &n
+		p.callChangeListeners(path, fmt.Sprintf("%d", value))
+	}
 	return nil
 }
 

@@ -68,6 +68,7 @@ const (
 	themeVarPrefName       = "theme"
 	logFileNamePrefName    = "log.fileName"
 	logActivePrefName      = "log.active"
+	logPrefixPrefName      = "log.prefix"
 	screenWidthPrefName    = "screen.width"
 	screenHeightPrefName   = "screen.height"
 	screenFullPrefName     = "screen.fullScreen"
@@ -79,12 +80,11 @@ const (
 var (
 	window                   fyne.Window
 	searchWindow             *gui.SearchDataWindow
-	logWindow                *gui.LogData
+	logData                  *gui.LogData
 	fileData                 *lib.FileData
 	dataRoot                 *lib.JsonData
 	preferences              *pref.PrefData
 	navTreeLHS               *widget.Tree
-	logStartStopButton       *widget.Button
 	saveShortcutButton       *widget.Button
 	fullScreenShortcutButton *widget.Button
 	editModeShortcutButton   *widget.Button
@@ -123,8 +123,9 @@ func main() {
 	preferences = p
 	preferences.AddChangeListener(dataPreferencesChanged, "data.")
 
-	logWindow = gui.NewLogData(
+	logData = gui.NewLogData(
 		preferences.GetStringForPathWithFallback(logFileNamePrefName, "enctest.log"),
+		preferences.GetStringForPathWithFallback(logPrefixPrefName, "INFO")+": ",
 		preferences.GetBoolWithFallback(logActivePrefName, false))
 
 	loadThreadFileName := p.GetStringForPathWithFallback(dataFilePrefName, fallbackDataFile)
@@ -195,10 +196,8 @@ func main() {
 
 			switch taskForTheBeast {
 			case MAIN_THREAD_LOAD:
-				if logWindow != nil {
-					if logWindow.IsWarning() {
-						gui.TimedNotification(window, 5000, "Log file error", logWindow.GetErr().Error())
-					}
+				if logData.IsWarning() {
+					timedNotification(5000, "Log file error", logData.GetErr().Error())
 				}
 				// Load the file and decrypt it if required
 				fd, err := lib.NewFileData(loadThreadFileName, getDataUrl, postDataUrl)
@@ -300,6 +299,10 @@ func futureReleaseTheBeast(ms int, status int) {
 	}
 }
 
+/*
+Dont call directly. Use:
+	futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
+*/
 func updateButtonBar() {
 	if countChangedItems() > 0 {
 		saveShortcutButton.Enable()
@@ -321,44 +324,52 @@ func updateButtonBar() {
 	} else {
 		timeStampLabel.SetText("  Last Updated -> " + dataRoot.GetTimeStampString())
 	}
-	if logWindow == nil {
-		logStartStopButton.Disable()
-		logStartStopButton.SetText("LOG ?")
-	} else {
-		if !logWindow.IsReady() {
-			logStartStopButton.Disable()
-			logStartStopButton.SetText("LOG ?")
-		} else {
-			logStartStopButton.Enable()
-			logStartStopButton.SetText(oneOrTheOther(logWindow.IsLogging(), "LOG Stop", "LOG Start"))
-		}
-	}
 }
 
 func log(l string) {
-	if logWindow != nil {
-		logWindow.Log(l)
+	if logData.IsLogging() {
+		logData.Log(l)
 	}
+}
+func logInformationDialog(title, message string) dialog.Dialog {
+	return logInformationDialogWithPrefix("Dialog-info", title, message)
+}
+
+func timedNotification(msDelay int64, title, message string) {
+	go func() {
+		dia := logInformationDialogWithPrefix("Dialog-timed", title, message)
+		time.Sleep(time.Duration(msDelay) * time.Millisecond)
+		dia.Hide()
+	}()
+}
+
+func logInformationDialogWithPrefix(prefix, title, message string) dialog.Dialog {
+	if logData.IsLogging() {
+		logData.Log(fmt.Sprintf("%s: Title:'%s' Message:'%s'", prefix, title, message))
+	}
+	dil := dialog.NewInformation(title, message, window)
+	dil.Show()
+	return dil
 }
 
 func logDataRequest(action string) {
-	if logWindow != nil {
-		switch action {
-		case "navmap":
-			log(fmt.Sprintf("NavMap: ----------------\n%s", dataRoot.GetNavIndexAsString()))
-		case "select":
-			m, err := lib.GetUserDataForUid(dataRoot.GetDataRoot(), currentSelection)
-			if err != nil {
-				log(fmt.Sprintf("Data for uid [%s] not found. %s", currentSelection, err.Error()))
-			}
-			if m != nil {
-				log(fmt.Sprintf("UID:'%s'. Json:%s", currentSelection, m.JsonValueIndented(4)))
-			} else {
-				log(fmt.Sprintf("Data for uid [%s] returned null", currentSelection))
-			}
-		default:
-			log(fmt.Sprintf("Log Action: '%s' unknown", action))
+	switch action {
+	case "onoff":
+		logData.FlipOnOff()
+	case "navmap":
+		log(fmt.Sprintf("NavMap: ----------------\n%s", dataRoot.GetNavIndexAsString()))
+	case "select":
+		m, err := lib.GetUserDataForUid(dataRoot.GetDataRoot(), currentSelection)
+		if err != nil {
+			log(fmt.Sprintf("Data for uid [%s] not found. %s", currentSelection, err.Error()))
 		}
+		if m != nil {
+			log(fmt.Sprintf("UID:'%s'. Json:%s", currentSelection, m.JsonValueIndented(4)))
+		} else {
+			log(fmt.Sprintf("Data for uid [%s] returned null", currentSelection))
+		}
+	default:
+		log(fmt.Sprintf("Log Action: '%s' unknown", action))
 	}
 }
 
@@ -368,21 +379,11 @@ func makeButtonBar() *fyne.Container {
 	})
 	fullScreenShortcutButton = widget.NewButton("FULL SCREEN", flipFullScreen)
 	editModeShortcutButton = widget.NewButton("EDIT", flipPositionalData)
-	logStartStopButton = widget.NewButton("LOG ?", func() {
-		if logWindow != nil {
-			if logWindow.IsLogging() {
-				logWindow.Stop()
-			} else {
-				logWindow.Start()
-			}
-			futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
-		}
-	})
 
 	quit := widget.NewButton("EXIT", shouldClose)
 	timeStampLabel = widget.NewLabel("  File Not loaded")
-	updateButtonBar()
-	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton, logStartStopButton, timeStampLabel)
+	futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
+	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton, timeStampLabel)
 }
 
 func makeMenus() *fyne.MainMenu {
@@ -423,28 +424,37 @@ func makeMenus() *fyne.MainMenu {
 		themeMenuItem,
 	)
 
-	helpMenu := fyne.NewMenu("Help",
-		fyne.NewMenuItem("Documentation", func() {
-			u, _ := url.Parse("https://developer.fyne.io")
-			_ = fyne.CurrentApp().OpenURL(u)
-		}),
-		fyne.NewMenuItem("Support", func() {
-			u, _ := url.Parse("https://fyne.io/support/")
-			_ = fyne.CurrentApp().OpenURL(u)
-		}),
-		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Sponsor", func() {
-			u, _ := url.Parse("https://github.com/sponsors/fyne-io")
-			_ = fyne.CurrentApp().OpenURL(u)
-		}),
-		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Log Selection", func() {
-			logDataRequest("select")
-		}),
-		fyne.NewMenuItem("Log Nav Map", func() {
-			logDataRequest("navmap")
-		}),
-	)
+	m := make([]*fyne.MenuItem, 0)
+	m = append(m, fyne.NewMenuItem("Support", func() {
+		u, _ := url.Parse("https://fyne.io/support/")
+		_ = fyne.CurrentApp().OpenURL(u)
+	},
+	))
+	m = append(m, fyne.NewMenuItem("Documentation", func() {
+		u, _ := url.Parse("https://developer.fyne.io")
+		_ = fyne.CurrentApp().OpenURL(u)
+	}))
+
+	if logData.IsReady() {
+		m = append(m,
+			fyne.NewMenuItemSeparator(),
+			fyne.NewMenuItem(oneOrTheOther(logData.IsLogging(), "Log Stop", "Log Start"), func() {
+				logDataRequest("onoff")
+				futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
+			}))
+		if logData.IsLogging() {
+			m = append(m,
+				fyne.NewMenuItem("Log Selection", func() {
+					logDataRequest("select")
+				}),
+				fyne.NewMenuItem("Log Nav Map", func() {
+					logDataRequest("navmap")
+				}),
+			)
+		}
+	}
+
+	helpMenu := fyne.NewMenu("Help", m...)
 
 	saveItem := fyne.NewMenuItem("Save", func() {
 		commitAndSaveData(SAVE_AS_IS, true)
@@ -538,6 +548,8 @@ This is called when a detail button is pressed of the RH page
 */
 func viewActionFunction(action string, uid string, extra string) {
 	switch action {
+	case gui.ACTION_LOG:
+		log(gui.LogCleanString(extra, 100))
 	case gui.ACTION_REMOVE:
 		removeAction(uid)
 	case gui.ACTION_RENAME:
@@ -545,9 +557,9 @@ func viewActionFunction(action string, uid string, extra string) {
 	case gui.ACTION_LINK:
 		linkAction(uid, extra)
 	case gui.ACTION_UPDATED:
-		updateButtonBar()
+		futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
 	case gui.ACTION_COPIED:
-		gui.TimedNotification(window, preferences.GetInt64WithFallback(copyDialogTimePrefName, 2500), "Copied item text to clipboard", uid)
+		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 2500), "Copied item text to clipboard", uid)
 	}
 }
 
@@ -614,7 +626,7 @@ func removeAction(uid string) {
 		if ok {
 			err := dataRoot.Remove(uid, 1)
 			if err != nil {
-				dialog.NewInformation("Remove item error", err.Error(), window).Show()
+				logInformationDialog("Remove item error", err.Error())
 			}
 		}
 	}, window).Show()
@@ -639,11 +651,11 @@ func renameAction(uid string, extra string) {
 			if accept {
 				s, err := lib.ProcessEntityName(toName, nt)
 				if err != nil {
-					dialog.NewInformation("Name validation error", err.Error(), window).Show()
+					logInformationDialog("Name validation error", err.Error())
 				} else {
 					err := dataRoot.Rename(uid, s)
 					if err != nil {
-						dialog.NewInformation("Rename item error", err.Error(), window).Show()
+						logInformationDialog("Rename item error", err.Error())
 					}
 				}
 			}
@@ -659,14 +671,17 @@ func linkAction(uid, urlStr string) {
 	if urlStr != "" {
 		s, err := url.Parse(urlStr)
 		if err != nil {
-			dialog.NewInformation("Link is invalid", err.Error(), window).Show()
+			logInformationDialog("Error: Link failed to parse", err.Error())
 		} else {
 			err = fyne.CurrentApp().OpenURL(s)
 			if err != nil {
-				dialog.NewInformation("ink could not be opened", err.Error(), window).Show()
+				logInformationDialog("Error: Link could not be opened", err.Error())
+			} else {
+				timedNotification(preferences.GetInt64WithFallback(linkDialogTimePrefName, 2500), "Open Link (URL)", urlStr)
 			}
-			gui.TimedNotification(window, preferences.GetInt64WithFallback(linkDialogTimePrefName, 2500), "Opening Link (URL)", urlStr)
 		}
+	} else {
+		logInformationDialog("Error: Link could not be opened", "An empty link was provided")
 	}
 }
 
@@ -705,7 +720,7 @@ func search(s string) {
 		defer futureReleaseTheBeast(200, MAIN_THREAD_RELOAD_TREE)
 		searchWindow.Show(500, 300)
 	} else {
-		dialog.NewInformation("Search results", fmt.Sprintf("Nothing found for search '%s'", s), window).Show()
+		logInformationDialog("Search results", fmt.Sprintf("Nothing found for search '%s'", s))
 	}
 }
 
@@ -731,7 +746,7 @@ func addNewHintItem() {
 	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Hint")
 	ch := lib.GetHintFromPath(currentSelection)
 	if ch == "" {
-		dialog.NewInformation("Add New "+n, fmt.Sprintf("A %s needs to be selected", n), window).Show()
+		logInformationDialog("Add New "+n, fmt.Sprintf("A %s needs to be selected", n))
 	} else {
 		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_HINT_ITEM, true)
 	}
@@ -767,7 +782,7 @@ func addNewEntity(head string, name string, addType int, isNote bool) {
 				}
 			}
 			if err != nil {
-				dialog.NewInformation("Add New "+name, "Error: "+err.Error(), window).Show()
+				logInformationDialog("Add New "+name, "Error: "+err.Error())
 			}
 		}
 	})
@@ -810,8 +825,7 @@ func getPasswordAndDecrypt(fd *lib.FileData, message string, fail func(string)) 
 }
 
 func callbackAfterSave() {
-	log("Saved")
-	gui.TimedNotification(window, preferences.GetInt64WithFallback(saveDialogTimePrefName, 3000), "Saved", fileData.GetFileName())
+	timedNotification(preferences.GetInt64WithFallback(saveDialogTimePrefName, 3000), "Saved", fileData.GetFileName())
 	futureReleaseTheBeast(500, MAIN_THREAD_RE_MENU)
 }
 
@@ -823,11 +837,9 @@ commitChangedItems writes any un-doable entries to the model. Nothing structural
 Once we have done all that we must update the button bar to disable the save button
 */
 func commitAndSaveData(enc int, mustBeChanged bool) {
-	defer updateButtonBar()
-
 	count := countChangedItems()
 	if count == 0 && mustBeChanged {
-		dialog.NewInformation("File Save", "There were no items to save!\n\nPress OK to continue", window).Show()
+		logInformationDialog("File Save", "There were no items to save!\n\nPress OK to continue")
 	} else {
 		if enc == SAVE_ENCRYPTED {
 			gui.NewModalPasswordDialog(window, "Enter the password to DECRYPT the file", "", func(ok bool, value string, nt types.NodeAnnotationEnum) {
@@ -835,24 +847,24 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 					if value != "" {
 						_, err := commitChangedItems()
 						if err != nil {
-							dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
+							logInformationDialog("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()))
 							return
 						}
 						err = fileData.StoreContentEncrypted([]byte(value), callbackAfterSave)
 						if err != nil {
-							dialog.NewInformation("Save Encrypted File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
+							logInformationDialog("Save Encrypted File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()))
 						} else {
 							hasDataChanges = false
 						}
 					} else {
-						dialog.NewInformation("Save Encrypted File Error:", "Error Message:\n\n-- Password not provided --\n\nFile was not saved!\nPress OK to continue", window).Show()
+						logInformationDialog("Save Encrypted File Error:", "Error Message:\n\n-- Password not provided --\n\nFile was not saved!\nPress OK to continue")
 					}
 				}
 			})
 		} else {
 			_, err := commitChangedItems()
 			if err != nil {
-				dialog.NewInformation("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()), window).Show()
+				logInformationDialog("Convert To Json:", fmt.Sprintf("Error Message:\n-- %s --\nFile was not saved\nPress OK to continue", err.Error()))
 				return
 			}
 			if enc == SAVE_AS_IS {
@@ -861,7 +873,7 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 				err = fileData.StoreContentUnEncrypted(callbackAfterSave)
 			}
 			if err != nil {
-				dialog.NewInformation("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()), window).Show()
+				logInformationDialog("Save File Error:", fmt.Sprintf("Error Message:\n-- %s --\nFile may not be saved!\nPress OK to continue", err.Error()))
 			} else {
 				hasDataChanges = false
 			}
@@ -876,15 +888,12 @@ func shouldClose() {
 		if searchWindow != nil {
 			searchWindow.Close()
 		}
-		if logWindow != nil {
-			logWindow.Close()
-		}
+		logData.Close()
 		count := countChangedItems()
 		if count > 0 {
 			d := dialog.NewConfirm("Close Warning", "There are unsaved changes\nDo you want to save them before closing?", saveChangesDialogAction, window)
 			d.Show()
 		} else {
-			fmt.Println("That's all folks")
 			shouldCloseLock = false
 			window.Close()
 		}
@@ -919,8 +928,8 @@ func savePreferences() {
 			preferences.PutFloat32(screenHeightPrefName, window.Canvas().Size().Height)
 		}
 	}
-	if logWindow.GetErr() == nil {
-		preferences.PutBool(logActivePrefName, logWindow.IsLogging())
+	if logData.GetErr() == nil {
+		preferences.PutBool(logActivePrefName, logData.IsLogging())
 	}
 	preferences.Save()
 }

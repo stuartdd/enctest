@@ -21,7 +21,7 @@ require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210727001814-0db043d8d5be // indirect
 	github.com/godbus/dbus/v5 v5.0.5 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
-	github.com/stuartdd/jsonParserGo/parser v0.0.0-20211021235909-0d3fcb783dbd
+	github.com/stuartdd/jsonParserGo/parser v0.0.0-20211023233954-7c5f12cd7744
 	golang.org/x/sys v0.0.0-20211020064051-0ec99a608a1b // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	stuartdd.com/gui v0.0.0-00010101000000-000000000000

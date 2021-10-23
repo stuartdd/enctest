@@ -213,13 +213,13 @@ func (p *JsonData) Rename(uid string, newName string) error {
 	}
 	err = parser.Rename(p.dataMap, n, newName)
 	if err != nil {
-		return fmt.Errorf("Rename '%s' failed. Error: '%s'", uid, err.Error())
+		return fmt.Errorf("rename '%s' failed. Error: '%s'", uid, err.Error())
 	}
 	p.navIndex = createNavIndex(p.dataMap)
 	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
-		p.dataMapUpdated("Rename", GetUserFromPath(newName), newName, nil)
+		p.dataMapUpdated("Renamed", GetUserFromPath(newName), newName, nil)
 	} else {
-		p.dataMapUpdated("Rename", GetUserFromPath(uid), GetParentId(uid)+"."+newName, nil)
+		p.dataMapUpdated("Renamed", GetUserFromPath(uid), GetParentId(uid)+"."+newName, nil)
 	}
 	return nil
 }
@@ -259,6 +259,9 @@ func GetUserDataForUid(root parser.NodeI, uid string) (parser.NodeI, error) {
 	nodes, err := parser.Find(root, dataMapRootName+"."+uid)
 	if err != nil {
 		return nil, err
+	}
+	if nodes == nil {
+		return nil, fmt.Errorf("nil returned from parser.Find(%s)", dataMapRootName+"."+uid)
 	}
 	return nodes, nil
 }

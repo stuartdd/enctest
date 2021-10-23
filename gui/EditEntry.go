@@ -126,6 +126,7 @@ func (p *EditEntry) RefreshData() {
 func (p *EditEntry) CommitEdit(data parser.NodeI) bool {
 	m, _ := lib.GetUserDataForUid(data, p.Path)
 	if m != nil {
+		oldV := m.String()
 		switch m.GetNodeType() {
 		case parser.NT_STRING:
 			m.(*parser.JsonString).SetValue(p.NewTxt)
@@ -139,6 +140,8 @@ func (p *EditEntry) CommitEdit(data parser.NodeI) bool {
 			m.(*parser.JsonNumber).SetValue(f)
 		}
 		p.OldTxt = p.NewTxt
+		newV := m.String()
+		p.ActionFunc(ACTION_LOG, p.Path, fmt.Sprintf("CommitEdit Path:%s Len:%d --> Len:%d --->%s<--+-->%s<---", p.Path, len(oldV), len(newV), oldV, newV))
 		p.RefreshData()
 		return true
 	}

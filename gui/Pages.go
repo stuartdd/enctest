@@ -21,12 +21,10 @@ import (
 	"net/url"
 	"sort"
 	"strings"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -45,6 +43,7 @@ const (
 	DataHintIsCalledPrefName = "data.hintIsCalled"
 	DataNoteIsCalledPrefName = "data.noteIsCalled"
 
+	ACTION_LOG     = "log"
 	ACTION_COPIED  = "copied"
 	ACTION_REMOVE  = "remove"
 	ACTION_RENAME  = "rename"
@@ -282,15 +281,6 @@ func parseURL(urlStr string) *url.URL {
 	}
 
 	return link
-}
-
-func TimedNotification(w fyne.Window, msDelay int64, title, message string) {
-	go func() {
-		dia := dialog.NewInformation(title, message, w)
-		dia.Show()
-		time.Sleep(time.Duration(msDelay) * time.Millisecond)
-		dia.Hide()
-	}()
 }
 
 func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, annotation types.NodeAnnotationEnum, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
