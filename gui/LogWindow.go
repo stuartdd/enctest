@@ -11,6 +11,7 @@ import (
 type LogData struct {
 	text           strings.Builder
 	grid           *widget.TextGrid
+	scroll         *container.Scroll
 	logWindow      fyne.Window
 	closeIntercept func()
 }
@@ -34,6 +35,9 @@ func (lw *LogData) Log(l string) *LogData {
 	lw.text.WriteString("\n")
 	if lw.grid != nil {
 		lw.grid.SetText(lw.text.String())
+	}
+	if lw.scroll != nil {
+		lw.scroll.ScrollToBottom()
 	}
 	return lw
 }
@@ -63,9 +67,11 @@ func (lw *LogData) Show(w, h float32) {
 			win.Resize(fyne.NewSize(w, h))
 			win.SetCloseIntercept(lw.closeIntercept)
 			tg := widget.NewTextGridFromString(lw.text.String())
-			win.SetContent(container.NewScroll(tg))
+			sb := container.NewScroll(tg)
+			win.SetContent(sb)
 			lw.grid = tg
 			lw.logWindow = win
+			lw.scroll = sb
 		}
 		lw.logWindow.Show()
 	}(w, h)

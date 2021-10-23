@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"sort"
 	"strings"
 	"time"
 
@@ -80,7 +79,7 @@ const (
 
 var (
 	window                   fyne.Window
-	searchWindow             fyne.Window
+	searchWindow             *gui.SearchDataWindow
 	logWindow                *gui.LogData
 	fileData                 *lib.FileData
 	dataRoot                 *lib.JsonData
@@ -160,6 +159,7 @@ func main() {
 	buttonBar := makeButtonBar()
 
 	logWindow = gui.NewLogData(closeLogWindow)
+	searchWindow = gui.NewSearchDataWindow(closeSearchWindow, selectSearchPath)
 	/*
 		function called when a selection is made in the LHS tree.
 		This updates the contentRHS which is the RHS page for editing data
@@ -238,7 +238,7 @@ func main() {
 				navTreeLHS = makeNavTree(setPageRHSFunc)
 				uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
 				log(fmt.Sprintf("Re-build nav tree. Sel:'%s' uid:'%s'", currentSelection, uid))
-				selectTreeElement(uid)
+				selectTreeElement("MAIN_THREAD_RELOAD_TREE", uid)
 				if splitContainerOffset < 0 {
 					splitContainerOffset = splitContainerOffsetPref
 				} else {
@@ -253,7 +253,7 @@ func main() {
 				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRoot(), *preferences)
 				setPageRHSFunc(*t)
 			case MAIN_THREAD_SELECT:
-				selectTreeElement(pendingSelection)
+				selectTreeElement("MAIN_THREAD_SELECT", pendingSelection)
 			case MAIN_THREAD_RE_MENU:
 				log("Refresh menu and buttons")
 				updateButtonBar()
@@ -271,10 +271,10 @@ func main() {
 Select a tree element.
 We need to open the parent branches or we will never see the selected element
 */
-func selectTreeElement(uid string) {
+func selectTreeElement(desc, uid string) {
 	user := lib.GetUserFromPath(uid)
 	parent := lib.GetParentId(uid)
-	log(fmt.Sprintf("selectTreeElement: User:'%s' Parent:'%s' Uid:'%s'", user, parent, uid))
+	log(fmt.Sprintf("selectTreeElement: Desc:'%s'\n    User:'%s' Parent:'%s' Uid:'%s'", desc, user, parent, uid))
 	navTreeLHS.OpenBranch(user)
 	navTreeLHS.OpenBranch(parent)
 	navTreeLHS.Select(uid)
@@ -624,6 +624,16 @@ func linkAction(uid, urlStr string) {
 	}
 }
 
+func closeSearchWindow() {
+	if searchWindow != nil {
+		searchWindow.Close()
+	}
+}
+
+func selectSearchPath(desc, path string) {
+	selectTreeElement(desc, path)
+}
+
 /*
 The search button has been pressed
 */
@@ -637,59 +647,19 @@ func search(s string) {
 	// This ensures no duplicates are displayed
 	// The map key is the human readable results e.g. 'User [Hint] app: noteName'
 	// The values are paths within the model! user.pwHints.app.noteName
-	mapPaths := make(map[string]string)
+	searchWindow.Reset()
 	dataRoot.Search(func(path, desc string) {
-		mapPaths[desc] = path
+		searchWindow.Add(desc, path)
 	}, s, matchCase)
 
-	// Fine all the keys and sort them
-	paths := make([]string, 0)
-	for k := range mapPaths {
-		paths = append(paths, k)
-	}
-	sort.Strings(paths)
-
 	// Use the sorted keys to populate the result window
-	if len(paths) > 0 {
+	if searchWindow.Len() > 0 {
 		preferences.PutStringList(searchLastGoodPrefName, s, 10)
 		defer futureReleaseTheBeast(200, MAIN_THREAD_RELOAD_TREE)
-		list := widget.NewList(
-			func() int { return len(paths) },
-			func() fyne.CanvasObject {
-				return widget.NewLabel("")
-			},
-			func(lii widget.ListItemID, co fyne.CanvasObject) {
-				co.(*widget.Label).SetText(paths[lii])
-			},
-		)
-		// When an item is selected, start the main thread to select it in the main tree
-		// pendingSelection is the path to the selected item
-		list.OnSelected = func(id widget.ListItemID) {
-			pendingSelection = mapPaths[paths[id]]
-			futureReleaseTheBeast(100, MAIN_THREAD_SELECT)
-		}
-		showSearchResultsWindow(window.Canvas().Size().Width/2, window.Canvas().Size().Height/2, list)
+		searchWindow.Show(300, 300)
 	} else {
 		dialog.NewInformation("Search results", fmt.Sprintf("Nothing found for search '%s'", s), window).Show()
 	}
-}
-
-/**
-Display the search results in a NON modal window
-*/
-func showSearchResultsWindow(w float32, h float32, list *widget.List) {
-	go func(w float32, h float32, list *widget.List) {
-		if searchWindow != nil {
-			searchWindow.Close()
-			searchWindow = nil
-		}
-		c := container.NewScroll(list)
-		searchWindow = fyne.CurrentApp().NewWindow("Search List")
-		searchWindow.SetContent(c)
-		searchWindow.Resize(fyne.NewSize(w, h))
-		searchWindow.SetFixedSize(true)
-		searchWindow.Show()
-	}(w, h, list)
 }
 
 /**

@@ -1,33 +1,33 @@
 
     {
+        "postDataUrl": "",
+        "getDataUrl": "",
+        "search": {
+            "lastGoodList": [
+                "app",
+                "note"
+            ],
+            "case": true
+        },
         "screen": {
-            "height": 512.857178,
+            "width": 924.761963,
+            "height": 501.428589,
             "fullScreen": false,
-            "split": 0.2,
-            "width": 935.238159
+            "split": 0.2
         },
         "datafile": "libtest/TestDataTypes.json",
-        "data": {
-            "presentationmode": false,
-            "hintIsCalled": "Hint",
-            "noteIsCalled": "Note"
-        },
         "dialog": {
             "copyTimeOutMS": 2500
         },
         "theme": "dark",
-        "getDataUrl": "",
-        "search": {
-            "lastGoodList": [
-                "note",
-                "app"
-            ],
-            "case": true
-        },
         "log": {
-            "width": 669.523865,
-            "height": 513.333374,
-            "showing": true
+            "showing": true,
+            "width": 987.61908,
+            "height": 513.333374
         },
-        "postDataUrl": ""
+        "data": {
+            "presentationmode": false,
+            "hintIsCalled": "Hint",
+            "noteIsCalled": "Note"
+        }
     }
