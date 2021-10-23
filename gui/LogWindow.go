@@ -40,6 +40,9 @@ func (lw *LogData) Log(l string) {
 		if lw.scroll != nil {
 			lw.scroll.ScrollToBottom()
 		}
+		if lw.grid != nil {
+			lw.grid.Refresh()
+		}
 	}()
 }
 
@@ -75,7 +78,7 @@ func (lw *LogData) Show(w, h float32) {
 			sb := container.NewScroll(tg)
 
 			bClear := widget.NewButton("Clear", func() { lw.Reset() })
-			bCopy := widget.NewButton("Copy", func() {
+			bCopy := widget.NewButton("Copy to Clipboard", func() {
 				go func() {
 					lw.logWindow.Clipboard().SetContent(lw.text.String())
 					lw.logDataRequest("copy")
@@ -91,7 +94,12 @@ func (lw *LogData) Show(w, h float32) {
 					lw.logDataRequest("select")
 				}()
 			})
-			hb := container.NewHBox(bClose, bClear, bSelect, bCopy)
+			bNavMap := widget.NewButton("Nav Map", func() {
+				go func() {
+					lw.logDataRequest("navmap")
+				}()
+			})
+			hb := container.NewHBox(bClose, bClear, bCopy, widget.NewSeparator(), widget.NewLabel("Log: "), bSelect, bNavMap)
 
 			bl := container.NewBorder(hb, nil, nil, nil, sb)
 			win.SetContent(bl)

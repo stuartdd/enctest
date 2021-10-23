@@ -83,6 +83,25 @@ func (p *JsonData) GetDataRoot() *parser.JsonObject {
 	return p.dataMap
 }
 
+func (p *JsonData) GetNavIndexAsString() string {
+	var sb strings.Builder
+	var root string
+	list := make([]string, 0)
+	for n, v := range *p.navIndex {
+		if n == "" {
+			root = fmt.Sprintf("root = %s", v)
+		} else {
+			list = append(list, fmt.Sprintf("\n%s = %s", n, v))
+		}
+	}
+	sort.Strings(list)
+	sb.WriteString(root)
+	for _, n := range list {
+		sb.WriteString(n)
+	}
+	return sb.String()
+}
+
 /*
 	We know we can cast the groups node. We checked it in NewJsonData
 */

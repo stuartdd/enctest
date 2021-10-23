@@ -332,6 +332,8 @@ func logDataRequest(action string) {
 			logCloseWindow()
 		case "copy":
 			gui.TimedNotification(logWindow.Window(), preferences.GetInt64WithFallback(copyDialogTimePrefName, 1500), "Copied to Clipboard", "Log text")
+		case "navmap":
+			log(fmt.Sprintf("NavMap:\n%s", dataRoot.GetNavIndexAsString()))
 		case "select":
 			m, err := lib.GetUserDataForUid(dataRoot.GetDataRoot(), currentSelection)
 			if err != nil {
