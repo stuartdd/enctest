@@ -25,7 +25,46 @@ func removeFile(t *testing.T, fileName string) {
 		t.Errorf("should have removed file %s. Error: %s", fileName, err.Error())
 	}
 }
-
+func TestPutStringList(t *testing.T) {
+	p, _ := pref.NewPrefData("config_001.json")
+	p.PutStringList("new.list.a", "abc", 3)
+	pp, ok := p.GetDataForPath("new.list.a")
+	if !ok {
+		t.Error("Should find path")
+	}
+	if pp.(*parser.JsonList).Len() != 1 {
+		t.Error("Should be len 1")
+	}
+	p.PutStringList("new.list.a", "abc", 3)
+	if pp.(*parser.JsonList).Len() != 1 {
+		t.Error("Should still be len 1")
+	}
+	p.PutStringList("new.list.a", "123", 3)
+	if pp.(*parser.JsonList).Len() != 2 {
+		t.Error("Should be len 2")
+	}
+	p.PutStringList("new.list.a", "123", 3)
+	if pp.(*parser.JsonList).Len() != 2 {
+		t.Error("Should still be len 2")
+	}
+	p.PutStringList("new.list.a", "123", 3)
+	if pp.(*parser.JsonList).Len() != 2 {
+		t.Error("Should still be len 2")
+	}
+	p.PutStringList("new.list.a", "abc", 3)
+	if pp.(*parser.JsonList).Len() != 2 {
+		t.Error("Should still be len 2")
+	}
+	p.PutStringList("new.list.a", "xyz1", 3)
+	if pp.(*parser.JsonList).Len() != 3 {
+		t.Error("Should be len 3")
+	}
+	p.PutStringList("new.list.a", "xyz2", 3)
+	if pp.(*parser.JsonList).Len() != 3 {
+		t.Error("Should be len 3")
+	}
+	t.Errorf("%s", p)
+}
 func TestFloats(t *testing.T) {
 	p, _ := pref.NewPrefData("TestDataTypes.json")
 	p.PutFloat32("float.f32", 1234.5)

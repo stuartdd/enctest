@@ -88,14 +88,10 @@ func (p *PrefData) PutStringList(path, value string, maxLen int) error {
 		return err
 	}
 	nL := n.(*parser.JsonList)
-	var nRem parser.NodeI
 	for _, v := range nL.GetValues() {
 		if v.String() == value {
-			nRem = v
+			return nil
 		}
-	}
-	if nRem != nil {
-		nL.Remove(nRem)
 	}
 	n.(*parser.JsonList).Add(parser.NewJsonString("", value))
 	p.cache[path] = &n

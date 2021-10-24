@@ -15,7 +15,7 @@
         },
         "UserA": {
             "notes": {
-                "note1": "An amazing A note (dont panic) fdf",
+                "note": "An amazing A note (dont panic) fdf",
                 "posit": "This is a note"
             },
             "pwHints": {
