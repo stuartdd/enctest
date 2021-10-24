@@ -1,6 +1,7 @@
 package libtest
 
 import (
+	"fmt"
 	"math"
 	"os"
 	"reflect"
@@ -63,7 +64,10 @@ func TestPutStringList(t *testing.T) {
 	if pp.(*parser.JsonList).Len() != 3 {
 		t.Error("Should be len 3")
 	}
-	t.Errorf("%s", p)
+	l := p.GetStringList("new.list.a")
+	if fmt.Sprintf("%s", l) != "[xyz2 xyz1 123]" {
+		t.Errorf("List should be %s", l)
+	}
 }
 func TestFloats(t *testing.T) {
 	p, _ := pref.NewPrefData("TestDataTypes.json")

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+LOG_FILE=enctest.log
+if [ -f "$LOG_FILE" ]; then
+    rm $LOG_FILE
+fi
+touch $LOG_FILE
+
+nohup ./enctest &
+
+tail -f -n 100 $LOG_FILE

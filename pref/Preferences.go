@@ -94,6 +94,9 @@ func (p *PrefData) PutStringList(path, value string, maxLen int) error {
 		}
 	}
 	n.(*parser.JsonList).Add(parser.NewJsonString("", value))
+	if nL.Len() > maxLen {
+		nL.Remove(nL.GetNodeAt(0))
+	}
 	p.cache[path] = &n
 	p.callChangeListeners(path, value)
 	return nil
