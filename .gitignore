@@ -2,6 +2,7 @@
 *.log
 *.txt
 *.exe
+*.out
 tmp.*
 fyne-cross/**
 data.json
