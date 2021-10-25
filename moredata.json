@@ -1,0 +1,34 @@
+
+    {
+        "datafile": "moredata.data",
+        "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
+        "screen": {
+            "fullScreen": false,
+            "split": 0.2,
+            "width": 1178.75,
+            "height": 845.416626
+        },
+        "log": {
+            "active": false,
+            "fileName": "",
+            "prefix": "INFO"
+        },
+        "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
+        "dialog": {
+            "linkTimeOutMS": 2500,
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
+        },
+        "search": {
+            "case": false,
+            "lastGoodList": [
+                ""
+            ]
+        },
+        "theme": "dark",
+        "data": {
+            "noteIsCalled": "Note",
+            "presentationmode": false,
+            "hintIsCalled": "Hint"
+        }
+    }

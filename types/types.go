@@ -18,6 +18,9 @@ package types
 
 import (
 	"strings"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/widget"
 )
 
 type NodeAnnotationEnum int
@@ -28,6 +31,22 @@ const (
 	NOTE_TYPE_RT
 	NOTE_TYPE_PO
 )
+
+type MyButton struct {
+	widget.Button
+	onTapped func()
+}
+
+func NewMyButton(text string, f func()) *MyButton {
+	button := &MyButton{onTapped: f}
+	button.ExtendBaseWidget(button)
+	button.SetText(text)
+	return button
+}
+
+func (t *MyButton) Tapped(_ *fyne.PointEvent) {
+	t.onTapped()
+}
 
 var (
 	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po"}

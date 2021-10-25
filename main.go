@@ -87,7 +87,7 @@ var (
 	navTreeLHS               *widget.Tree
 	saveShortcutButton       *widget.Button
 	fullScreenShortcutButton *widget.Button
-	editModeShortcutButton   *widget.Button
+	editModeShortcutButton   *types.MyButton
 	timeStampLabel           *widget.Label
 	splitContainer           *container.Split // So we can save the divider position to preferences.
 	splitContainerOffset     float64          = -1
@@ -378,7 +378,7 @@ func makeButtonBar() *fyne.Container {
 		commitAndSaveData(SAVE_AS_IS, true)
 	})
 	fullScreenShortcutButton = widget.NewButton("FULL SCREEN", flipFullScreen)
-	editModeShortcutButton = widget.NewButton("EDIT", flipPositionalData)
+	editModeShortcutButton = types.NewMyButton("EDIT", flipPositionalData)
 
 	quit := widget.NewButton("EXIT", shouldClose)
 	timeStampLabel = widget.NewLabel("  File Not loaded")

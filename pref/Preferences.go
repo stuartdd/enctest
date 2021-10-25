@@ -19,7 +19,6 @@ package pref
 import (
 	"fmt"
 	"io/ioutil"
-	"strings"
 
 	"github.com/stuartdd/jsonParserGo/parser"
 )
@@ -48,8 +47,8 @@ func NewPrefData(fileName string) (*PrefData, error) {
 	return &PrefData{fileName: fileName, data: data.(*parser.JsonObject), cache: c, changeListeners: cl}, nil
 }
 
-func (p *PrefData) AddChangeListener(cl func(string, string, string), filter string) {
-	p.changeListeners[filter] = cl
+func (p *PrefData) AddChangeListener(cl func(string, string, string), prefix string) {
+	p.changeListeners[prefix] = cl
 }
 
 func (p *PrefData) RemoveChangeListener(key string) {
@@ -57,11 +56,9 @@ func (p *PrefData) RemoveChangeListener(key string) {
 }
 
 func (p *PrefData) callChangeListeners(path, value string) {
-	for filter, fn := range p.changeListeners {
+	for prefix, fn := range p.changeListeners {
 		if fn != nil {
-			if strings.HasPrefix(path, filter) {
-				fn(path, value, filter)
-			}
+			fn(path, value, prefix)
 		}
 	}
 }
