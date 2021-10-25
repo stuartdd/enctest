@@ -85,10 +85,14 @@ func (p *PrefData) PutStringList(path, value string, maxLen int) error {
 		return err
 	}
 	nL := n.(*parser.JsonList)
+	var dupe parser.NodeI
 	for _, v := range nL.GetValues() {
 		if v.String() == value {
-			return nil
+			dupe = v
 		}
+	}
+	if dupe != nil {
+		nL.Remove(dupe)
 	}
 	n.(*parser.JsonList).Add(parser.NewJsonString("", value))
 	if nL.Len() > maxLen {

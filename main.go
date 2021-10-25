@@ -87,7 +87,7 @@ var (
 	navTreeLHS               *widget.Tree
 	saveShortcutButton       *widget.Button
 	fullScreenShortcutButton *widget.Button
-	editModeShortcutButton   *types.MyButton
+	editModeShortcutButton   *widget.Button
 	timeStampLabel           *widget.Label
 	splitContainer           *container.Split // So we can save the divider position to preferences.
 	splitContainerOffset     float64          = -1
@@ -163,13 +163,16 @@ func main() {
 	layoutRHS := container.NewBorder(title, nil, nil, nil, contentRHS)
 	buttonBar := makeButtonBar()
 
-	searchWindow = gui.NewSearchDataWindow(closeSearchWindow, selectSearchPath)
+	searchWindow = gui.NewSearchDataWindow(closeSearchWindow, selectTreeElement)
 	/*
 		function called when a selection is made in the LHS tree.
 		This updates the contentRHS which is the RHS page for editing data
 	*/
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
 		currentSelection = detailPage.Uid
+		if searchWindow != nil {
+			go searchWindow.Select(currentSelection)
+		}
 		log(fmt.Sprintf("Page User:'%s' Uid:'%s'", lib.GetUserFromPath(currentSelection), currentSelection))
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), lib.GetUserFromPath(currentSelection)))
 		window.SetMainMenu(makeMenus())
@@ -286,6 +289,7 @@ func selectTreeElement(desc, uid string) {
 	navTreeLHS.OpenBranch(user)
 	navTreeLHS.OpenBranch(parent)
 	navTreeLHS.Select(uid)
+	navTreeLHS.ScrollTo(uid)
 }
 
 func futureReleaseTheBeast(ms int, status int) {
@@ -378,7 +382,7 @@ func makeButtonBar() *fyne.Container {
 		commitAndSaveData(SAVE_AS_IS, true)
 	})
 	fullScreenShortcutButton = widget.NewButton("FULL SCREEN", flipFullScreen)
-	editModeShortcutButton = types.NewMyButton("EDIT", flipPositionalData)
+	editModeShortcutButton = widget.NewButton("EDIT", flipPositionalData)
 
 	quit := widget.NewButton("EXIT", shouldClose)
 	timeStampLabel = widget.NewLabel("  File Not loaded")
@@ -689,10 +693,6 @@ func closeSearchWindow() {
 	if searchWindow != nil {
 		searchWindow.Close()
 	}
-}
-
-func selectSearchPath(desc, path string) {
-	selectTreeElement(desc, path)
 }
 
 /*

@@ -5,6 +5,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -15,6 +16,8 @@ type SearchData struct {
 
 type SearchDataWindow struct {
 	paths          map[string]*SearchData
+	checks         map[string]*widget.Button
+	canSelect      bool
 	closeIntercept func()
 	selectFunction func(string, string)
 	searchWindow   fyne.Window
@@ -29,7 +32,7 @@ func (sd *SearchData) String() string {
 }
 
 func NewSearchDataWindow(closeIntercept func(), selectFunction func(string, string)) *SearchDataWindow {
-	return &SearchDataWindow{closeIntercept: closeIntercept, selectFunction: selectFunction, paths: make(map[string]*SearchData)}
+	return &SearchDataWindow{closeIntercept: closeIntercept, selectFunction: selectFunction, canSelect: true, paths: make(map[string]*SearchData)}
 }
 
 func (lw *SearchDataWindow) Add(desc, path string) {
@@ -62,35 +65,71 @@ func (lw *SearchDataWindow) Showing() bool {
 	return lw.searchWindow != nil
 }
 
-func (lw *SearchDataWindow) Show(w, h float32) {
-	go func(w, h float32) {
-		pathList := make([]string, 0)
-		for k, _ := range lw.paths {
-			pathList = append(pathList, k)
+func (lw *SearchDataWindow) Select(path string) {
+	lw.canSelect = false
+	defer func() {
+		lw.canSelect = true
+	}()
+	if lw.searchWindow != nil {
+		for _, v := range lw.checks {
+			v.SetIcon(theme.CheckButtonIcon())
+			v.Disable()
 		}
-		sort.Strings(pathList)
+		if path != "" {
+			c := lw.checks[path]
+			if c != nil {
+				c.SetIcon(theme.CheckButtonCheckedIcon())
+				c.Enable()
+			}
+		}
+	}
+}
+func (lw *SearchDataWindow) createRow(sd *SearchData) *fyne.Container {
+	c := container.NewHBox()
+	w := widget.NewButtonWithIcon("", theme.MailForwardIcon(), func() {})
+	w.SetIcon(theme.CheckButtonIcon())
+	lw.checks[sd.path] = w
+	b := widget.NewButtonWithIcon("", theme.MailForwardIcon(), func() {
+		if lw.canSelect {
+			go lw.selectFunction(sd.desc, sd.path)
+		}
+	})
+	c.Add(b)
+	c.Add(w)
+	c.Add(widget.NewLabel(sd.desc))
+	return c
+}
 
-		list := widget.NewList(
-			func() int { return len(lw.paths) },
-			func() fyne.CanvasObject {
-				return widget.NewLabel("")
-			},
-			func(lii widget.ListItemID, co fyne.CanvasObject) {
-				co.(*widget.Label).SetText(lw.paths[pathList[lii]].desc)
-			},
-		)
-		list.OnSelected = func(id widget.ListItemID) {
-			data := lw.paths[pathList[id]]
-			go lw.selectFunction(data.desc, data.path)
-		}
-		c := container.NewScroll(list)
-		lw.searchWindow = fyne.CurrentApp().NewWindow("Search List")
-		lw.searchWindow.SetCloseIntercept(lw.closeIntercept)
-		lw.searchWindow.SetContent(c)
-		lw.searchWindow.Resize(fyne.NewSize(w, h))
-		lw.searchWindow.SetFixedSize(true)
-		lw.searchWindow.Show()
-	}(w, h)
+func (lw *SearchDataWindow) Show(w, h float32) {
+	lw.canSelect = false
+	defer func() {
+		lw.canSelect = true
+	}()
+
+	pathList := make([]string, 0)
+	for k, _ := range lw.paths {
+		pathList = append(pathList, k)
+	}
+	sort.Strings(pathList)
+
+	lw.searchWindow = fyne.CurrentApp().NewWindow("Search List")
+	vc := container.NewVBox()
+	hb := container.NewHBox()
+	hb.Add(widget.NewButtonWithIcon("Close", theme.CancelIcon(), func() {
+		lw.Close()
+	}))
+	hb.Add(widget.NewLabel("Select from below to navigate to the item"))
+	vc.Add(hb)
+	lw.checks = make(map[string]*widget.Button)
+	for _, v := range pathList {
+		vc.Add(lw.createRow(lw.paths[v]))
+	}
+	c := container.NewScroll(vc)
+	lw.searchWindow.SetContent(c)
+	lw.searchWindow.SetCloseIntercept(lw.closeIntercept)
+	lw.searchWindow.Resize(fyne.NewSize(w, h))
+	lw.searchWindow.SetFixedSize(true)
+	lw.searchWindow.Show()
 }
 
 func (lw *SearchDataWindow) Close() {
