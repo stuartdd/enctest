@@ -65,7 +65,7 @@ func TestPutStringList(t *testing.T) {
 		t.Error("Should be len 3")
 	}
 	l := p.GetStringList("new.list.a")
-	if fmt.Sprintf("%s", l) != "[xyz2 xyz1 123]" {
+	if fmt.Sprintf("%s", l) != "[xyz2 xyz1 abc]" {
 		t.Errorf("List should be %s", l)
 	}
 }

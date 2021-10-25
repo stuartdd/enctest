@@ -718,7 +718,7 @@ func search(s string) {
 	if searchWindow.Len() > 0 {
 		preferences.PutStringList(searchLastGoodPrefName, s, 10)
 		defer futureReleaseTheBeast(200, MAIN_THREAD_RELOAD_TREE)
-		searchWindow.Show(500, 300)
+		searchWindow.Show(500, 350, s)
 	} else {
 		logInformationDialog("Search results", fmt.Sprintf("Nothing found for search '%s'", s))
 	}

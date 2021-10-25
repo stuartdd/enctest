@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"fmt"
 	"sort"
 
 	"fyne.io/fyne/v2"
@@ -100,7 +101,7 @@ func (lw *SearchDataWindow) createRow(sd *SearchData) *fyne.Container {
 	return c
 }
 
-func (lw *SearchDataWindow) Show(w, h float32) {
+func (lw *SearchDataWindow) Show(w, h float32, searchFor string) {
 	lw.canSelect = false
 	defer func() {
 		lw.canSelect = true
@@ -112,13 +113,13 @@ func (lw *SearchDataWindow) Show(w, h float32) {
 	}
 	sort.Strings(pathList)
 
-	lw.searchWindow = fyne.CurrentApp().NewWindow("Search List")
+	lw.searchWindow = fyne.CurrentApp().NewWindow("Search Results")
 	vc := container.NewVBox()
 	hb := container.NewHBox()
 	hb.Add(widget.NewButtonWithIcon("Close", theme.CancelIcon(), func() {
 		lw.Close()
 	}))
-	hb.Add(widget.NewLabel("Select from below to navigate to the item"))
+	hb.Add(widget.NewLabel(fmt.Sprintf("Results for \"%s\"", searchFor)))
 	vc.Add(hb)
 	lw.checks = make(map[string]*widget.Button)
 	for _, v := range pathList {
