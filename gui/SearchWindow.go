@@ -107,7 +107,7 @@ func (lw *SearchDataWindow) Show(w, h float32) {
 	}()
 
 	pathList := make([]string, 0)
-	for k, _ := range lw.paths {
+	for k := range lw.paths {
 		pathList = append(pathList, k)
 	}
 	sort.Strings(pathList)
