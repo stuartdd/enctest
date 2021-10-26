@@ -709,7 +709,6 @@ func search(s string) {
 	// The map key is the human readable results e.g. 'User [Hint] app: noteName'
 	// The values are paths within the model! user.pwHints.app.noteName
 	searchWindow.Reset()
-	searchWindow.Close()
 	dataRoot.Search(func(path, desc string) {
 		searchWindow.Add(desc, path)
 	}, s, matchCase)

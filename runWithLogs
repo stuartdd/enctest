@@ -1,11 +1,16 @@
 #!/bin/bash
+cd /home/stuart/git/golang/enctest
 
 LOG_FILE=enctest.log
+NOHUP_FILE=nohup.out
+
 if [ -f "$LOG_FILE" ]; then
     rm $LOG_FILE
 fi
 touch $LOG_FILE
-
+if [ -f "$NOHUP_FILE" ]; then
+    rm $NOHUP_FILE
+fi
 nohup ./enctest &
 
 tail -f -n 100 $LOG_FILE

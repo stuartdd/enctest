@@ -62,7 +62,7 @@ func (lw *SearchDataWindow) Height() float32 {
 	return 500
 }
 
-func (lw *SearchDataWindow) Showing() bool {
+func (lw *SearchDataWindow) IsShowing() bool {
 	return lw.searchWindow != nil
 }
 
@@ -112,8 +112,9 @@ func (lw *SearchDataWindow) Show(w, h float32, searchFor string) {
 		pathList = append(pathList, k)
 	}
 	sort.Strings(pathList)
-
-	lw.searchWindow = fyne.CurrentApp().NewWindow("Search Results")
+	if !lw.IsShowing() {
+		lw.searchWindow = fyne.CurrentApp().NewWindow("Search Results")
+	}
 	vc := container.NewVBox()
 	hb := container.NewHBox()
 	hb.Add(widget.NewButtonWithIcon("Close", theme.CancelIcon(), func() {
