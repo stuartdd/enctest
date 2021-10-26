@@ -11,6 +11,6 @@ touch $LOG_FILE
 if [ -f "$NOHUP_FILE" ]; then
     rm $NOHUP_FILE
 fi
-nohup ./enctest &
+nohup ./enctest config.json &
 
 tail -f -n 100 $LOG_FILE

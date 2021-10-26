@@ -17,7 +17,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
@@ -31,6 +33,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/stuartdd/jsonParserGo/parser"
 	"stuartdd.com/gui"
 	"stuartdd.com/lib"
 	"stuartdd.com/pref"
@@ -93,12 +96,13 @@ var (
 	splitContainerOffset     float64          = -1
 	splitContainerOffsetPref float64          = -1
 
-	findCaseSensitive = binding.NewBool()
-	pendingSelection  = ""
-	currentSelection  = ""
-	shouldCloseLock   = false
-	hasDataChanges    = false
-	releaseTheBeast   = make(chan int, 1)
+	findCaseSensitive  = binding.NewBool()
+	pendingSelection   = ""
+	currentSelection   = ""
+	shouldCloseLock    = false
+	hasDataChanges     = false
+	releaseTheBeast    = make(chan int, 1)
+	dataIsNotLoadedYet = true
 )
 
 func abortWithUsage(message string) {
@@ -111,7 +115,7 @@ func abortWithUsage(message string) {
 
 func main() {
 	var prefFile string
-	if len(os.Args) == 1 {
+	if len(os.Args) < 2 {
 		prefFile = fallbackPreferencesFile
 	} else {
 		prefFile = os.Args[1]
@@ -121,16 +125,47 @@ func main() {
 		abortWithUsage(fmt.Sprintf("Failed to load configuration file '%s'", prefFile))
 	}
 	preferences = p
-	preferences.AddChangeListener(dataPreferencesChanged, "data.")
+
+	loadThreadFileName := p.GetStringForPathWithFallback(dataFilePrefName, fallbackDataFile)
+	getDataUrl := p.GetStringForPathWithFallback(getUrlPrefName, "")
+	postDataUrl := p.GetStringForPathWithFallback(postUrlPrefName, "")
+	//
+	// For extended command line options. Dont use logData use std out!
+	//
+	if len(os.Args) > 2 {
+		switch os.Args[2] {
+		case "create":
+			createFile := oneOrTheOther(postDataUrl == "", loadThreadFileName, postDataUrl+"/"+loadThreadFileName)
+			fmt.Printf("-> Create new data file '%s'\n", createFile)
+			fmt.Printf("-> File is defined in config data file '%s'\n", prefFile)
+			fmt.Println("-> Existing data will be overwritten!")
+			fmt.Print("-> ARE YOU SURE. (Y/n)")
+			reader := bufio.NewReader(os.Stdin)
+			text, _ := reader.ReadString('\n')
+			if !strings.HasPrefix(text, "Y") {
+				fmt.Println("----> Action aborted. You need to type capitol Y to procceed.")
+				os.Exit(0)
+			}
+			data := lib.CreateEmptyJsonData()
+			var err error
+			if postDataUrl != "" {
+				_, err = parser.PostJsonBytes(fmt.Sprintf("%s/%s", postDataUrl, loadThreadFileName), data)
+			} else {
+				err = ioutil.WriteFile(loadThreadFileName, data, 0644)
+			}
+			if err != nil {
+				fmt.Println(err.Error())
+			} else {
+				fmt.Printf("-> File %s has been created\n", createFile)
+			}
+		}
+		os.Exit(0)
+	}
 
 	logData = gui.NewLogData(
 		preferences.GetStringForPathWithFallback(logFileNamePrefName, "enctest.log"),
 		preferences.GetStringForPathWithFallback(logPrefixPrefName, "INFO")+": ",
 		preferences.GetBoolWithFallback(logActivePrefName, false))
-
-	loadThreadFileName := p.GetStringForPathWithFallback(dataFilePrefName, fallbackDataFile)
-	getDataUrl := p.GetStringForPathWithFallback(getUrlPrefName, "")
-	postDataUrl := p.GetStringForPathWithFallback(postUrlPrefName, "")
 
 	a := app.NewWithID("stuartdd.enctest")
 	a.Settings().SetTheme(theme2.NewAppTheme(preferences.GetStringForPathWithFallback(themeVarPrefName, "dark")))
@@ -162,7 +197,6 @@ func main() {
 	contentRHS := container.NewMax()
 	layoutRHS := container.NewBorder(title, nil, nil, nil, contentRHS)
 	buttonBar := makeButtonBar()
-
 	searchWindow = gui.NewSearchDataWindow(closeSearchWindow, selectTreeElement)
 	/*
 		function called when a selection is made in the LHS tree.
@@ -199,6 +233,8 @@ func main() {
 
 			switch taskForTheBeast {
 			case MAIN_THREAD_LOAD:
+				dataIsNotLoadedYet = true
+
 				if logData.IsWarning() {
 					timedNotification(5000, "Log file error", logData.GetErr().Error())
 				}
@@ -238,6 +274,7 @@ func main() {
 				}
 				fileData = fd
 				dataRoot = dr
+				dataIsNotLoadedYet = false
 				log(fmt.Sprintf("Data Parsed OK: File:'%s' DateTime:'%s'", loadThreadFileName, dataRoot.GetTimeStampString()))
 				// Follow on action to rebuild the Tree and re-display it
 				futureReleaseTheBeast(0, MAIN_THREAD_RELOAD_TREE)
@@ -273,7 +310,8 @@ func main() {
 		}
 	}()
 
-	futureReleaseTheBeast(1000, MAIN_THREAD_LOAD)
+	futureReleaseTheBeast(500, MAIN_THREAD_LOAD)
+	preferences.AddChangeListener(dataPreferencesChanged, "data.")
 	setFullScreen(preferences.GetBoolWithFallback(screenFullPrefName, false), false)
 	window.ShowAndRun()
 }
@@ -297,7 +335,27 @@ func futureReleaseTheBeast(ms int, status int) {
 		releaseTheBeast <- status
 	} else {
 		go func() {
+			//
+			// Wait for the required time before sending the request
+			//
 			time.Sleep(time.Duration(ms) * time.Millisecond)
+			//
+			// Cannot do anything until MAIN_THREAD_LOAD is run and dataIsLoaded = true
+			// But we cannot give in so we wait. But not forever!
+			//
+			if status != MAIN_THREAD_LOAD && dataIsNotLoadedYet {
+				count := 0
+				for dataIsNotLoadedYet {
+					time.Sleep(100 * time.Millisecond)
+					count++
+					if count > 10 {
+						return
+					}
+				}
+			}
+			//
+			// Sent the request
+			//
 			releaseTheBeast <- status
 		}()
 	}
@@ -335,6 +393,7 @@ func log(l string) {
 		logData.Log(l)
 	}
 }
+
 func logInformationDialog(title, message string) dialog.Dialog {
 	return logInformationDialogWithPrefix("Dialog-info", title, message)
 }
@@ -386,7 +445,6 @@ func makeButtonBar() *fyne.Container {
 
 	quit := widget.NewButton("EXIT", shouldClose)
 	timeStampLabel = widget.NewLabel("  File Not loaded")
-	futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
 	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton, timeStampLabel)
 }
 
@@ -887,13 +945,13 @@ func shouldClose() {
 		if searchWindow != nil {
 			searchWindow.Close()
 		}
-		logData.Close()
 		count := countChangedItems()
 		if count > 0 {
 			d := dialog.NewConfirm("Close Warning", "There are unsaved changes\nDo you want to save them before closing?", saveChangesDialogAction, window)
 			d.Show()
 		} else {
 			shouldCloseLock = false
+			logData.WaitAndClose()
 			window.Close()
 		}
 	}
@@ -942,7 +1000,8 @@ func setThemeById(varient string) {
 func saveChangesDialogAction(option bool) {
 	shouldCloseLock = false
 	if !option {
-		fmt.Println("Quit without saving changes")
+		log("Quit without saving changes")
+		logData.WaitAndClose()
 		window.Close()
 	}
 }

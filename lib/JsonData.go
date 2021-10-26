@@ -555,3 +555,23 @@ func (p *JsonData) GetRootUidOrCurrentUid(currentUid string) string {
 	}
 	return ""
 }
+
+func CreateEmptyJsonData() []byte {
+	root := parser.NewJsonObject("")
+	g := parser.NewJsonObject("groups")
+	u := parser.NewJsonObject("tempUser")
+	n := parser.NewJsonObject("notes")
+	h := parser.NewJsonObject("pwHints")
+	n1 := parser.NewJsonString("note", "newNote")
+	app := parser.NewJsonObject("application")
+	name := parser.NewJsonString("name", "userName")
+	app.Add(name)
+	n.Add(n1)
+	u.Add(n)
+	u.Add(h)
+	g.Add(u)
+	h.Add(app)
+	root.Add(g)
+	root.Add(parser.NewJsonString("timeStamp", time.Now().Format("Mon Jan 2 15:04:05 MST 2006")))
+	return []byte(root.JsonValueIndented(4))
+}

@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 type LogData struct {
@@ -13,9 +14,23 @@ type LogData struct {
 	fileName string
 	active   bool
 	warning  bool
+	queue    chan string
 }
 
 func NewLogData(fileName string, prefix string, active bool) *LogData {
+	lg := setup(fileName, prefix, active)
+	if lg.IsReady() {
+		lg.queue = make(chan string, 20)
+	}
+	go func(ld *LogData) {
+		for l := range lg.queue {
+			ld.logger.Println(l)
+		}
+	}(lg)
+	return lg
+}
+
+func setup(fileName string, prefix string, active bool) *LogData {
 	if fileName == "" {
 		err := fmt.Errorf("log is active but log file name was not provided")
 		return &LogData{active: active, logger: nil, err: err, warning: active}
@@ -65,12 +80,27 @@ func (lw *LogData) IsReady() bool {
 	return lw.logger != nil
 }
 
+func (lw *LogData) WaitAndClose() {
+	count := 0
+	for len(lw.queue) > 0 {
+		time.Sleep(500 * time.Millisecond)
+		count++
+		if count > 20 {
+			panic("LogData WitAndClose timed out after 10 seconds!")
+		}
+	}
+	lw.Close()
+}
+
 func (lw *LogData) Close() {
+	if lw.queue != nil {
+		close(lw.queue)
+	}
 }
 
 func (lw *LogData) Log(l string) {
-	if lw.IsLogging() {
-		go lw.logger.Println(l)
+	if lw.queue != nil {
+		lw.queue <- l
 	}
 }
 
