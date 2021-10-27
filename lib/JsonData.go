@@ -151,13 +151,32 @@ func (p *JsonData) Search(addPath func(string, string), needle string, matchCase
 	}
 }
 
+func (p *JsonData) CloneHint(user, path, hintItemName string, cloneLeafNodeData bool) error {
+	h, err := parser.Find(p.GetUserRoot(), path)
+	if err != nil {
+		return fmt.Errorf("the clone hint '%s' cannot be found", path)
+	}
+	if h.GetNodeType() != parser.NT_OBJECT {
+		return fmt.Errorf("the clone hint item '%s' was not an object node", path)
+	}
+	parent, _ := parser.FindParentNode(p.dataMap, h)
+	if parent.(parser.NodeC).GetNodeWithName(hintItemName) != nil {
+		return fmt.Errorf("the cloned item '%s' name already exists", path)
+	}
+	cl := parser.Clone(h, hintItemName, cloneLeafNodeData)
+	parent.(parser.NodeC).Add(cl)
+	p.navIndex = createNavIndex(p.dataMap)
+	p.dataMapUpdated(fmt.Sprintf("Cloned Item '%s' added", hintItemName), GetUserFromPath(user), path, nil)
+	return nil
+}
+
 func (p *JsonData) AddHintItem(user, path, hintItemName string) error {
 	h, err := parser.Find(p.GetUserRoot(), path)
 	if err != nil {
 		return fmt.Errorf("the hint '%s' cannot be found", path)
 	}
 	if h.GetNodeType() != parser.NT_OBJECT {
-		return fmt.Errorf("the hint note '%s' was not an object node", path)
+		return fmt.Errorf("the hint item '%s' was not an object node", path)
 	}
 	hO := h.(*parser.JsonObject)
 	addStringIfDoesNotExist(hO, hintItemName)

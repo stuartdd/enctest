@@ -1,18 +1,8 @@
 
     {
-        "data": {
-            "hintIsCalled": "Hint",
-            "noteIsCalled": "Note",
-            "presentationmode": true
-        },
-        "postDataUrl": "",
-        "theme": "dark",
-        "getDataUrl": "",
-        "datafile": "libtest/TestDataTypesX.json",
-        "log": {
-            "prefix": "INFO",
-            "fileName": "enctest.log",
-            "active": true
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
         },
         "search": {
             "case": true,
@@ -23,14 +13,24 @@
                 "Principality note"
             ]
         },
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
+        "log": {
+            "active": true,
+            "prefix": "INFO",
+            "fileName": "enctest.log"
         },
+        "postDataUrl": "",
+        "data": {
+            "noteIsCalled": "Note",
+            "presentationmode": true,
+            "hintIsCalled": "Hint"
+        },
+        "datafile": "libtest/TestDataTypes.json",
+        "theme": "dark",
+        "getDataUrl": "",
         "screen": {
-            "width": 920.000061,
-            "height": 579.047668,
-            "fullScreen": false,
-            "split": 0.2
+            "split": 0.2,
+            "width": 901.904785,
+            "height": 559.047668,
+            "fullScreen": false
         }
     }

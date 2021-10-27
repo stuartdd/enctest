@@ -51,10 +51,12 @@ const (
 	MAIN_THREAD_RESELECT    = iota
 	MAIN_THREAD_RE_MENU     = iota
 
-	ADD_TYPE_USER      = iota
-	ADD_TYPE_HINT      = iota
-	ADD_TYPE_HINT_ITEM = iota
-	ADD_TYPE_NOTE_ITEM = iota
+	ADD_TYPE_USER            = iota
+	ADD_TYPE_HINT            = iota
+	ADD_TYPE_HINT_CLONE      = iota
+	ADD_TYPE_HINT_CLONE_FULL = iota
+	ADD_TYPE_HINT_ITEM       = iota
+	ADD_TYPE_NOTE_ITEM       = iota
 
 	defaultScreenWidth  = 640
 	defaultScreenHeight = 480
@@ -85,7 +87,7 @@ var (
 	searchWindow             *gui.SearchDataWindow
 	logData                  *gui.LogData
 	fileData                 *lib.FileData
-	dataRoot                 *lib.JsonData
+	jsonData                 *lib.JsonData
 	preferences              *pref.PrefData
 	navTreeLHS               *widget.Tree
 	saveShortcutButton       *widget.Button
@@ -273,9 +275,9 @@ func main() {
 					abortWithUsage(fmt.Sprintf("ERROR: Cannot process data in file '%s'.\n%s\n", loadThreadFileName, err))
 				}
 				fileData = fd
-				dataRoot = dr
+				jsonData = dr
 				dataIsNotLoadedYet = false
-				log(fmt.Sprintf("Data Parsed OK: File:'%s' DateTime:'%s'", loadThreadFileName, dataRoot.GetTimeStampString()))
+				log(fmt.Sprintf("Data Parsed OK: File:'%s' DateTime:'%s'", loadThreadFileName, jsonData.GetTimeStampString()))
 				// Follow on action to rebuild the Tree and re-display it
 				futureReleaseTheBeast(0, MAIN_THREAD_RELOAD_TREE)
 			case MAIN_THREAD_RELOAD_TREE:
@@ -284,7 +286,7 @@ func main() {
 				// Init the devider (split)
 				// Populate the window and we are done!
 				navTreeLHS = makeNavTree(setPageRHSFunc)
-				uid := dataRoot.GetRootUidOrCurrentUid(currentSelection)
+				uid := jsonData.GetRootUidOrCurrentUid(currentSelection)
 				log(fmt.Sprintf("Re-build nav tree. Sel:'%s' uid:'%s'", currentSelection, uid))
 				selectTreeElement("MAIN_THREAD_RELOAD_TREE", uid)
 				if splitContainerOffset < 0 {
@@ -298,7 +300,7 @@ func main() {
 				futureReleaseTheBeast(0, MAIN_THREAD_RE_MENU)
 			case MAIN_THREAD_RESELECT:
 				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentSelection))
-				t := gui.GetDetailPage(currentSelection, dataRoot.GetDataRoot(), *preferences)
+				t := gui.GetDetailPage(currentSelection, jsonData.GetDataRoot(), *preferences)
 				setPageRHSFunc(*t)
 			case MAIN_THREAD_SELECT:
 				selectTreeElement("MAIN_THREAD_SELECT", pendingSelection)
@@ -381,10 +383,10 @@ func updateButtonBar() {
 	} else {
 		editModeShortcutButton.SetText("Present Data")
 	}
-	if dataRoot == nil {
+	if jsonData == nil {
 		timeStampLabel.SetText("  File Not loaded")
 	} else {
-		timeStampLabel.SetText("  Last Updated -> " + dataRoot.GetTimeStampString())
+		timeStampLabel.SetText("  Last Updated -> " + jsonData.GetTimeStampString())
 	}
 }
 
@@ -420,9 +422,9 @@ func logDataRequest(action string) {
 	case "onoff":
 		logData.FlipOnOff()
 	case "navmap":
-		log(fmt.Sprintf("NavMap: ----------------\n%s", dataRoot.GetNavIndexAsString()))
+		log(fmt.Sprintf("NavMap: ----------------\n%s", jsonData.GetNavIndexAsString()))
 	case "select":
-		m, err := lib.GetUserDataForUid(dataRoot.GetDataRoot(), currentSelection)
+		m, err := lib.GetUserDataForUid(jsonData.GetDataRoot(), currentSelection)
 		if err != nil {
 			log(fmt.Sprintf("Data for uid [%s] not found. %s", currentSelection, err.Error()))
 		}
@@ -464,7 +466,10 @@ func makeMenus() *fyne.MainMenu {
 		newItem = fyne.NewMenu("New",
 			n1,
 			fyne.NewMenuItem(fmt.Sprintf("%s Item for '%s'", hintName, hint), addNewHintItem),
-			n3, n4)
+			n3,
+			fyne.NewMenuItem(fmt.Sprintf("Clone '%s'", hint), cloneHint),
+			fyne.NewMenuItem(fmt.Sprintf("Clone Full '%s'", hint), cloneHintFull),
+			n4)
 	}
 
 	var themeMenuItem *fyne.MenuItem
@@ -553,22 +558,22 @@ Calls setPage with the selected page, defined by the uid (path) and Pages (gui) 
 func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 	return &widget.Tree{
 		ChildUIDs: func(uid string) []string {
-			id := dataRoot.GetNavIndex(uid)
+			id := jsonData.GetNavIndex(uid)
 			return id
 		},
 		IsBranch: func(uid string) bool {
-			children := dataRoot.GetNavIndex(uid)
+			children := jsonData.GetNavIndex(uid)
 			return len(children) > 0
 		},
 		CreateNode: func(branch bool) fyne.CanvasObject {
 			return widget.NewLabel("?")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			t := gui.GetDetailPage(uid, dataRoot.GetDataRoot(), *preferences)
+			t := gui.GetDetailPage(uid, jsonData.GetDataRoot(), *preferences)
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
-			t := gui.GetDetailPage(uid, dataRoot.GetDataRoot(), *preferences)
+			t := gui.GetDetailPage(uid, jsonData.GetDataRoot(), *preferences)
 			setPage(*t)
 		},
 	}
@@ -632,7 +637,7 @@ func dataMapUpdated(desc, user, path string, err error) {
 	if err == nil {
 		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' Path:'%s'", desc, user, path))
 		pp := lib.GetParentId(path)
-		if dataRoot.GetNavIndex(pp) == nil {
+		if jsonData.GetNavIndex(pp) == nil {
 			path = pp
 		}
 		currentSelection = path
@@ -686,7 +691,7 @@ func removeAction(uid string) {
 	_, removeName := types.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
 	dialog.NewConfirm("Remove entry", fmt.Sprintf("'%s'\nAre you sure?", removeName), func(ok bool) {
 		if ok {
-			err := dataRoot.Remove(uid, 1)
+			err := jsonData.Remove(uid, 1)
 			if err != nil {
 				logInformationDialog("Remove item error", err.Error())
 			}
@@ -700,12 +705,12 @@ dataMapUpdated id called if a change is made to the model
 */
 func renameAction(uid string, extra string) {
 	log(fmt.Sprintf("renameAction Uid:'%s'  Extra:'%s'", uid, extra))
-	m, _ := dataRoot.GetUserDataForUid(uid)
+	m, _ := jsonData.GetUserDataForUid(uid)
 	if m != nil {
 		at, fromName := types.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
 		toName := ""
 		isNote := false
-		if dataRoot.IsStringNode(m) {
+		if jsonData.IsStringNode(m) {
 			toName = fromName
 			isNote = true
 		}
@@ -715,7 +720,7 @@ func renameAction(uid string, extra string) {
 				if err != nil {
 					logInformationDialog("Name validation error", err.Error())
 				} else {
-					err := dataRoot.Rename(uid, s)
+					err := jsonData.Rename(uid, s)
 					if err != nil {
 						logInformationDialog("Rename item error", err.Error())
 					}
@@ -767,7 +772,7 @@ func search(s string) {
 	// The map key is the human readable results e.g. 'User [Hint] app: noteName'
 	// The values are paths within the model! user.pwHints.app.noteName
 	searchWindow.Reset()
-	dataRoot.Search(func(path, desc string) {
+	jsonData.Search(func(path, desc string) {
 		searchWindow.Add(desc, path)
 	}, s, matchCase)
 
@@ -794,6 +799,16 @@ Selecting the menu to add a hint
 func addNewHint() {
 	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	addNewEntity(n+" for ", n, ADD_TYPE_HINT, false)
+}
+
+func cloneHint() {
+	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE, false)
+}
+
+func cloneHintFull() {
+	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE_FULL, false)
 }
 
 /**
@@ -829,13 +844,17 @@ func addNewEntity(head string, name string, addType int, isNote bool) {
 			if err == nil {
 				switch addType {
 				case ADD_TYPE_USER:
-					err = dataRoot.AddUser(s)
+					err = jsonData.AddUser(s)
 				case ADD_TYPE_NOTE_ITEM:
-					err = dataRoot.AddNoteItem(cu, s)
+					err = jsonData.AddNoteItem(cu, s)
 				case ADD_TYPE_HINT:
-					err = dataRoot.AddHint(cu, s)
+					err = jsonData.AddHint(cu, s)
+				case ADD_TYPE_HINT_CLONE:
+					err = jsonData.CloneHint(cu, currentSelection, s, false)
+				case ADD_TYPE_HINT_CLONE_FULL:
+					err = jsonData.CloneHint(cu, currentSelection, s, true)
 				case ADD_TYPE_HINT_ITEM:
-					err = dataRoot.AddHintItem(cu, currentSelection, s)
+					err = jsonData.AddHintItem(cu, currentSelection, s)
 				}
 			}
 			if err != nil {
@@ -966,9 +985,9 @@ func countChangedItems() int {
 }
 
 func commitChangedItems() (int, error) {
-	count := gui.EditEntryListCache.Commit(dataRoot.GetDataRoot())
-	dataRoot.SetDateTime()
-	c := dataRoot.ToJson()
+	count := gui.EditEntryListCache.Commit(jsonData.GetDataRoot())
+	jsonData.SetDateTime()
+	c := jsonData.ToJson()
 	fileData.SetContent([]byte(c))
 	return count, nil
 }

@@ -1,29 +1,29 @@
 
     {
-        "datafile": "dvdDatabase.data",
-        "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
-        "theme": "dark",
-        "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
-        "dialog": {
-            "saveTimeOutMS": 1000
-        },
         "search": {
             "case": true
         },
+        "dialog": {
+            "saveTimeOutMS": 1000
+        },
+        "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
         "data": {
-            "presentationmode": true,
-            "hintIsCalled": "DVD",
-            "noteIsCalled": "Note"
+            "noteIsCalled": "Note",
+            "presentationmode": false,
+            "hintIsCalled": "DVD"
         },
         "log": {
+            "fileName": "enctest.log",
             "prefix": "INFO",
-            "active": false,
-            "fileName": "enctest.log"
+            "active": false
         },
+        "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
+        "datafile": "dvdDatabase.data",
         "screen": {
-            "height": 558.095276,
-            "split": 0.2,
             "fullScreen": false,
-            "width": 868.571472
-        }
+            "width": 867.142883,
+            "height": 555.238098,
+            "split": 0.2
+        },
+        "theme": "dark"
     }
