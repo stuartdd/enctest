@@ -51,6 +51,7 @@ const (
 	ACTION_CLONE_FULL = "clonefull"
 	ACTION_LINK       = "link"
 	ACTION_UPDATED    = "update"
+	ACTION_ADD_NOTE   = "addnode"
 )
 
 var (
@@ -80,12 +81,12 @@ func GetDetailPage(id string, dataRootMap parser.NodeI, preferences pref.PrefDat
 		return NewDetailPage(id, id, "", welcomeScreen, welcomeControls, dataRootMap, preferences)
 	case 2:
 		if nodes[1] == idPwDetails {
-			return NewDetailPage(id, hintsAreCalled+"s", user, welcomeScreen, notesControls, dataRootMap, preferences)
+			return NewDetailPage(id, hintsAreCalled+"s", user, welcomeScreen, welcomeControls, dataRootMap, preferences)
 		}
 		if nodes[1] == idNotes {
 			return NewDetailPage(id, notesAreCalled+"s", user, notesScreen, notesControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(id, "Unknown", user, welcomeScreen, notesControls, dataRootMap, preferences)
+		return NewDetailPage(id, "Unknown", user, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	case 3:
 		if nodes[1] == idPwDetails {
 			return NewDetailPage(id, nodes[2], user, notesScreen, hintsControls, dataRootMap, preferences)
@@ -93,7 +94,7 @@ func GetDetailPage(id string, dataRootMap parser.NodeI, preferences pref.PrefDat
 		if nodes[1] == idNotes {
 			return NewDetailPage(id, nodes[2], user, notesScreen, notesControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(id, "Unknown", "", welcomeScreen, notesControls, dataRootMap, preferences)
+		return NewDetailPage(id, "Unknown", "", welcomeScreen, welcomeControls, dataRootMap, preferences)
 	}
 	return NewDetailPage(id, id, "", welcomeScreen, notesControls, dataRootMap, preferences)
 }
@@ -150,6 +151,15 @@ func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, st
 
 func notesControls(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
+	cObj = append(cObj, NewMyIconButton("NewMI", theme.ContentAddIcon(), func() {
+		actionFunc(ACTION_ADD_NOTE, details.Uid, "")
+	}, func(mouseIn bool) {
+		if mouseIn {
+			fmt.Println("MI")
+		} else {
+			fmt.Println("MO")
+		}
+	}))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
@@ -248,7 +258,10 @@ func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(string, st
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
 		actionFunc(ACTION_RENAME, details.Uid, "")
 	}))
-	cObj = append(cObj, widget.NewButtonWithIcon("Clone", theme.ContentCopyIcon(), func() {
+	cObj = append(cObj, widget.NewButtonWithIcon("", theme.ContentCopyIcon(), func() {
+		actionFunc(ACTION_CLONE, details.Uid, "")
+	}))
+	cObj = append(cObj, widget.NewButtonWithIcon("Full", theme.ContentCopyIcon(), func() {
 		actionFunc(ACTION_CLONE_FULL, details.Uid, "")
 	}))
 	cObj = append(cObj, widget.NewLabel(details.Heading))

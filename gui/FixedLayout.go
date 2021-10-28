@@ -19,6 +19,8 @@ package gui
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/widget"
 )
 
 var Padding50 = container.New(NewFixedWLayout(50))
@@ -128,4 +130,49 @@ func (d *FixedWHLayout) Layout(objects []fyne.CanvasObject, containerSize fyne.S
 		pos = pos.Add(fyne.NewPos(size.Width, size.Height))
 	}
 
+}
+
+type MyStatus struct {
+	widget.Label
+	w, h float32
+}
+
+func NewMyStatus(label string) *MyStatus {
+	myStatus := &MyStatus{}
+	myStatus.ExtendBaseWidget(myStatus)
+	myStatus.SetText(label)
+	return myStatus
+}
+
+func (d *MyStatus) MinSize() fyne.Size {
+	return fyne.NewSize(d.w, d.h)
+}
+
+func (d *MyStatus) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
+	for _, o := range objects {
+		d.w = containerSize.Width
+		d.h = containerSize.Height
+		o.Resize(fyne.NewSize(d.w, d.h))
+	}
+}
+
+type MyButton struct {
+	widget.Button
+	hover func(bool)
+}
+
+func NewMyIconButton(label string, icon fyne.Resource, tapped func(), hover func(bool)) *MyButton {
+	mybutton := &MyButton{hover: hover}
+	mybutton.ExtendBaseWidget(mybutton)
+	mybutton.SetIcon(icon)
+	mybutton.OnTapped = tapped
+	mybutton.SetText(label)
+	return mybutton
+}
+
+func (t *MyButton) MouseIn(me *desktop.MouseEvent) {
+	t.hover(true)
+}
+func (t *MyButton) MouseOut() {
+	t.hover(false)
 }

@@ -197,7 +197,7 @@ func main() {
 	title := container.NewHBox()
 	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil)}
 	contentRHS := container.NewMax()
-	layoutRHS := container.NewBorder(title, nil, nil, nil, contentRHS)
+	layoutRHS := container.NewBorder(title, container.NewWithoutLayout(), nil, nil, contentRHS)
 	buttonBar := makeButtonBar()
 	searchWindow = gui.NewSearchDataWindow(closeSearchWindow, selectTreeElement)
 	/*
@@ -296,7 +296,7 @@ func main() {
 				}
 				splitContainer = container.NewHSplit(container.NewBorder(makeSearchLHS(setPageRHSFunc), nil, nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(splitContainerOffset)
-				window.SetContent(container.NewBorder(buttonBar, nil, nil, nil, splitContainer))
+				window.SetContent(container.NewBorder(buttonBar, gui.NewMyStatus("Status:"), nil, nil, splitContainer))
 				futureReleaseTheBeast(0, MAIN_THREAD_RE_MENU)
 			case MAIN_THREAD_RESELECT:
 				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentSelection))
@@ -619,6 +619,8 @@ func viewActionFunction(action string, uid string, extra string) {
 		log(gui.LogCleanString(extra, 100))
 	case gui.ACTION_REMOVE:
 		removeAction(uid)
+	case gui.ACTION_ADD_NOTE:
+		addNewNoteItem()
 	case gui.ACTION_RENAME:
 		renameAction(uid, extra)
 	case gui.ACTION_CLONE_FULL:
