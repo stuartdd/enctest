@@ -621,6 +621,10 @@ func viewActionFunction(action string, uid string, extra string) {
 		removeAction(uid)
 	case gui.ACTION_RENAME:
 		renameAction(uid, extra)
+	case gui.ACTION_CLONE_FULL:
+		cloneHintFull()
+	case gui.ACTION_CLONE:
+		cloneHint()
 	case gui.ACTION_LINK:
 		linkAction(uid, extra)
 	case gui.ACTION_UPDATED:

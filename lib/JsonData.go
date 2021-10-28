@@ -166,7 +166,7 @@ func (p *JsonData) CloneHint(user, path, hintItemName string, cloneLeafNodeData 
 	cl := parser.Clone(h, hintItemName, cloneLeafNodeData)
 	parent.(parser.NodeC).Add(cl)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated(fmt.Sprintf("Cloned Item '%s' added", hintItemName), GetUserFromPath(user), path, nil)
+	p.dataMapUpdated(fmt.Sprintf("Cloned Item '%s' added", hintItemName), GetUserFromPath(user), GetFirstPathElements(path, 2)+"."+hintItemName, nil)
 	return nil
 }
 

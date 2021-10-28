@@ -43,12 +43,14 @@ const (
 	DataHintIsCalledPrefName = "data.hintIsCalled"
 	DataNoteIsCalledPrefName = "data.noteIsCalled"
 
-	ACTION_LOG     = "log"
-	ACTION_COPIED  = "copied"
-	ACTION_REMOVE  = "remove"
-	ACTION_RENAME  = "rename"
-	ACTION_LINK    = "link"
-	ACTION_UPDATED = "update"
+	ACTION_LOG        = "log"
+	ACTION_COPIED     = "copied"
+	ACTION_REMOVE     = "remove"
+	ACTION_RENAME     = "rename"
+	ACTION_CLONE      = "clone"
+	ACTION_CLONE_FULL = "clonefull"
+	ACTION_LINK       = "link"
+	ACTION_UPDATED    = "update"
 )
 
 var (
@@ -245,6 +247,9 @@ func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(string, st
 	}))
 	cObj = append(cObj, widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
 		actionFunc(ACTION_RENAME, details.Uid, "")
+	}))
+	cObj = append(cObj, widget.NewButtonWithIcon("Clone", theme.ContentCopyIcon(), func() {
+		actionFunc(ACTION_CLONE_FULL, details.Uid, "")
 	}))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
