@@ -90,9 +90,9 @@ var (
 	jsonData                 *lib.JsonData
 	preferences              *pref.PrefData
 	navTreeLHS               *widget.Tree
-	saveShortcutButton       *widget.Button
-	fullScreenShortcutButton *widget.Button
-	editModeShortcutButton   *widget.Button
+	saveShortcutButton       *gui.MyButton
+	fullScreenShortcutButton *gui.MyButton
+	editModeShortcutButton   *gui.MyButton
 	timeStampLabel           *widget.Label
 	statusDisplay            *gui.StatusDisplay
 	splitContainer           *container.Split // So we can save the divider position to preferences.
@@ -377,13 +377,17 @@ func updateButtonBar() {
 	}
 	if preferences.GetBoolWithFallback(screenFullPrefName, false) {
 		fullScreenShortcutButton.SetText("Windowed")
+		fullScreenShortcutButton.SetStatusMessage("Set display to Windowed")
 	} else {
 		fullScreenShortcutButton.SetText("Full Screen")
+		fullScreenShortcutButton.SetStatusMessage("Set display to Full Screen")
 	}
 	if preferences.GetBoolWithFallback(gui.DataPresModePrefName, true) {
 		editModeShortcutButton.SetText("Edit Data")
+		editModeShortcutButton.SetStatusMessage("Allow user to edit the data")
 	} else {
 		editModeShortcutButton.SetText("Present Data")
+		editModeShortcutButton.SetStatusMessage("Display the data in presentation mode")
 	}
 	if jsonData == nil {
 		timeStampLabel.SetText("  File Not loaded")
@@ -441,13 +445,13 @@ func logDataRequest(action string) {
 }
 
 func makeButtonBar() *fyne.Container {
-	saveShortcutButton = widget.NewButton("Save", func() {
+	saveShortcutButton = gui.NewMyIconButton("Save", theme.DocumentSaveIcon(), func() {
 		commitAndSaveData(SAVE_AS_IS, true)
-	})
-	fullScreenShortcutButton = widget.NewButton("FULL SCREEN", flipFullScreen)
-	editModeShortcutButton = widget.NewButton("EDIT", flipPositionalData)
+	}, statusDisplay, "Save then current changes to the source file")
+	fullScreenShortcutButton = gui.NewMyIconButton("FULL SCREEN", theme.ComputerIcon(), flipFullScreen, statusDisplay, "Display full screen or Show windowed")
+	editModeShortcutButton = gui.NewMyIconButton("EDIT", theme.DocumentIcon(), flipPositionalData, statusDisplay, "Allow editing of the data")
 
-	quit := widget.NewButton("EXIT", shouldClose)
+	quit := gui.NewMyIconButton("EXIT", theme.LogoutIcon(), shouldClose, statusDisplay, "Allow editing of the data")
 	timeStampLabel = widget.NewLabel("  File Not loaded")
 	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton, timeStampLabel)
 }
@@ -591,7 +595,7 @@ func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	c2 := container.New(
 		layout.NewHBoxLayout(),
 		widget.NewLabel("Find:"),
-		widget.NewButtonWithIcon("", theme.SearchIcon(), func() { search(searchEntry.Text) }),
+		gui.NewMyIconButton("", theme.SearchIcon(), func() { search(searchEntry.Text) }, statusDisplay, "Search for the given text"),
 		widget.NewCheckWithData("Match Case", findCaseSensitive))
 	c := container.New(
 		layout.NewVBoxLayout(),

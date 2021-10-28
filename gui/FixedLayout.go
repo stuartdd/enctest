@@ -147,6 +147,11 @@ func NewMyIconButton(label string, icon fyne.Resource, tapped func(), sd *Status
 	return mybutton
 }
 
+func (t *MyButton) SetStatusMessage(message string) {
+	t.statusMessage = message
+	t.statusDisplay.Reset()
+}
+
 func (t *MyButton) MouseIn(me *desktop.MouseEvent) {
 	t.statusDisplay.PushStatus(t.statusMessage)
 }
@@ -158,13 +163,18 @@ type StatusDisplay struct {
 	statusLabel     *widget.Label
 	StatusContainer *fyne.Container
 	statusStack     *StringStack
+	initialText     string
 }
 
 func NewStatusDisplay(initialText string) *StatusDisplay {
-	sl := widget.NewLabel("Hint: Select a item from the list above")
+	sl := widget.NewLabel(initialText)
 	sc := container.New(NewFixedWHLayout(200, 15), sl)
 	ss := NewStringStack()
-	return &StatusDisplay{statusLabel: sl, StatusContainer: sc, statusStack: ss}
+	return &StatusDisplay{statusLabel: sl, StatusContainer: sc, statusStack: ss, initialText: initialText}
+}
+func (sd *StatusDisplay) Reset() {
+	sd.statusStack = NewStringStack()
+	sd.PopStatus()
 }
 
 func (sd *StatusDisplay) PushStatus(m string) {
@@ -174,7 +184,11 @@ func (sd *StatusDisplay) PushStatus(m string) {
 }
 
 func (sd *StatusDisplay) PopStatus() {
-	sd.statusLabel.SetText(sd.statusStack.Pop())
+	s := sd.statusStack.Pop()
+	if s == "" {
+		s = sd.initialText
+	}
+	sd.statusLabel.SetText(s)
 	sd.StatusContainer.Refresh()
 }
 
