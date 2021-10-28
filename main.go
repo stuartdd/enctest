@@ -94,6 +94,7 @@ var (
 	fullScreenShortcutButton *widget.Button
 	editModeShortcutButton   *widget.Button
 	timeStampLabel           *widget.Label
+	statusDisplay            *gui.StatusDisplay
 	splitContainer           *container.Split // So we can save the divider position to preferences.
 	splitContainerOffset     float64          = -1
 	splitContainerOffsetPref float64          = -1
@@ -193,9 +194,10 @@ func main() {
 	*/
 	window.SetMaster()
 
+	statusDisplay = gui.NewStatusDisplay("Hint: Select an item from the list above")
 	wp := gui.GetWelcomePage("", *preferences)
 	title := container.NewHBox()
-	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil)}
+	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil, statusDisplay)}
 	contentRHS := container.NewMax()
 	layoutRHS := container.NewBorder(title, container.NewWithoutLayout(), nil, nil, contentRHS)
 	buttonBar := makeButtonBar()
@@ -213,9 +215,9 @@ func main() {
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), lib.GetUserFromPath(currentSelection)))
 		window.SetMainMenu(makeMenus())
 		navTreeLHS.OpenBranch(currentSelection)
-		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction)}
+		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction, statusDisplay)}
 		title.Refresh()
-		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage, viewActionFunction)}
+		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage, viewActionFunction, statusDisplay)}
 		contentRHS.Refresh()
 	}
 
@@ -296,7 +298,7 @@ func main() {
 				}
 				splitContainer = container.NewHSplit(container.NewBorder(makeSearchLHS(setPageRHSFunc), nil, nil, nil, navTreeLHS), layoutRHS)
 				splitContainer.SetOffset(splitContainerOffset)
-				window.SetContent(container.NewBorder(buttonBar, gui.NewMyStatus("Status:"), nil, nil, splitContainer))
+				window.SetContent(container.NewBorder(buttonBar, statusDisplay.StatusContainer, nil, nil, splitContainer))
 				futureReleaseTheBeast(0, MAIN_THREAD_RE_MENU)
 			case MAIN_THREAD_RESELECT:
 				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentSelection))

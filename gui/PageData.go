@@ -27,8 +27,8 @@ import (
 
 type DetailPage struct {
 	Uid, Heading, Title, User string
-	ViewFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject
-	CntlFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject
+	ViewFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject
+	CntlFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject
 	DataRootMap               parser.NodeI
 	Preferences               pref.PrefData
 }
@@ -37,8 +37,8 @@ func NewDetailPage(
 	uid string,
 	title string,
 	user string,
-	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject,
-	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject,
+	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject,
+	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject,
 	dataRootMap parser.NodeI,
 	preferences pref.PrefData) *DetailPage {
 

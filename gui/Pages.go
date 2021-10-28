@@ -115,19 +115,21 @@ func positional(s string) fyne.CanvasObject {
 	return g1
 }
 
-func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
+func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, details.Uid, "")
-	}))
-	cObj = append(cObj, widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
+	}, statusDisplay, fmt.Sprintf("Delete: - '%s'", details.Title)))
+
+	cObj = append(cObj, NewMyIconButton("", theme2.EditIcon(), func() {
 		actionFunc(ACTION_RENAME, details.Uid, "")
-	}))
+	}, statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
+
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
 
-func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
+func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
 	logo := canvas.NewImageFromFile("background.png")
 	logo.FillMode = canvas.ImageFillContain
 	logo.SetMinSize(fyne.NewSize(228, 167))
@@ -149,22 +151,16 @@ func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, st
 		)))
 }
 
-func notesControls(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
+func notesControls(_ fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, NewMyIconButton("NewMI", theme.ContentAddIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_NOTE, details.Uid, "")
-	}, func(mouseIn bool) {
-		if mouseIn {
-			fmt.Println("MI")
-		} else {
-			fmt.Println("MO")
-		}
-	}))
+	}, statusDisplay, fmt.Sprintf("Add new Note to user: %s", details.User)))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
 
-func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
+func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
 	data := details.GetObjectsForUid()
 	cObj := make([]fyne.CanvasObject, 0)
 	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
@@ -178,15 +174,15 @@ func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, stri
 					entryChangedFunction(newWalue, path)
 					actionFunc(ACTION_UPDATED, path, "")
 				},
-				unDoFunction, actionFunc)
+				unDoFunction, actionFunc, statusDisplay)
 			EditEntryListCache.Add(editEntry)
 		}
 		editEntry.RefreshData()
 
-		clip := widget.NewButtonWithIcon("", theme.ContentCopyIcon(), func() {
+		clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {
 			w.Clipboard().SetContent(editEntry.GetCurrentText())
 			actionFunc(ACTION_COPIED, editEntry.Path, editEntry.GetCurrentText())
-		})
+		}, statusDisplay, fmt.Sprintf("Copy the contents of '%s' to the clipboard", k))
 		flClipboard := container.New(&FixedLayout{10, 1}, clip)
 		flLab := container.New(&FixedLayout{100, 1}, editEntry.Lab)
 		flLink := container.New(&FixedLayout{10, 0}, editEntry.Link)
@@ -250,20 +246,24 @@ func unDoFunction(path string) {
 	}
 }
 
-func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(string, string, string)) fyne.CanvasObject {
+func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, details.Uid, "")
-	}))
-	cObj = append(cObj, widget.NewButtonWithIcon("", theme2.EditIcon(), func() {
+	}, statusDisplay, fmt.Sprintf("Delete: - '%s'", details.Title)))
+
+	cObj = append(cObj, NewMyIconButton("", theme2.EditIcon(), func() {
 		actionFunc(ACTION_RENAME, details.Uid, "")
-	}))
-	cObj = append(cObj, widget.NewButtonWithIcon("", theme.ContentCopyIcon(), func() {
+	}, statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
+
+	cObj = append(cObj, NewMyIconButton("", theme.ContentCopyIcon(), func() {
 		actionFunc(ACTION_CLONE, details.Uid, "")
-	}))
-	cObj = append(cObj, widget.NewButtonWithIcon("Full", theme.ContentCopyIcon(), func() {
+	}, statusDisplay, fmt.Sprintf("Copy: - '%s' without copying the data it contains", details.Title)))
+
+	cObj = append(cObj, NewMyIconButton("Full", theme.ContentCopyIcon(), func() {
 		actionFunc(ACTION_CLONE_FULL, details.Uid, "")
-	}))
+	}, statusDisplay, fmt.Sprintf("Copy: - '%s' keeping the data it contains", details.Title)))
+
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }

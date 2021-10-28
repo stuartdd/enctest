@@ -132,37 +132,14 @@ func (d *FixedWHLayout) Layout(objects []fyne.CanvasObject, containerSize fyne.S
 
 }
 
-type MyStatus struct {
-	widget.Label
-	w, h float32
-}
-
-func NewMyStatus(label string) *MyStatus {
-	myStatus := &MyStatus{}
-	myStatus.ExtendBaseWidget(myStatus)
-	myStatus.SetText(label)
-	return myStatus
-}
-
-func (d *MyStatus) MinSize() fyne.Size {
-	return fyne.NewSize(d.w, d.h)
-}
-
-func (d *MyStatus) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
-	for _, o := range objects {
-		d.w = containerSize.Width
-		d.h = containerSize.Height
-		o.Resize(fyne.NewSize(d.w, d.h))
-	}
-}
-
 type MyButton struct {
 	widget.Button
-	hover func(bool)
+	statusMessage string
+	statusDisplay *StatusDisplay
 }
 
-func NewMyIconButton(label string, icon fyne.Resource, tapped func(), hover func(bool)) *MyButton {
-	mybutton := &MyButton{hover: hover}
+func NewMyIconButton(label string, icon fyne.Resource, tapped func(), sd *StatusDisplay, sm string) *MyButton {
+	mybutton := &MyButton{statusDisplay: sd, statusMessage: sm}
 	mybutton.ExtendBaseWidget(mybutton)
 	mybutton.SetIcon(icon)
 	mybutton.OnTapped = tapped
@@ -171,8 +148,62 @@ func NewMyIconButton(label string, icon fyne.Resource, tapped func(), hover func
 }
 
 func (t *MyButton) MouseIn(me *desktop.MouseEvent) {
-	t.hover(true)
+	t.statusDisplay.PushStatus(t.statusMessage)
 }
 func (t *MyButton) MouseOut() {
-	t.hover(false)
+	t.statusDisplay.PopStatus()
+}
+
+type StatusDisplay struct {
+	statusLabel     *widget.Label
+	StatusContainer *fyne.Container
+	statusStack     *StringStack
+}
+
+func NewStatusDisplay(initialText string) *StatusDisplay {
+	sl := widget.NewLabel("Hint: Select a item from the list above")
+	sc := container.New(NewFixedWHLayout(200, 15), sl)
+	ss := NewStringStack()
+	return &StatusDisplay{statusLabel: sl, StatusContainer: sc, statusStack: ss}
+}
+
+func (sd *StatusDisplay) PushStatus(m string) {
+	sd.statusStack.Push(sd.statusLabel.Text)
+	sd.statusLabel.SetText(m)
+	sd.StatusContainer.Refresh()
+}
+
+func (sd *StatusDisplay) PopStatus() {
+	sd.statusLabel.SetText(sd.statusStack.Pop())
+	sd.StatusContainer.Refresh()
+}
+
+type StringStack struct {
+	stack []string
+}
+
+func NewStringStack() *StringStack {
+	return &StringStack{make([]string, 0)}
+}
+
+// IsEmpty: check if stack is empty
+func (s *StringStack) IsEmpty() bool {
+	return len(s.stack) == 0
+}
+
+// Push a new value onto the stack
+func (s *StringStack) Push(str string) {
+	s.stack = append(s.stack, str) // Simply append the new value to the end of the stack
+}
+
+// Remove and return top element of stack. Return false if stack is empty.
+func (s *StringStack) Pop() string {
+	if s.IsEmpty() {
+		return ""
+	} else {
+		index := len(s.stack) - 1   // Get the index of the top most element.
+		element := (s.stack)[index] // Index into the slice and obtain the element.
+		s.stack = (s.stack)[:index] // Remove it from the stack by slicing it off.
+		return element
+	}
 }
