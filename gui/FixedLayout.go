@@ -17,6 +17,8 @@
 package gui
 
 import (
+	"fmt"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
@@ -164,31 +166,36 @@ type StatusDisplay struct {
 	StatusContainer *fyne.Container
 	statusStack     *StringStack
 	initialText     string
+	prefix          string
+	current         string
 }
 
-func NewStatusDisplay(initialText string) *StatusDisplay {
+func NewStatusDisplay(initialText, prefix string) *StatusDisplay {
 	sl := widget.NewLabel(initialText)
 	sc := container.New(NewFixedWHLayout(200, 15), sl)
 	ss := NewStringStack()
-	return &StatusDisplay{statusLabel: sl, StatusContainer: sc, statusStack: ss, initialText: initialText}
+	return &StatusDisplay{statusLabel: sl, StatusContainer: sc, statusStack: ss, initialText: initialText, prefix: prefix, current: ""}
 }
+
 func (sd *StatusDisplay) Reset() {
 	sd.statusStack = NewStringStack()
 	sd.PopStatus()
 }
 
 func (sd *StatusDisplay) PushStatus(m string) {
-	sd.statusStack.Push(sd.statusLabel.Text)
-	sd.statusLabel.SetText(m)
+	sd.statusStack.Push(sd.current)
+	sd.current = m
+	sd.statusLabel.SetText(fmt.Sprintf("%s: %s", sd.prefix, m))
 	sd.StatusContainer.Refresh()
 }
 
 func (sd *StatusDisplay) PopStatus() {
-	s := sd.statusStack.Pop()
-	if s == "" {
-		s = sd.initialText
+	m := sd.statusStack.Pop()
+	if m == "" {
+		m = sd.initialText
 	}
-	sd.statusLabel.SetText(s)
+	sd.current = m
+	sd.statusLabel.SetText(fmt.Sprintf("%s: %s", sd.prefix, m))
 	sd.StatusContainer.Refresh()
 }
 

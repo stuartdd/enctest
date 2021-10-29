@@ -194,7 +194,7 @@ func main() {
 	*/
 	window.SetMaster()
 
-	statusDisplay = gui.NewStatusDisplay("Hint: Select an item from the list above")
+	statusDisplay = gui.NewStatusDisplay("Select an item from the list above", "Hint")
 	wp := gui.GetWelcomePage("", *preferences)
 	title := container.NewHBox()
 	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil, statusDisplay)}
@@ -375,6 +375,7 @@ func updateButtonBar() {
 	} else {
 		saveShortcutButton.Disable()
 	}
+	saveShortcutButton.SetStatusMessage(fmt.Sprintf("Save changes to: %s", fileData.GetFileName()))
 	if preferences.GetBoolWithFallback(screenFullPrefName, false) {
 		fullScreenShortcutButton.SetText("Windowed")
 		fullScreenShortcutButton.SetStatusMessage("Set display to Windowed")
@@ -447,11 +448,11 @@ func logDataRequest(action string) {
 func makeButtonBar() *fyne.Container {
 	saveShortcutButton = gui.NewMyIconButton("Save", theme.DocumentSaveIcon(), func() {
 		commitAndSaveData(SAVE_AS_IS, true)
-	}, statusDisplay, "Save then current changes to the source file")
+	}, statusDisplay, "Save changes")
 	fullScreenShortcutButton = gui.NewMyIconButton("FULL SCREEN", theme.ComputerIcon(), flipFullScreen, statusDisplay, "Display full screen or Show windowed")
 	editModeShortcutButton = gui.NewMyIconButton("EDIT", theme.DocumentIcon(), flipPositionalData, statusDisplay, "Allow editing of the data")
 
-	quit := gui.NewMyIconButton("EXIT", theme.LogoutIcon(), shouldClose, statusDisplay, "Allow editing of the data")
+	quit := gui.NewMyIconButton("EXIT", theme.LogoutIcon(), shouldClose, statusDisplay, "Exit the application")
 	timeStampLabel = widget.NewLabel("  File Not loaded")
 	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton, timeStampLabel)
 }
