@@ -26,6 +26,6 @@
         "file" : {
             "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
             "datafile": "dvdDatabase.data",
-            "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",    
+            "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name"    
         }
     }
