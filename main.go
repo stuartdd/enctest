@@ -38,7 +38,6 @@ import (
 	"stuartdd.com/lib"
 	"stuartdd.com/pref"
 	"stuartdd.com/theme2"
-	"stuartdd.com/types"
 )
 
 const (
@@ -701,7 +700,7 @@ dataMapUpdated id called if a change is made to the model
 */
 func removeAction(uid string) {
 	log(fmt.Sprintf("removeAction Uid:'%s'", uid))
-	_, removeName := types.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
+	_, removeName := lib.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
 	dialog.NewConfirm("Remove entry", fmt.Sprintf("'%s'\nAre you sure?", removeName), func(ok bool) {
 		if ok {
 			err := jsonData.Remove(uid, 1)
@@ -720,14 +719,14 @@ func renameAction(uid string, extra string) {
 	log(fmt.Sprintf("renameAction Uid:'%s'  Extra:'%s'", uid, extra))
 	m, _ := jsonData.GetUserDataForUid(uid)
 	if m != nil {
-		at, fromName := types.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
+		at, fromName := lib.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
 		toName := ""
 		isNote := false
 		if jsonData.IsStringNode(m) {
 			toName = fromName
 			isNote = true
 		}
-		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), toName, isNote, at, func(accept bool, toName string, nt types.NodeAnnotationEnum) {
+		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), toName, isNote, at, func(accept bool, toName string, nt lib.NodeAnnotationEnum) {
 			if accept {
 				s, err := lib.ProcessEntityName(toName, nt)
 				if err != nil {
@@ -851,7 +850,7 @@ Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a ch
 */
 func addNewEntity(head string, name string, addType int, isNote bool) {
 	cu := lib.GetUserFromPath(currentSelection)
-	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, types.NOTE_TYPE_SL, func(accept bool, newName string, nt types.NodeAnnotationEnum) {
+	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, lib.NOTE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
 		if accept {
 			s, err := lib.ProcessEntityName(newName, nt)
 			if err == nil {
@@ -885,7 +884,7 @@ func getPasswordAndDecrypt(fd *lib.FileData, message string, fail func(string)) 
 		message = "Enter the password to DECRYPT the file"
 	}
 	running := true
-	gui.NewModalPasswordDialog(window, message, "", func(ok bool, value string, nt types.NodeAnnotationEnum) {
+	gui.NewModalPasswordDialog(window, message, "", func(ok bool, value string, nt lib.NodeAnnotationEnum) {
 		if ok {
 			if value == "" {
 				fail("password is empty")
@@ -931,7 +930,7 @@ func commitAndSaveData(enc int, mustBeChanged bool) {
 		logInformationDialog("File Save", "There were no items to save!\n\nPress OK to continue")
 	} else {
 		if enc == SAVE_ENCRYPTED {
-			gui.NewModalPasswordDialog(window, "Enter the password to DECRYPT the file", "", func(ok bool, value string, nt types.NodeAnnotationEnum) {
+			gui.NewModalPasswordDialog(window, "Enter the password to DECRYPT the file", "", func(ok bool, value string, nt lib.NodeAnnotationEnum) {
 				if ok {
 					if value != "" {
 						_, err := commitChangedItems()

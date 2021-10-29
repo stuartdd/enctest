@@ -23,8 +23,9 @@ import (
 	"time"
 
 	"github.com/stuartdd/jsonParserGo/parser"
-	"stuartdd.com/types"
 )
+
+type NodeAnnotationEnum int
 
 const (
 	hintStr            = "pwHints"
@@ -33,10 +34,18 @@ const (
 	timeStampStr       = "timeStamp"
 	tabdata            = "                                     "
 	allowedCharsInName = " *@#$%^&*()_+=?"
+
+	NOTE_TYPE_SL NodeAnnotationEnum = iota
+	NOTE_TYPE_ML
+	NOTE_TYPE_RT
+	NOTE_TYPE_PO
 )
 
 var (
-	defaultHintNames = []string{"notes", "post", "pre", "userId"}
+	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po"}
+	NodeAnnotationPrefixNames = []string{"Single Line", "Multi Line", "Rich Text", "Positional"}
+	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO}
+	defaultHintNames          = []string{"notes", "post", "pre", "userId"}
 )
 
 type JsonData struct {
@@ -289,7 +298,7 @@ func GetUserDataForUid(root parser.NodeI, uid string) (parser.NodeI, error) {
 Validate the names of entities. These result in JSON entity names so require
 some restrictions.
 */
-func ProcessEntityName(entry string, nt types.NodeAnnotationEnum) (string, error) {
+func ProcessEntityName(entry string, nt NodeAnnotationEnum) (string, error) {
 	if len(entry) == 0 {
 		return "", fmt.Errorf("input is undefined")
 	}
@@ -306,7 +315,7 @@ func ProcessEntityName(entry string, nt types.NodeAnnotationEnum) (string, error
 		}
 		return "", fmt.Errorf("input must not contain character '%c'. Only '0..9', 'a..z', 'A..Z' and '%s' chars are allowed", c, allowedCharsInName)
 	}
-	return types.GetNodeAnnotationNameWithPrefix(nt, entry), nil
+	return GetNodeAnnotationNameWithPrefix(nt, entry), nil
 }
 
 func searchUsers(addPath func(string, string), needle, user string, m *parser.JsonObject, matchCase bool) {
@@ -573,6 +582,36 @@ func (p *JsonData) GetRootUidOrCurrentUid(currentUid string) string {
 		return l[0]
 	}
 	return ""
+}
+
+func IndexOfAnnotation(annotation string) int {
+	for i, v := range nodeAnnotationPrefix {
+		if v == annotation {
+			return i
+		}
+	}
+	return 0
+}
+
+func GetNodeAnnotationTypeAndName(combinedName string) (NodeAnnotationEnum, string) {
+	pos := strings.IndexRune(combinedName, '!')
+	if pos < 0 {
+		return NOTE_TYPE_SL, combinedName
+	}
+	aStr := combinedName[pos:]
+	indx := IndexOfAnnotation(aStr)
+	if indx == 0 {
+		return NOTE_TYPE_SL, combinedName
+	}
+	return NodeAnnotationEnums[indx], combinedName[:pos]
+}
+
+func GetNodeAnnotationNameWithPrefix(nae NodeAnnotationEnum, name string) string {
+	return name + nodeAnnotationPrefix[nae]
+}
+
+func GetNodeAnnotationPrefixName(nae NodeAnnotationEnum) string {
+	return nodeAnnotationPrefix[nae]
 }
 
 func CreateEmptyJsonData() []byte {

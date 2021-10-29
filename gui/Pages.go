@@ -29,9 +29,9 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/stuartdd/jsonParserGo/parser"
+	"stuartdd.com/lib"
 	"stuartdd.com/pref"
 	"stuartdd.com/theme2"
-	"stuartdd.com/types"
 )
 
 const (
@@ -59,12 +59,12 @@ var (
 	EditEntryListCache    = NewEditEntryList()
 )
 
-func NewModalEntryDialog(w fyne.Window, heading, txt string, isNote bool, annotation types.NodeAnnotationEnum, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
+func NewModalEntryDialog(w fyne.Window, heading, txt string, isNote bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
 	return runModalEntryPopup(w, heading, txt, false, isNote, annotation, accept)
 }
 
-func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
-	return runModalEntryPopup(w, heading, txt, true, false, types.NOTE_TYPE_SL, accept)
+func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
+	return runModalEntryPopup(w, heading, txt, true, false, lib.NOTE_TYPE_SL, accept)
 }
 
 func GetWelcomePage(id string, preferences pref.PrefData) *DetailPage {
@@ -197,11 +197,11 @@ func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, stri
 		na := editEntry.NodeAnnotation
 		dp := details.Preferences.GetBoolWithFallback(DataPresModePrefName, true)
 		cObj = append(cObj, widget.NewSeparator())
-		if na == types.NOTE_TYPE_RT && dp {
+		if na == lib.NOTE_TYPE_RT && dp {
 			rt := widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())
 			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, rt))
 		} else {
-			if na == types.NOTE_TYPE_PO && dp {
+			if na == lib.NOTE_TYPE_PO && dp {
 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
 			} else {
 				if dp {
@@ -210,11 +210,11 @@ func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, stri
 					var we *widget.Entry
 					editEntry.Rename.Enable()
 					contHeight := editEntry.Lab.MinSize().Height
-					if na == types.NOTE_TYPE_SL {
+					if na == lib.NOTE_TYPE_SL {
 						we = widget.NewEntry()
 					} else {
 						we = widget.NewMultiLineEntry()
-						if na != types.NOTE_TYPE_PO {
+						if na != lib.NOTE_TYPE_PO {
 							contHeight = 250
 						}
 					}
@@ -301,19 +301,19 @@ func parseURL(urlStr string) *url.URL {
 	return link
 }
 
-func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, annotation types.NodeAnnotationEnum, accept func(bool, string, types.NodeAnnotationEnum)) (modal *widget.PopUp) {
+func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
 	var radioGroup *widget.RadioGroup
 	var styles *fyne.Container
-	var noteTypeId types.NodeAnnotationEnum = 0
+	var noteTypeId lib.NodeAnnotationEnum = 0
 	submitInternal := func(s string) {
 		modal.Hide()
 		accept(true, s, noteTypeId)
 	}
 
 	radinGroupChanged := func(s string) {
-		for i := 0; i < len(types.NodeAnnotationEnums); i++ {
-			if s == types.NodeAnnotationPrefixNames[i] {
-				noteTypeId = types.NodeAnnotationEnums[i]
+		for i := 0; i < len(lib.NodeAnnotationEnums); i++ {
+			if s == lib.NodeAnnotationPrefixNames[i] {
+				noteTypeId = lib.NodeAnnotationEnums[i]
 				return
 			}
 		}
@@ -321,8 +321,8 @@ func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNot
 	}
 
 	if isNote {
-		radioGroup = widget.NewRadioGroup(types.NodeAnnotationPrefixNames, radinGroupChanged)
-		radioGroup.SetSelected(types.NodeAnnotationPrefixNames[annotation])
+		radioGroup = widget.NewRadioGroup(lib.NodeAnnotationPrefixNames, radinGroupChanged)
+		radioGroup.SetSelected(lib.NodeAnnotationPrefixNames[annotation])
 		styles = container.NewCenter(container.New(layout.NewHBoxLayout()), radioGroup)
 	}
 	entry := &widget.Entry{Text: txt, Password: password, OnChanged: func(s string) {}, OnSubmitted: submitInternal}

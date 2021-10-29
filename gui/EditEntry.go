@@ -10,7 +10,6 @@ import (
 	"github.com/stuartdd/jsonParserGo/parser"
 	"stuartdd.com/lib"
 	"stuartdd.com/theme2"
-	"stuartdd.com/types"
 )
 
 type EditEntryList struct {
@@ -29,7 +28,7 @@ type EditEntry struct {
 	Link           *MyButton
 	Remove         *MyButton
 	Rename         *MyButton
-	NodeAnnotation types.NodeAnnotationEnum
+	NodeAnnotation lib.NodeAnnotationEnum
 	OnChangeFunc   func(input string, path string)
 	UnDoFunc       func(path string)
 	ActionFunc     func(action string, path string, extra string)
@@ -79,7 +78,7 @@ func (p *EditEntryList) Count() int {
 }
 
 func NewEditEntry(path string, titleWithAnnotation string, currentTxt string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string, extra string), statusData *StatusDisplay) *EditEntry {
-	nodeAnnotation, title := types.GetNodeAnnotationTypeAndName(titleWithAnnotation)
+	nodeAnnotation, title := lib.GetNodeAnnotationTypeAndName(titleWithAnnotation)
 	lab := widget.NewLabel(fmt.Sprintf(" %s ", title))
 	undo := NewMyIconButton("", theme.ContentUndoIcon(), func() {
 		unDoFunc(path)
