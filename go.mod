@@ -15,12 +15,10 @@ replace stuartdd.com/types => ./types
 // replace fyne.io/fyne/v2 => github.com/andydotxyz/fyne/v2 07e8477c8
 
 require (
-	fyne.io/fyne/v2 v2.1.1
+	fyne.io/fyne/v2 v2.1.2-0.20211027110326-35a71c79e1a1
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-gl/gl v0.0.0-20210905235341-f7a045908259 // indirect
-	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210727001814-0db043d8d5be // indirect
 	github.com/godbus/dbus/v5 v5.0.5 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/stuartdd/jsonParserGo/parser v0.0.0-20211027173544-5eb3c83d25d7
 	golang.org/x/sys v0.0.0-20211020064051-0ec99a608a1b // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect

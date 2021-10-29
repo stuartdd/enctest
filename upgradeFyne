@@ -1,0 +1,27 @@
+#!/bin/bash
+
+go get fyne.io/fyne/v2@$1
+go mod tidy
+echo DONE
+pwd
+
+cd gui
+go get fyne.io/fyne/v2@$1
+go mod tidy
+echo DONE
+pwd
+cd ..
+
+cd lib
+go get fyne.io/fyne/v2@$1
+go mod tidy
+echo DONE
+pwd
+cd ..
+
+cd pref
+go get fyne.io/fyne/v2@$1
+go mod tidy
+echo DONE
+pwd
+cd ..

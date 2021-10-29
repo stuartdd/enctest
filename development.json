@@ -1,5 +1,24 @@
 
     {
+        "datafile": "libtest/TestDataTypes.json",
+        "log": {
+            "active": true,
+            "prefix": "INFO",
+            "fileName": "enctest.log"
+        },
+        "screen": {
+            "width": 1064.761963,
+            "height": 566.190491,
+            "fullScreen": false,
+            "split": 0.2
+        },
+        "data": {
+            "presentationmode": true,
+            "hintIsCalled": "Hint",
+            "noteIsCalled": "Note"
+        },
+        "getDataUrl": "",
+        "theme": "dark",
         "postDataUrl": "",
         "search": {
             "case": true,
@@ -10,25 +29,6 @@
                 "Principality note"
             ]
         },
-        "data": {
-            "presentationmode": true,
-            "hintIsCalled": "Hint",
-            "noteIsCalled": "Note"
-        },
-        "getDataUrl": "",
-        "log": {
-            "active": true,
-            "prefix": "INFO",
-            "fileName": "enctest.log"
-        },
-        "theme": "dark",
-        "screen": {
-            "fullScreen": false,
-            "split": 0.2,
-            "width": 858.571472,
-            "height": 433.333344
-        },
-        "datafile": "libtest/TestDataTypes.json",
         "dialog": {
             "copyTimeOutMS": 2500,
             "saveTimeOutMS": 3000

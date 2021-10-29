@@ -1,12 +1,25 @@
 {
     "groups": {
-        "UserA": {
+        "Stuart": {
             "notes": {
-                "dsdfsdfs": "note",
-                "note": "An amazing A note (dont panic) fdf"
+                "note": "dHellofg"
             },
             "pwHints": {
-                "GMailA": {
+                "application": {
+                    "notes": "",
+                    "post": "",
+                    "pre": "",
+                    "userId": ""
+                }
+            }
+        },
+        "UserA": {
+            "notes": {
+                "note": "An amazing A note (dont panic) fdf",
+                "posit": "This is a note"
+            },
+            "pwHints": {
+                "MyApp": {
                     "notes": "a note to User A",
                     "post": "123",
                     "pre": "abc",
@@ -28,7 +41,7 @@
             "pwHints": {
                 "GMail B": {
                     "notes": "a note to User B",
-                    "positional": "1234567890",
+                    "po!positional": "1234567890",
                     "post": "123 Fred",
                     "pre": "abc",
                     "some More Notes": "hi",

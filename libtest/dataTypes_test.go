@@ -14,7 +14,7 @@ import (
 var (
 	mapData      *lib.JsonData
 	structData   string
-	dataFileName = "TestDataTypes.json"
+	dataFileName = "TestDataUnEncrypted.json"
 )
 
 /*
@@ -228,7 +228,7 @@ func TestLoadAndParseJson(t *testing.T) {
 	testStructContains("STRING: N:'pre' V:'abc'")
 	testStructContains("STRING: N:'userId' V:'Buser'")
 	if mapData.GetTimeStampString() != "Fri Jul 30 21:25:10 BST 2021" {
-		log.Fatalf("Timestamp dis not parse to UnixDate correctly. file:%s\n", dataFileName)
+		log.Fatalf("Timestamp did not parse to UnixDate correctly. file:%s\n", dataFileName)
 	}
 }
 
