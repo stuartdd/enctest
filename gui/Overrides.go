@@ -134,6 +134,7 @@ func (d *FixedWHLayout) Layout(objects []fyne.CanvasObject, containerSize fyne.S
 
 }
 
+// --------------------------------------------------
 type MyButton struct {
 	widget.Button
 	statusMessage string

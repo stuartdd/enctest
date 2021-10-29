@@ -1,10 +1,24 @@
 
     {
+        "dialog": {
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
+        },
+        "file": {
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": "",
+            "postDataUrl": ""
+        },
+        "log": {
+            "active": true,
+            "prefix": "INFO",
+            "fileName": "enctest.log"
+        },
         "screen": {
-            "width": 1063.80957,
-            "height": 565.714294,
+            "height": 514.761902,
             "fullScreen": false,
-            "split": 0.2
+            "split": 0.2,
+            "width": 1219.047729
         },
         "data": {
             "presentationmode": true,
@@ -20,19 +34,5 @@
                 "app",
                 "Principality note"
             ]
-        },
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
-        "file": {
-            "postDataUrl": "",
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
-        },
-        "log": {
-            "fileName": "enctest.log",
-            "active": true,
-            "prefix": "INFO"
         }
     }

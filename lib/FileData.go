@@ -24,6 +24,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"strings"
 
 	"github.com/stuartdd/jsonParserGo/parser"
 
@@ -46,9 +48,30 @@ More encIterations will produce slower encryption and decryption times
 Note that encIterations is multiplied by 1024
 */
 var (
-	encIterations = 64                                         // Keep as power of 2.
-	encSalt       = []byte("SQhMXVt8rQED2MxHTHxmuZLMxdJz5DQI") // Keep as 32 randomly generated chars
+	supportedImageExtenstions = []string{".jpg", "png", ".svg"}
+	encIterations             = 64                                         // Keep as power of 2.
+	encSalt                   = []byte("SQhMXVt8rQED2MxHTHxmuZLMxdJz5DQI") // Keep as 32 randomly generated chars
 )
+
+func FileExists(fileName string) bool {
+	if _, err := os.Stat(fileName); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	return true
+}
+
+func CheckImageFile(fileName string) error {
+	if FileExists(fileName) {
+		fn := strings.ToLower(fileName)
+		for _, ext := range supportedImageExtenstions {
+			if strings.HasSuffix(fn, ext) {
+				return nil
+			}
+		}
+		return fmt.Errorf("image '%s' file type is not suppprted", fileName)
+	}
+	return fmt.Errorf("image '%s' file cannot be found", fileName)
+}
 
 func NewFileData(fName string, getUrl string, postUrl string) (*FileData, error) {
 	fd := FileData{fileName: fName, getDataUrl: getUrl, postDataUrl: postUrl, content: make([]byte, 0), isEmpty: true, isEncrypted: false, key: make([]byte, 0)}

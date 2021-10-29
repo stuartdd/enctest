@@ -35,16 +35,18 @@ const (
 	tabdata            = "                                     "
 	allowedCharsInName = " *@#$%^&*()_+=?"
 
-	NOTE_TYPE_SL NodeAnnotationEnum = iota
-	NOTE_TYPE_ML
-	NOTE_TYPE_RT
-	NOTE_TYPE_PO
+	NOTE_TYPE_SL NodeAnnotationEnum = 0 // These are indexes. Found issues when using iota!
+	NOTE_TYPE_ML NodeAnnotationEnum = 1
+	NOTE_TYPE_RT NodeAnnotationEnum = 2
+	NOTE_TYPE_PO NodeAnnotationEnum = 3
+	NOTE_TYPE_IM NodeAnnotationEnum = 4
 )
 
 var (
-	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po"}
-	NodeAnnotationPrefixNames = []string{"Single Line", "Multi Line", "Rich Text", "Positional"}
-	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO}
+	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po", "!im"}
+	NodeAnnotationPrefixNames = []string{"Single Line", "Multi Line", "Rich Text", "Positional", "Image"}
+	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO, NOTE_TYPE_IM}
+	NodeAnnotationsSingleLine = []bool{true, false, false, true, true}
 	defaultHintNames          = []string{"notes", "post", "pre", "userId"}
 )
 

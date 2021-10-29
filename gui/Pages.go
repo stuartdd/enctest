@@ -197,37 +197,79 @@ func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, stri
 		na := editEntry.NodeAnnotation
 		dp := details.Preferences.GetBoolWithFallback(DataPresModePrefName, true)
 		cObj = append(cObj, widget.NewSeparator())
-		if na == lib.NOTE_TYPE_RT && dp {
-			rt := widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, rt))
-		} else {
-			if na == lib.NOTE_TYPE_PO && dp {
+		if dp {
+			switch na {
+			case lib.NOTE_TYPE_RT:
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())))
+			case lib.NOTE_TYPE_PO:
 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
-			} else {
-				if dp {
-					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
+			case lib.NOTE_TYPE_IM:
+				err := lib.CheckImageFile(editEntry.GetCurrentText())
+				if err == nil {
+					image := canvas.NewImageFromFile(editEntry.GetCurrentText())
+					image.FillMode = canvas.ImageFillOriginal
+					cObj = append(cObj, image)
 				} else {
-					var we *widget.Entry
-					editEntry.Rename.Enable()
-					contHeight := editEntry.Lab.MinSize().Height
-					if na == lib.NOTE_TYPE_SL {
-						we = widget.NewEntry()
-					} else {
-						we = widget.NewMultiLineEntry()
-						if na != lib.NOTE_TYPE_PO {
-							contHeight = 250
-						}
-					}
-					we.OnChanged = func(newWalue string) {
-						entryChangedFunction(newWalue, editEntry.Path)
-						actionFunc(ACTION_UPDATED, editEntry.Path, "")
-					}
-					we.SetText(editEntry.GetCurrentText())
-					editEntry.We = we
-					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
+					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewLabel(err.Error())))
+				}
+			default:
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
+			}
+		} else {
+			var we *widget.Entry
+			editEntry.Rename.Enable()
+			contHeight := editEntry.Lab.MinSize().Height
+			if lib.NodeAnnotationsSingleLine[na] {
+				we = widget.NewEntry()
+			} else {
+				we = widget.NewMultiLineEntry()
+				if na != lib.NOTE_TYPE_PO {
+					contHeight = 250
 				}
 			}
+			we.OnChanged = func(newWalue string) {
+				entryChangedFunction(newWalue, editEntry.Path)
+				actionFunc(ACTION_UPDATED, editEntry.Path, "")
+			}
+			we.SetText(editEntry.GetCurrentText())
+			editEntry.We = we
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
 		}
+		// if na == lib.NOTE_TYPE_RT && dp {
+		// 	rt := widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())
+		// 	cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, rt))
+		// } else {
+		// 	if na == lib.NOTE_TYPE_PO && dp {
+		// 		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
+		// 	} else {
+		// 		if na == lib.NOTE_TYPE_IM && dp {
+		// 			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
+		// 		} else {
+		// 			if dp {
+		// 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
+		// 			} else {
+		// 				var we *widget.Entry
+		// 				editEntry.Rename.Enable()
+		// 				contHeight := editEntry.Lab.MinSize().Height
+		// 				if lib.NodeAnnotationsSingleLine[na] {
+		// 					we = widget.NewEntry()
+		// 				} else {
+		// 					we = widget.NewMultiLineEntry()
+		// 					if na != lib.NOTE_TYPE_PO {
+		// 						contHeight = 250
+		// 					}
+		// 				}
+		// 				we.OnChanged = func(newWalue string) {
+		// 					entryChangedFunction(newWalue, editEntry.Path)
+		// 					actionFunc(ACTION_UPDATED, editEntry.Path, "")
+		// 				}
+		// 				we.SetText(editEntry.GetCurrentText())
+		// 				editEntry.We = we
+		// 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
+		// 			}
+		// 		}
+		// 	}
+		// }
 	}
 	return container.NewScroll(container.NewVBox(cObj...))
 }
