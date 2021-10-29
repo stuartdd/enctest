@@ -1,14 +1,8 @@
 
     {
-        "datafile": "libtest/TestDataTypes.json",
-        "log": {
-            "active": true,
-            "prefix": "INFO",
-            "fileName": "enctest.log"
-        },
         "screen": {
-            "width": 1064.761963,
-            "height": 566.190491,
+            "width": 1063.80957,
+            "height": 565.714294,
             "fullScreen": false,
             "split": 0.2
         },
@@ -17,9 +11,7 @@
             "hintIsCalled": "Hint",
             "noteIsCalled": "Note"
         },
-        "getDataUrl": "",
         "theme": "dark",
-        "postDataUrl": "",
         "search": {
             "case": true,
             "lastGoodList": [
@@ -32,5 +24,15 @@
         "dialog": {
             "copyTimeOutMS": 2500,
             "saveTimeOutMS": 3000
+        },
+        "file": {
+            "postDataUrl": "",
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
+        },
+        "log": {
+            "fileName": "enctest.log",
+            "active": true,
+            "prefix": "INFO"
         }
     }

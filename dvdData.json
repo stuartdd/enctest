@@ -6,8 +6,7 @@
         "dialog": {
             "saveTimeOutMS": 1000
         },
-        "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
-        "data": {
+       "data": {
             "noteIsCalled": "Note",
             "presentationmode": false,
             "hintIsCalled": "DVD"
@@ -17,13 +16,16 @@
             "prefix": "INFO",
             "active": false
         },
-        "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
-        "datafile": "dvdDatabase.data",
         "screen": {
             "fullScreen": false,
             "width": 867.142883,
             "height": 555.238098,
             "split": 0.2
         },
-        "theme": "dark"
+        "theme": "dark",
+        "file" : {
+            "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
+            "datafile": "dvdDatabase.data",
+            "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",    
+        }
     }
