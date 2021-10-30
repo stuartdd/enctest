@@ -625,6 +625,8 @@ func viewActionFunction(action string, uid string, extra string) {
 		log(gui.LogCleanString(extra, 100))
 	case gui.ACTION_REMOVE:
 		removeAction(uid)
+	case gui.ACTION_HINT_ITEM:
+		addNewHintItem()
 	case gui.ACTION_ADD_NOTE:
 		addNewNoteItem()
 	case gui.ACTION_RENAME:

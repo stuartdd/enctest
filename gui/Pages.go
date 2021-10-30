@@ -53,6 +53,7 @@ const (
 	ACTION_LINK       = "link"
 	ACTION_UPDATED    = "update"
 	ACTION_ADD_NOTE   = "addnode"
+	ACTION_HINT_ITEM  = "addhintitem"
 )
 
 var (
@@ -100,27 +101,30 @@ func GetDetailPage(id string, dataRootMap parser.NodeI, preferences pref.PrefDat
 	return NewDetailPage(id, id, "", welcomeScreen, notesControls, dataRootMap, preferences)
 }
 
-func loadImage(s string) (*canvas.Image, error) {
+func loadImage(s string) (*canvas.Image, string) {
+	if strings.TrimSpace(s) == "" {
+		return nil, "Enter the location of the image. File or URL"
+	}
 	imageType, message := lib.CheckImageFile(s)
 	switch imageType {
 	case lib.IMAGE_NOT_SUPPORTED:
-		return nil, fmt.Errorf("file '%s' image type is not supported", s)
+		return nil, fmt.Sprintf("File '%s' image type is not supported", s)
 	case lib.IMAGE_NOT_FOUND:
-		return nil, fmt.Errorf("file image '%s' not found or invalid URL", s)
+		return nil, fmt.Sprintf("File image '%s' not found or invalid URL", s)
 	case lib.IMAGE_GET_FAIL:
-		return nil, fmt.Errorf(message)
+		return nil, message
 	case lib.IMAGE_FILE_FOUND:
 		image := canvas.NewImageFromFile(s)
-		return image, nil
+		return image, ""
 	case lib.IMAGE_URL:
 		uri, err := storage.ParseURI(s)
 		if err != nil {
-			return nil, fmt.Errorf("file url '%s' is invalid: %s", s, err.Error())
+			return nil, fmt.Sprintf("File url '%s' is invalid: %s", s, err.Error())
 		}
 		image := canvas.NewImageFromURI(uri)
-		return image, nil
+		return image, ""
 	}
-	return nil, fmt.Errorf("file image '%s' not found or invalid URL", s)
+	return nil, fmt.Sprintf("file image '%s' not found or invalid URL", s)
 }
 
 func positional(s string) fyne.CanvasObject {
@@ -228,12 +232,12 @@ func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, stri
 			case lib.NOTE_TYPE_PO:
 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
 			case lib.NOTE_TYPE_IM:
-				image, err := loadImage(editEntry.GetCurrentText())
-				if err == nil {
+				image, message := loadImage(editEntry.GetCurrentText())
+				if message == "" {
 					image.FillMode = canvas.ImageFillOriginal
 					cObj = append(cObj, image)
 				} else {
-					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewLabel(err.Error())))
+					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewLabel(message)))
 				}
 			default:
 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
@@ -285,6 +289,10 @@ func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(string, st
 	cObj = append(cObj, NewMyIconButton("", theme2.EditIcon(), func() {
 		actionFunc(ACTION_RENAME, details.Uid, "")
 	}, statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
+
+	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
+		actionFunc(ACTION_HINT_ITEM, details.Uid, "")
+	}, statusDisplay, fmt.Sprintf("Add new item to: %s", details.Title)))
 
 	cObj = append(cObj, NewMyIconButton("", theme.ContentCopyIcon(), func() {
 		actionFunc(ACTION_CLONE, details.Uid, "")

@@ -1,18 +1,8 @@
 
     {
-        "theme": "dark",
-        "search": {
-            "case": true,
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note"
-            ]
-        },
         "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
         },
         "file": {
             "getDataUrl": "",
@@ -27,12 +17,22 @@
         "screen": {
             "fullScreen": false,
             "split": 0.2,
-            "width": 940.000061,
-            "height": 395.714294
+            "width": 935.714355,
+            "height": 568.095276
         },
         "data": {
             "hintIsCalled": "Hint",
             "noteIsCalled": "Note",
-            "presentationmode": false
+            "presentationmode": true
+        },
+        "theme": "dark",
+        "search": {
+            "case": true,
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note"
+            ]
         }
     }
