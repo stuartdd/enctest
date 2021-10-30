@@ -26,6 +26,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/stuartdd/jsonParserGo/parser"
@@ -97,6 +98,29 @@ func GetDetailPage(id string, dataRootMap parser.NodeI, preferences pref.PrefDat
 		return NewDetailPage(id, "Unknown", "", welcomeScreen, welcomeControls, dataRootMap, preferences)
 	}
 	return NewDetailPage(id, id, "", welcomeScreen, notesControls, dataRootMap, preferences)
+}
+
+func loadImage(s string) (*canvas.Image, error) {
+	imageType, message := lib.CheckImageFile(s)
+	switch imageType {
+	case lib.IMAGE_NOT_SUPPORTED:
+		return nil, fmt.Errorf("file '%s' image type is not supported", s)
+	case lib.IMAGE_NOT_FOUND:
+		return nil, fmt.Errorf("file image '%s' not found or invalid URL", s)
+	case lib.IMAGE_GET_FAIL:
+		return nil, fmt.Errorf(message)
+	case lib.IMAGE_FILE_FOUND:
+		image := canvas.NewImageFromFile(s)
+		return image, nil
+	case lib.IMAGE_URL:
+		uri, err := storage.ParseURI(s)
+		if err != nil {
+			return nil, fmt.Errorf("file url '%s' is invalid: %s", s, err.Error())
+		}
+		image := canvas.NewImageFromURI(uri)
+		return image, nil
+	}
+	return nil, fmt.Errorf("file image '%s' not found or invalid URL", s)
 }
 
 func positional(s string) fyne.CanvasObject {
@@ -204,9 +228,8 @@ func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, stri
 			case lib.NOTE_TYPE_PO:
 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
 			case lib.NOTE_TYPE_IM:
-				err := lib.CheckImageFile(editEntry.GetCurrentText())
+				image, err := loadImage(editEntry.GetCurrentText())
 				if err == nil {
-					image := canvas.NewImageFromFile(editEntry.GetCurrentText())
 					image.FillMode = canvas.ImageFillOriginal
 					cObj = append(cObj, image)
 				} else {
@@ -235,41 +258,6 @@ func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, stri
 			editEntry.We = we
 			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
 		}
-		// if na == lib.NOTE_TYPE_RT && dp {
-		// 	rt := widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())
-		// 	cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, rt))
-		// } else {
-		// 	if na == lib.NOTE_TYPE_PO && dp {
-		// 		cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
-		// 	} else {
-		// 		if na == lib.NOTE_TYPE_IM && dp {
-		// 			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
-		// 		} else {
-		// 			if dp {
-		// 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
-		// 			} else {
-		// 				var we *widget.Entry
-		// 				editEntry.Rename.Enable()
-		// 				contHeight := editEntry.Lab.MinSize().Height
-		// 				if lib.NodeAnnotationsSingleLine[na] {
-		// 					we = widget.NewEntry()
-		// 				} else {
-		// 					we = widget.NewMultiLineEntry()
-		// 					if na != lib.NOTE_TYPE_PO {
-		// 						contHeight = 250
-		// 					}
-		// 				}
-		// 				we.OnChanged = func(newWalue string) {
-		// 					entryChangedFunction(newWalue, editEntry.Path)
-		// 					actionFunc(ACTION_UPDATED, editEntry.Path, "")
-		// 				}
-		// 				we.SetText(editEntry.GetCurrentText())
-		// 				editEntry.We = we
-		// 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
-		// 			}
-		// 		}
-		// 	}
-		// }
 	}
 	return container.NewScroll(container.NewVBox(cObj...))
 }

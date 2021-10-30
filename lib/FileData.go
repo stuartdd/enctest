@@ -24,12 +24,25 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
 	"github.com/stuartdd/jsonParserGo/parser"
 
 	"golang.org/x/crypto/scrypt"
+)
+
+type ImageRefType int
+
+const (
+	IMAGE_FILE_FOUND ImageRefType = iota
+	IMAGE_NOT_FOUND
+	IMAGE_URL
+	IMAGE_GET_FAIL
+	IMAGE_SUPPORTED
+	IMAGE_NOT_SUPPORTED
 )
 
 type FileData struct {
@@ -60,17 +73,27 @@ func FileExists(fileName string) bool {
 	return true
 }
 
-func CheckImageFile(fileName string) error {
-	if FileExists(fileName) {
-		fn := strings.ToLower(fileName)
-		for _, ext := range supportedImageExtenstions {
-			if strings.HasSuffix(fn, ext) {
-				return nil
-			}
-		}
-		return fmt.Errorf("image '%s' file type is not suppprted", fileName)
+//
+// Check the path to the image file.
+// Do not do anything with fyne here. The lib module should NOT import fyne
+//
+func CheckImageFile(pathToImage string) (ImageRefType, string) {
+	result := checkSupportedImage(pathToImage)
+	if result == IMAGE_NOT_SUPPORTED {
+		return result, ""
 	}
-	return fmt.Errorf("image '%s' file cannot be found", fileName)
+	if FileExists(pathToImage) {
+		return IMAGE_FILE_FOUND, ""
+	}
+	_, err := url.Parse(pathToImage)
+	if err != nil {
+		return IMAGE_NOT_FOUND, ""
+	}
+	err = checkImageUrl(pathToImage)
+	if err != nil {
+		return IMAGE_GET_FAIL, err.Error()
+	}
+	return IMAGE_URL, ""
 }
 
 func NewFileData(fName string, getUrl string, postUrl string) (*FileData, error) {
@@ -201,6 +224,28 @@ func (r *FileData) loadData() error {
 	r.SetContent(dat)
 	r.isEncrypted = !r.IsRawJson()
 	return nil
+}
+
+func checkImageUrl(getUrl string) error {
+	resp, err := http.Get(getUrl)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("failed to get data from server. Return Code: %d Url: %s", resp.StatusCode, getUrl)
+	}
+	return nil
+}
+
+func checkSupportedImage(fileName string) ImageRefType {
+	fn := strings.ToLower(fileName)
+	for _, ext := range supportedImageExtenstions {
+		if strings.HasSuffix(fn, ext) {
+			return IMAGE_SUPPORTED
+		}
+	}
+	return IMAGE_NOT_SUPPORTED
 }
 
 func decrypt(key []byte, data []byte) ([]byte, error) {
