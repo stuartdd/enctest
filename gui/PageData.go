@@ -26,19 +26,20 @@ import (
 )
 
 type DetailPage struct {
-	Uid, Heading, Title, User string
-	ViewFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject
-	CntlFunc                  func(w fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject
-	DataRootMap               parser.NodeI
-	Preferences               pref.PrefData
+	Uid                  *parser.Path
+	Heading, Title, User string
+	ViewFunc             func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject
+	CntlFunc             func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject
+	DataRootMap          parser.NodeI
+	Preferences          pref.PrefData
 }
 
 func NewDetailPage(
-	uid string,
+	uid *parser.Path,
 	title string,
 	user string,
-	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject,
-	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, string, string), statusDisplay *StatusDisplay) fyne.CanvasObject,
+	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject,
+	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject,
 	dataRootMap parser.NodeI,
 	preferences pref.PrefData) *DetailPage {
 

@@ -17,7 +17,7 @@ type EditEntryList struct {
 }
 
 type EditEntry struct {
-	Path           string
+	Path           *parser.Path
 	Title          string
 	OldTxt         string
 	NewTxt         string
@@ -29,9 +29,9 @@ type EditEntry struct {
 	Remove         *MyButton
 	Rename         *MyButton
 	NodeAnnotation lib.NodeAnnotationEnum
-	OnChangeFunc   func(input string, path string)
-	UnDoFunc       func(path string)
-	ActionFunc     func(action string, path string, extra string)
+	OnChangeFunc   func(input string, path *parser.Path)
+	UnDoFunc       func(path *parser.Path)
+	ActionFunc     func(string, *parser.Path, string)
 	StatusDisplay  *StatusDisplay
 }
 
@@ -44,15 +44,15 @@ func (p *EditEntryList) Clear() {
 }
 
 func (p *EditEntryList) Add(ee *EditEntry) {
-	p.editEntryList[ee.Path] = ee
+	p.editEntryList[ee.Path.String()] = ee
 }
 
-func (p *EditEntryList) Get(path string) (*EditEntry, bool) {
-	ee := p.editEntryList[path]
+func (p *EditEntryList) Get(path *parser.Path) (*EditEntry, bool) {
+	ee := p.editEntryList[path.String()]
 	if ee == nil {
 		return nil, false
 	}
-	return p.editEntryList[path], true
+	return ee, true
 }
 
 func (p *EditEntryList) Commit(dataRoot parser.NodeI) int {
@@ -77,7 +77,7 @@ func (p *EditEntryList) Count() int {
 	return count
 }
 
-func NewEditEntry(path string, titleWithAnnotation string, currentTxt string, onChangeFunc func(s string, path string), unDoFunc func(path string), actionFunc func(action string, uid string, extra string), statusData *StatusDisplay) *EditEntry {
+func NewEditEntry(path *parser.Path, titleWithAnnotation string, currentTxt string, onChangeFunc func(s string, path *parser.Path), unDoFunc func(path *parser.Path), actionFunc func(string, *parser.Path, string), statusData *StatusDisplay) *EditEntry {
 	nodeAnnotation, title := lib.GetNodeAnnotationTypeAndName(titleWithAnnotation)
 	lab := widget.NewLabel(fmt.Sprintf(" %s ", title))
 	undo := NewMyIconButton("", theme.ContentUndoIcon(), func() {

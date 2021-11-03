@@ -46,7 +46,6 @@ const (
 	SAVE_UN_ENCRYPTED       = iota
 	MAIN_THREAD_LOAD        = iota
 	MAIN_THREAD_RELOAD_TREE = iota
-	MAIN_THREAD_SELECT      = iota
 	MAIN_THREAD_RESELECT    = iota
 	MAIN_THREAD_RE_MENU     = iota
 
@@ -63,22 +62,22 @@ const (
 	fallbackPreferencesFile = "config.json"
 	fallbackDataFile        = "data.json"
 
-	dataFilePrefName       = "file.datafile"
-	copyDialogTimePrefName = "dialog.copyTimeOutMS"
-	linkDialogTimePrefName = "dialog.linkTimeOutMS"
-	saveDialogTimePrefName = "dialog.saveTimeOutMS"
-	getUrlPrefName         = "file.getDataUrl"
-	postUrlPrefName        = "file.postDataUrl"
+	dataFilePrefName       = "file|datafile"
+	copyDialogTimePrefName = "dialog|copyTimeOutMS"
+	linkDialogTimePrefName = "dialog|linkTimeOutMS"
+	saveDialogTimePrefName = "dialog|saveTimeOutMS"
+	getUrlPrefName         = "file|getDataUrl"
+	postUrlPrefName        = "file|postDataUrl"
 	themeVarPrefName       = "theme"
-	logFileNamePrefName    = "log.fileName"
-	logActivePrefName      = "log.active"
-	logPrefixPrefName      = "log.prefix"
-	screenWidthPrefName    = "screen.width"
-	screenHeightPrefName   = "screen.height"
-	screenFullPrefName     = "screen.fullScreen"
-	screenSplitPrefName    = "screen.split"
-	searchLastGoodPrefName = "search.lastGoodList"
-	searchCasePrefName     = "search.case"
+	logFileNamePrefName    = "log|fileName"
+	logActivePrefName      = "log|active"
+	logPrefixPrefName      = "log|prefix"
+	screenWidthPrefName    = "screen|width"
+	screenHeightPrefName   = "screen|height"
+	screenFullPrefName     = "screen|fullScreen"
+	screenSplitPrefName    = "screen|split"
+	searchLastGoodPrefName = "search|lastGoodList"
+	searchCasePrefName     = "search|case"
 )
 
 var (
@@ -99,8 +98,7 @@ var (
 	splitContainerOffsetPref float64          = -1
 
 	findCaseSensitive  = binding.NewBool()
-	pendingSelection   = ""
-	currentSelection   = ""
+	currentUid         = ""
 	shouldCloseLock    = false
 	hasDataChanges     = false
 	releaseTheBeast    = make(chan int, 1)
@@ -194,7 +192,7 @@ func main() {
 	window.SetMaster()
 
 	statusDisplay = gui.NewStatusDisplay("Select an item from the list above", "Hint")
-	wp := gui.GetWelcomePage("", *preferences)
+	wp := gui.GetWelcomePage(parser.NewBarPath(""), *preferences)
 	title := container.NewHBox()
 	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil, statusDisplay)}
 	contentRHS := container.NewMax()
@@ -206,14 +204,14 @@ func main() {
 		This updates the contentRHS which is the RHS page for editing data
 	*/
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
-		currentSelection = detailPage.Uid
+		currentUid = detailPage.Uid.String() //// TODO
 		if searchWindow != nil {
-			go searchWindow.Select(currentSelection)
+			go searchWindow.Select(currentUid)
 		}
-		log(fmt.Sprintf("Page User:'%s' Uid:'%s'", lib.GetUserFromPath(currentSelection), currentSelection))
-		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), lib.GetUserFromPath(currentSelection)))
+		log(fmt.Sprintf("Page User:'%s' Uid:'%s'", lib.GetUserFromUid(currentUid), currentUid))
+		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), lib.GetUserFromUid(currentUid)))
 		window.SetMainMenu(makeMenus())
-		navTreeLHS.OpenBranch(currentSelection)
+		navTreeLHS.OpenBranch(currentUid)
 		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction, statusDisplay)}
 		title.Refresh()
 		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage, viewActionFunction, statusDisplay)}
@@ -287,8 +285,8 @@ func main() {
 				// Init the devider (split)
 				// Populate the window and we are done!
 				navTreeLHS = makeNavTree(setPageRHSFunc)
-				uid := jsonData.GetRootUidOrCurrentUid(currentSelection)
-				log(fmt.Sprintf("Re-build nav tree. Sel:'%s' uid:'%s'", currentSelection, uid))
+				uid := jsonData.GetRootUidOrCurrentUid(currentUid)
+				log(fmt.Sprintf("Re-build nav tree. Sel:'%s' uid:'%s'", currentUid, uid))
 				selectTreeElement("MAIN_THREAD_RELOAD_TREE", uid)
 				if splitContainerOffset < 0 {
 					splitContainerOffset = splitContainerOffsetPref
@@ -300,11 +298,9 @@ func main() {
 				window.SetContent(container.NewBorder(buttonBar, statusDisplay.StatusContainer, nil, nil, splitContainer))
 				futureReleaseTheBeast(0, MAIN_THREAD_RE_MENU)
 			case MAIN_THREAD_RESELECT:
-				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentSelection))
-				t := gui.GetDetailPage(currentSelection, jsonData.GetDataRoot(), *preferences)
+				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentUid))
+				t := gui.GetDetailPage(parser.NewBarPath(currentUid), jsonData.GetDataRoot(), *preferences)
 				setPageRHSFunc(*t)
-			case MAIN_THREAD_SELECT:
-				selectTreeElement("MAIN_THREAD_SELECT", pendingSelection)
 			case MAIN_THREAD_RE_MENU:
 				log("Refresh menu and buttons")
 				updateButtonBar()
@@ -324,7 +320,7 @@ Select a tree element.
 We need to open the parent branches or we will never see the selected element
 */
 func selectTreeElement(desc, uid string) {
-	user := lib.GetUserFromPath(uid)
+	user := lib.GetUserFromUid(uid)
 	parent := lib.GetParentId(uid)
 	log(fmt.Sprintf("selectTreeElement: Desc:'%s' User:'%s' Parent:'%s' Uid:'%s'", desc, user, parent, uid))
 	navTreeLHS.OpenBranch(user)
@@ -430,14 +426,14 @@ func logDataRequest(action string) {
 	case "navmap":
 		log(fmt.Sprintf("NavMap: ----------------\n%s", jsonData.GetNavIndexAsString()))
 	case "select":
-		m, err := lib.GetUserDataForUid(jsonData.GetDataRoot(), currentSelection)
+		m, err := lib.GetUserDataForUid(jsonData.GetDataRoot(), parser.NewBarPath(currentUid)) /// TODO
 		if err != nil {
-			log(fmt.Sprintf("Data for uid [%s] not found. %s", currentSelection, err.Error()))
+			log(fmt.Sprintf("Data for uid [%s] not found. %s", currentUid, err.Error()))
 		}
 		if m != nil {
-			log(fmt.Sprintf("UID:'%s'. Json:%s", currentSelection, m.JsonValueIndented(4)))
+			log(fmt.Sprintf("uid:'%s'. Json:%s", currentUid, m.JsonValueIndented(4)))
 		} else {
-			log(fmt.Sprintf("Data for uid [%s] returned null", currentSelection))
+			log(fmt.Sprintf("Data for uid [%s] returned null", currentUid))
 		}
 	default:
 		log(fmt.Sprintf("Log Action: '%s' unknown", action))
@@ -459,8 +455,8 @@ func makeButtonBar() *fyne.Container {
 func makeMenus() *fyne.MainMenu {
 	hintName := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	noteName := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
-	hint := lib.GetHintFromPath(currentSelection)
-	user := lib.GetUserFromPath(currentSelection)
+	hint := lib.GetHintFromUid(currentUid)
+	user := lib.GetUserFromUid(currentUid)
 
 	n1 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem)
 	n3 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", hintName, user), addNewHint)
@@ -575,11 +571,11 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 			return widget.NewLabel("?")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			t := gui.GetDetailPage(uid, jsonData.GetDataRoot(), *preferences)
+			t := gui.GetDetailPage(parser.NewBarPath(uid), jsonData.GetDataRoot(), *preferences)
 			obj.(*widget.Label).SetText(t.Title)
 		},
 		OnSelected: func(uid string) {
-			t := gui.GetDetailPage(uid, jsonData.GetDataRoot(), *preferences)
+			t := gui.GetDetailPage(parser.NewBarPath(uid), jsonData.GetDataRoot(), *preferences)
 			setPage(*t)
 		},
 	}
@@ -608,7 +604,7 @@ func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 /**
 This is called when a heading button is pressed of the RH page
 */
-func controlActionFunction(action string, uid string, extra string) {
+func controlActionFunction(action string, uid *parser.Path, extra string) {
 	viewActionFunction(action, uid, extra)
 }
 
@@ -619,28 +615,28 @@ func dataPreferencesChanged(path, value, filter string) {
 /**
 This is called when a detail button is pressed of the RH page
 */
-func viewActionFunction(action string, uid string, extra string) {
+func viewActionFunction(action string, uid *parser.Path, extra string) {
 	switch action {
 	case gui.ACTION_LOG:
 		log(gui.LogCleanString(extra, 100))
 	case gui.ACTION_REMOVE:
-		removeAction(uid)
+		removeAction(uid.String()) // TODO
 	case gui.ACTION_HINT_ITEM:
 		addNewHintItem()
 	case gui.ACTION_ADD_NOTE:
 		addNewNoteItem()
 	case gui.ACTION_RENAME:
-		renameAction(uid, extra)
+		renameAction(uid.String(), extra) // TODO
 	case gui.ACTION_CLONE_FULL:
 		cloneHintFull()
 	case gui.ACTION_CLONE:
 		cloneHint()
 	case gui.ACTION_LINK:
-		linkAction(uid, extra)
+		linkAction(uid.String(), extra) // TODO
 	case gui.ACTION_UPDATED:
 		futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
 	case gui.ACTION_COPIED:
-		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 2500), "Copied item text to clipboard", uid)
+		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 2500), "Copied item text to clipboard", uid.String())
 	}
 }
 
@@ -654,7 +650,7 @@ func dataMapUpdated(desc, user, path string, err error) {
 		if jsonData.GetNavIndex(pp) == nil {
 			path = pp
 		}
-		currentSelection = path
+		currentUid = path
 		hasDataChanges = true
 	} else {
 		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' Path:'%s', Err:'%s'", desc, user, path, err.Error()))
@@ -830,7 +826,7 @@ Selecting the menu to add an item to a hint
 */
 func addNewHintItem() {
 	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Hint")
-	ch := lib.GetHintFromPath(currentSelection)
+	ch := lib.GetHintFromUid(currentUid)
 	if ch == "" {
 		logInformationDialog("Add New "+n, fmt.Sprintf("A %s needs to be selected", n))
 	} else {
@@ -851,7 +847,7 @@ Add an entity to the model.
 Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
 */
 func addNewEntity(head string, name string, addType int, isNote bool) {
-	cu := lib.GetUserFromPath(currentSelection)
+	cu := lib.GetUserFromUid(currentUid)
 	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, lib.NOTE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
 		if accept {
 			s, err := lib.ProcessEntityName(newName, nt)
@@ -864,11 +860,11 @@ func addNewEntity(head string, name string, addType int, isNote bool) {
 				case ADD_TYPE_HINT:
 					err = jsonData.AddHint(cu, s)
 				case ADD_TYPE_HINT_CLONE:
-					err = jsonData.CloneHint(cu, currentSelection, s, false)
+					err = jsonData.CloneHint(cu, currentUid, s, false)
 				case ADD_TYPE_HINT_CLONE_FULL:
-					err = jsonData.CloneHint(cu, currentSelection, s, true)
+					err = jsonData.CloneHint(cu, currentUid, s, true)
 				case ADD_TYPE_HINT_ITEM:
-					err = jsonData.AddHintItem(cu, currentSelection, s)
+					err = jsonData.AddHintItem(cu, currentUid, s)
 				}
 			}
 			if err != nil {

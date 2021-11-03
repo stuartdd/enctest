@@ -28,12 +28,14 @@ import (
 type NodeAnnotationEnum int
 
 const (
-	hintStr            = "pwHints"
-	noteStr            = "notes"
+	hintNodeName       = "pwHints"
+	noteNodeName       = "notes"
 	dataMapRootName    = "groups"
-	timeStampStr       = "timeStamp"
+	timeStampName      = "timeStamp"
 	tabdata            = "                                     "
 	allowedCharsInName = " *@#$%^&*()_+=?"
+	dateTimeFormatStr  = "Mon Jan 2 15:04:05 MST 2006"
+	PATH_SEP           = "|"
 
 	NOTE_TYPE_SL NodeAnnotationEnum = 0 // These are indexes. Found issues when using iota!
 	NOTE_TYPE_ML NodeAnnotationEnum = 1
@@ -48,6 +50,8 @@ var (
 	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO, NOTE_TYPE_IM}
 	NodeAnnotationsSingleLine = []bool{true, false, false, true, true}
 	defaultHintNames          = []string{"notes", "post", "pre", "userId"}
+	timeStampPath             = parser.NewBarPath(timeStampName)
+	dataMapRootPath           = parser.NewBarPath(dataMapRootName)
 )
 
 type JsonData struct {
@@ -73,13 +77,13 @@ func NewJsonData(j []byte, dataMapUpdated func(string, string, string, error)) (
 	if u.GetNodeType() != parser.NT_OBJECT {
 		return nil, fmt.Errorf("root '%s' element is NOT a JsonObject", dataMapRootName)
 	}
-	ts, err := parser.Find(rO, timeStampStr)
+	ts, err := parser.Find(rO, timeStampPath)
 	if err != nil {
-		return nil, fmt.Errorf("'%s' does not exist in data root", timeStampStr)
+		return nil, fmt.Errorf("'%s' does not exist in data root", timeStampPath)
 	}
 	_, err = parseTime((ts.(*parser.JsonString)).GetValue())
 	if err != nil {
-		return nil, fmt.Errorf("'%s' could not be parsed", timeStampStr)
+		return nil, fmt.Errorf("'%s' could not be parsed", timeStampPath)
 	}
 	dr := &JsonData{dataMap: rO, navIndex: createNavIndex(rO), dataMapUpdated: dataMapUpdated}
 	return dr, nil
@@ -137,14 +141,14 @@ func (p *JsonData) GetUserNode(user string) *parser.JsonObject {
 }
 
 func (p *JsonData) SetDateTime() {
-	dtNode, err := parser.Find(p.dataMap, "timeStamp")
+	dtNode, err := parser.Find(p.dataMap, timeStampPath)
 	if err == nil {
-		dtNode.(*parser.JsonString).SetValue(time.Now().Format("Mon Jan 2 15:04:05 MST 2006"))
+		dtNode.(*parser.JsonString).SetValue(time.Now().Format(dateTimeFormatStr))
 	}
 }
 
 func (p *JsonData) GetTimeStampString() string {
-	dtNode, err := parser.Find(p.dataMap, "timeStamp")
+	dtNode, err := parser.Find(p.dataMap, timeStampPath)
 	if err == nil {
 		return dtNode.String()
 	}
@@ -162,8 +166,8 @@ func (p *JsonData) Search(addPath func(string, string), needle string, matchCase
 	}
 }
 
-func (p *JsonData) CloneHint(user, path, hintItemName string, cloneLeafNodeData bool) error {
-	h, err := parser.Find(p.GetUserRoot(), path)
+func (p *JsonData) CloneHint(userUid, path, hintItemName string, cloneLeafNodeData bool) error {
+	h, err := parser.Find(p.GetUserRoot(), parser.NewBarPath(path))
 	if err != nil {
 		return fmt.Errorf("the clone hint '%s' cannot be found", path)
 	}
@@ -177,12 +181,12 @@ func (p *JsonData) CloneHint(user, path, hintItemName string, cloneLeafNodeData 
 	cl := parser.Clone(h, hintItemName, cloneLeafNodeData)
 	parent.(parser.NodeC).Add(cl)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated(fmt.Sprintf("Cloned Item '%s' added", hintItemName), GetUserFromPath(user), GetFirstPathElements(path, 2)+"."+hintItemName, nil)
+	p.dataMapUpdated(fmt.Sprintf("Cloned Item '%s' added", hintItemName), GetUserFromUid(userUid), GetFirstUidElements(path, 2)+PATH_SEP+hintItemName, nil)
 	return nil
 }
 
-func (p *JsonData) AddHintItem(user, path, hintItemName string) error {
-	h, err := parser.Find(p.GetUserRoot(), path)
+func (p *JsonData) AddHintItem(userUid, path, hintItemName string) error {
+	h, err := parser.Find(p.GetUserRoot(), parser.NewBarPath(path))
 	if err != nil {
 		return fmt.Errorf("the hint '%s' cannot be found", path)
 	}
@@ -192,43 +196,43 @@ func (p *JsonData) AddHintItem(user, path, hintItemName string) error {
 	hO := h.(*parser.JsonObject)
 	addStringIfDoesNotExist(hO, hintItemName)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Note Item", GetUserFromPath(user), path, nil)
+	p.dataMapUpdated("Add Note Item", GetUserFromUid(userUid), path, nil)
 	return nil
 }
 
-func (p *JsonData) AddHint(user, hintName string) error {
-	u := p.GetUserNode(user)
+func (p *JsonData) AddHint(userUid, hintName string) error {
+	u := p.GetUserNode(userUid)
 	if u == nil {
-		return fmt.Errorf("the user '%s' cannot be found", user)
+		return fmt.Errorf("the user '%s' cannot be found", userUid)
 	}
 	addHintToUser(u, hintName)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Note Item", GetUserFromPath(user), user+"."+hintStr+"."+hintName, nil)
+	p.dataMapUpdated("Add Note Item", GetUserFromUid(userUid), userUid+PATH_SEP+hintNodeName+PATH_SEP+hintName, nil)
 	return nil
 }
 
-func (p *JsonData) AddNoteItem(user, itemName string) error {
-	u := p.GetUserNode(user)
+func (p *JsonData) AddNoteItem(userUid, itemName string) error {
+	u := p.GetUserNode(userUid)
 	if u == nil {
-		return fmt.Errorf("the user '%s' cannot be found", user)
+		return fmt.Errorf("the user '%s' cannot be found", userUid)
 	}
 	addNoteToUser(u, itemName, "")
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Note Item", GetUserFromPath(user), user+"."+noteStr, nil)
+	p.dataMapUpdated("Add Note Item", GetUserFromUid(userUid), userUid+PATH_SEP+noteNodeName, nil)
 	return nil
 }
 
-func (p *JsonData) AddUser(user string) error {
-	u := p.GetUserNode(user)
+func (p *JsonData) AddUser(userUid string) error {
+	u := p.GetUserNode(userUid)
 	if u != nil {
-		return fmt.Errorf("the user '%s' already exists", user)
+		return fmt.Errorf("the user '%s' already exists", userUid)
 	}
-	userO := parser.NewJsonObject(user)
+	userO := parser.NewJsonObject(userUid)
 	addNoteToUser(userO, "note", "text")
 	addHintToUser(userO, "App1")
 	p.GetUserRoot().Add(userO)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("New User", GetUserFromPath(user), user, nil)
+	p.dataMapUpdated("New User", GetUserFromUid(userUid), userUid, nil)
 	return nil
 }
 
@@ -247,9 +251,9 @@ func (p *JsonData) Rename(uid string, newName string) error {
 	}
 	p.navIndex = createNavIndex(p.dataMap)
 	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
-		p.dataMapUpdated("Renamed", GetUserFromPath(newName), newName, nil)
+		p.dataMapUpdated("Renamed", GetUserFromUid(newName), newName, nil)
 	} else {
-		p.dataMapUpdated("Renamed", GetUserFromPath(uid), GetParentId(uid)+"."+newName, nil)
+		p.dataMapUpdated("Renamed", GetUserFromUid(uid), GetParentId(uid)+PATH_SEP+newName, nil)
 	}
 	return nil
 }
@@ -273,7 +277,7 @@ func (p *JsonData) Remove(uid string, min int) error {
 	}
 	parser.Remove(p.dataMap, n)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Removed", GetUserFromPath(uid), GetParentId(uid), nil)
+	p.dataMapUpdated("Removed", GetUserFromUid(uid), GetParentId(uid), nil)
 	return nil
 }
 
@@ -282,16 +286,17 @@ func (p *JsonData) IsStringNode(n parser.NodeI) bool {
 }
 
 func (p *JsonData) GetUserDataForUid(uid string) (parser.NodeI, error) {
-	return GetUserDataForUid(p.GetDataRoot(), uid)
+	return GetUserDataForUid(p.GetDataRoot(), parser.NewBarPath(uid))
 }
 
-func GetUserDataForUid(root parser.NodeI, uid string) (parser.NodeI, error) {
-	nodes, err := parser.Find(root, dataMapRootName+"."+uid)
+func GetUserDataForUid(root parser.NodeI, uid *parser.Path) (parser.NodeI, error) {
+	path := dataMapRootPath.PathAppend(uid)
+	nodes, err := parser.Find(root, path)
 	if err != nil {
 		return nil, err
 	}
 	if nodes == nil {
-		return nil, fmt.Errorf("nil returned from parser.Find(%s)", dataMapRootName+"."+uid)
+		return nil, fmt.Errorf("nil returned from parser.Find(%s)", path)
 	}
 	return nodes, nil
 }
@@ -322,7 +327,7 @@ func ProcessEntityName(entry string, nt NodeAnnotationEnum) (string, error) {
 
 func searchUsers(addPath func(string, string), needle, user string, m *parser.JsonObject, matchCase bool) {
 	for _, v := range m.GetValues() {
-		if v.GetName() == hintStr {
+		if v.GetName() == hintNodeName {
 			for _, v1 := range v.(*parser.JsonObject).GetValues() {
 				searchLeafNodes(addPath, true, needle, user, v1.GetName(), v1.(*parser.JsonObject), matchCase)
 			}
@@ -333,9 +338,9 @@ func searchUsers(addPath func(string, string), needle, user string, m *parser.Js
 }
 
 func searchLeafNodes(addPath func(string, string), isHint bool, needle, user, name string, m *parser.JsonObject, matchCase bool) {
-	tag1 := "."
+	tag1 := PATH_SEP
 	if isHint {
-		tag1 = "." + hintStr + "."
+		tag1 = PATH_SEP + hintNodeName + PATH_SEP
 	}
 	if containsWithCase(name, needle, matchCase) {
 		addPath(user+tag1+name, searchDeriveText(user, isHint, name, "LHS Tree", ""))
@@ -382,25 +387,25 @@ func addStringIfDoesNotExist(obj *parser.JsonObject, name string) {
 }
 
 func addHintToUser(userO *parser.JsonObject, hintName string) {
-	pwHints := userO.GetNodeWithName(hintStr)
-	if pwHints == nil {
-		pwHints = parser.NewJsonObject(hintStr)
-		userO.Add(pwHints)
+	hints := userO.GetNodeWithName(hintNodeName)
+	if hints == nil {
+		hints = parser.NewJsonObject(hintNodeName)
+		userO.Add(hints)
 	}
-	pwHintsO := pwHints.(*parser.JsonObject)
-	hint := pwHintsO.GetNodeWithName(hintName)
+	hintsO := hints.(*parser.JsonObject)
+	hint := hintsO.GetNodeWithName(hintName)
 	if hint == nil {
 		hint = parser.NewJsonObject(hintName)
-		pwHintsO.Add(hint)
+		hintsO.Add(hint)
 	}
 	hintO := hint.(*parser.JsonObject)
 	addDefaultHintItemsToHint(hintO)
 }
 
 func addNoteToUser(userO *parser.JsonObject, noteName, noteText string) {
-	notes := userO.GetNodeWithName(noteStr)
+	notes := userO.GetNodeWithName(noteNodeName)
 	if notes == nil {
-		notes = parser.NewJsonObject(noteStr)
+		notes = parser.NewJsonObject(noteNodeName)
 		userO.Add(notes)
 	}
 	notesO := notes.(*parser.JsonObject)
@@ -432,7 +437,7 @@ func createNavIndexDetail(id string, uids *map[string][]string, nodeI parser.Nod
 	if nodeI.GetNodeType() == parser.NT_LIST {
 		panic("createNavIndexDetail2: cannot process lists")
 	}
-	g, err := parser.Find(nodeI, "groups")
+	g, err := parser.Find(nodeI, dataMapRootPath)
 	if err != nil {
 		panic("createNavIndexDetail2: cannot find groups")
 	}
@@ -478,7 +483,7 @@ func keysToList(id string, m *parser.JsonObject) ([]string, []string) {
 		if id == "" {
 			ll = append(ll, k)
 		} else {
-			ll = append(ll, fmt.Sprintf("%s.%s", id, k))
+			ll = append(ll, fmt.Sprintf("%s%s%s", id, PATH_SEP, k))
 		}
 	}
 	sort.Strings(l)
@@ -525,7 +530,7 @@ func GetParentId(uid string) string {
 }
 
 func GetPathElementAt(path string, index int) string {
-	elements := strings.Split(path, ".")
+	elements := strings.Split(path, PATH_SEP)
 	l := len(elements)
 	if l == 0 || index < 0 || index >= l {
 		return ""
@@ -536,21 +541,21 @@ func GetPathElementAt(path string, index int) string {
 	return elements[l-1]
 }
 
-func GetUserFromPath(path string) string {
-	return GetFirstPathElements(path, 1)
+func GetUserFromUid(uid string) string {
+	return GetFirstUidElements(uid, 1)
 }
 
-func GetHintFromPath(path string) string {
-	return GetPathElementAt(path, 2)
+func GetHintFromUid(uid string) string {
+	return GetPathElementAt(uid, 2)
 }
 
-func GetFirstPathElements(path string, count int) string {
+func GetFirstUidElements(uid string, count int) string {
 	if count <= 0 {
 		return ""
 	}
 	var sb strings.Builder
 	dotCount := 0
-	for _, c := range path {
+	for _, c := range uid {
 		if c == '.' {
 			dotCount++
 		}
@@ -566,7 +571,7 @@ func (p *JsonData) GetRootUidOrCurrentUid(currentUid string) string {
 	ni := *p.navIndex
 	if currentUid != "" {
 		for i := 4; i > 0; i-- {
-			x := GetFirstPathElements(currentUid, i)
+			x := GetFirstUidElements(currentUid, i)
 			_, ok := ni[x]
 			if ok {
 				return currentUid
@@ -618,10 +623,10 @@ func GetNodeAnnotationPrefixName(nae NodeAnnotationEnum) string {
 
 func CreateEmptyJsonData() []byte {
 	root := parser.NewJsonObject("")
-	g := parser.NewJsonObject("groups")
+	g := parser.NewJsonObject(dataMapRootName)
 	u := parser.NewJsonObject("tempUser")
-	n := parser.NewJsonObject("notes")
-	h := parser.NewJsonObject("pwHints")
+	n := parser.NewJsonObject(noteNodeName)
+	h := parser.NewJsonObject(hintNodeName)
 	n1 := parser.NewJsonString("note", "newNote")
 	app := parser.NewJsonObject("application")
 	name := parser.NewJsonString("name", "userName")
@@ -632,6 +637,6 @@ func CreateEmptyJsonData() []byte {
 	g.Add(u)
 	h.Add(app)
 	root.Add(g)
-	root.Add(parser.NewJsonString("timeStamp", time.Now().Format("Mon Jan 2 15:04:05 MST 2006")))
+	root.Add(parser.NewJsonString(timeStampName, time.Now().Format(dateTimeFormatStr)))
 	return []byte(root.JsonValueIndented(4))
 }

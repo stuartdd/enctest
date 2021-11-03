@@ -2,14 +2,14 @@
     "groups": {
         "UserB": {
             "pwHints": {
-                "Principality B": {
+                "Principality.B": {
                     "post": "456",
                     "pre": "efg",
                     "userId": "Buser",
                     "link": "https://www.principality.co.uk/en/your-account",
                     "notes": "Principality note"
                 },
-                "GMail B": {
+                "GMail.B": {
                     "userId": "another@gmail.com",
                     "notes": "a note to User B",
                     "positional!po": "1234567890",
