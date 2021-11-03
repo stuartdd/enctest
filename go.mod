@@ -17,7 +17,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-gl/gl v0.0.0-20210905235341-f7a045908259 // indirect
 	github.com/godbus/dbus/v5 v5.0.5 // indirect
-	github.com/stuartdd/jsonParserGo/parser v0.0.0-20211103004348-7d105cd4b122
+	github.com/stuartdd/jsonParserGo/parser v0.0.0-20211103100851-1f886ec75bd3
 	golang.org/x/sys v0.0.0-20211020064051-0ec99a608a1b // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	stuartdd.com/gui v0.0.0-00010101000000-000000000000

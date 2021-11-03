@@ -1,34 +1,32 @@
 
     {
         "theme": "dark",
+        "file": {
+            "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
+            "datafile": "moredata.data",
+            "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name"
+        },
+        "search": {
+            "case": true
+        },
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 1000
+        },
+        "data": {
+            "hintIsCalled": "DVD",
+            "noteIsCalled": "Note",
+            "presentationmode": false
+        },
         "log": {
             "prefix": "INFO",
             "active": false,
-            "fileName": ""
+            "fileName": "enctest.log"
         },
-        "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500,
-            "linkTimeOutMS": 2500
-        },
-        "data": {
-            "noteIsCalled": "Note",
-            "presentationmode": false,
-            "hintIsCalled": "Hint"
-        },
-        "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
         "screen": {
-            "height": 842.916626,
             "fullScreen": false,
-            "split": 0.2,
-            "width": 1248.75
-        },
-        "search": {
-            "lastGoodList": [
-                ""
-            ],
-            "case": false
-        },
-        "datafile": "moredata.data",
-        "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name"
+            "width": 1378.333252,
+            "height": 551.25,
+            "split": 0.2
+        }
     }

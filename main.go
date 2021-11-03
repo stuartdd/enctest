@@ -206,7 +206,7 @@ func main() {
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
 		currentUid = detailPage.Uid.String() //// TODO
 		if searchWindow != nil {
-			go searchWindow.Select(currentUid)
+			go searchWindow.Select(currentUid) // TODO
 		}
 		log(fmt.Sprintf("Page User:'%s' Uid:'%s'", lib.GetUserFromUid(currentUid), currentUid))
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), lib.GetUserFromUid(currentUid)))
@@ -615,28 +615,29 @@ func dataPreferencesChanged(path, value, filter string) {
 /**
 This is called when a detail button is pressed of the RH page
 */
-func viewActionFunction(action string, uid *parser.Path, extra string) {
+func viewActionFunction(action string, dataPath *parser.Path, extra string) {
+	log(fmt.Sprintf("Action:%s path:'%s' extra:'%s'", action, dataPath, extra))
 	switch action {
 	case gui.ACTION_LOG:
 		log(gui.LogCleanString(extra, 100))
 	case gui.ACTION_REMOVE:
-		removeAction(uid.String()) // TODO
+		removeAction(dataPath.String()) // TODO
 	case gui.ACTION_HINT_ITEM:
 		addNewHintItem()
 	case gui.ACTION_ADD_NOTE:
 		addNewNoteItem()
 	case gui.ACTION_RENAME:
-		renameAction(uid.String(), extra) // TODO
+		renameAction(dataPath.String(), extra) // TODO
 	case gui.ACTION_CLONE_FULL:
 		cloneHintFull()
 	case gui.ACTION_CLONE:
 		cloneHint()
 	case gui.ACTION_LINK:
-		linkAction(uid.String(), extra) // TODO
+		linkAction(dataPath.String(), extra) // TODO
 	case gui.ACTION_UPDATED:
 		futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
 	case gui.ACTION_COPIED:
-		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 2500), "Copied item text to clipboard", uid.String())
+		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 2500), "Copied item text to clipboard", dataPath.String())
 	}
 }
 
