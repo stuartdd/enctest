@@ -259,9 +259,9 @@ func (p *JsonData) Rename(dataPath *parser.Path, newName string) error {
 	}
 	p.navIndex = createNavIndex(p.dataMap)
 	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
-		p.dataMapUpdated("Renamed User", newName, newName, nil)
+		p.dataMapUpdated(fmt.Sprintf("Renamed User '%s'", n.GetName()), newName, newName, nil) // TODO No Strings
 	} else {
-		p.dataMapUpdated("Renamed Entity", dataPath.StringFirst(), dataPath.PathParent().StringAppend(newName).String(), nil) // TODO
+		p.dataMapUpdated(fmt.Sprintf("Renamed Item '%s'", n.GetName()), dataPath.StringFirst(), dataPath.PathParent().StringAppend(newName).String(), nil) // TODO No Strings
 	}
 	return nil
 }
@@ -285,7 +285,11 @@ func (p *JsonData) Remove(dataPath *parser.Path, min int) error {
 	}
 	parser.Remove(p.dataMap, n)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Removed", dataPath.StringFirst(), dataPath.String(), nil)
+	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
+		p.dataMapUpdated(fmt.Sprintf("Removed User '%s'", n.GetName()), "", "", nil) // TODO No Strings
+	} else {
+		p.dataMapUpdated(fmt.Sprintf("Removed Item '%s'", n.GetName()), dataPath.StringFirst(), dataPath.PathParent().String(), nil) // TODO No Strings
+	}
 	return nil
 }
 

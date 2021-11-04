@@ -596,6 +596,11 @@ We need to open the parent branches or we will never see the selected element
 func selectTreeElement(desc string, uid *parser.Path) {
 	if uid.IsEmpty() {
 		uid = jsonData.GetUserPath("")
+	} else {
+		n, err := parser.Find(jsonData.GetUserRoot(), uid)
+		if err != nil || !n.IsContainer() {
+			uid = uid.PathParent()
+		}
 	}
 	user := uid.StringFirst()
 	parent := uid.PathParent().String()
@@ -604,6 +609,20 @@ func selectTreeElement(desc string, uid *parser.Path) {
 	navTreeLHS.OpenBranch(parent)
 	navTreeLHS.Select(uid.String())
 	navTreeLHS.ScrollTo(uid.String())
+}
+
+/**
+Called if there is a structural change in the model
+*/
+func dataMapUpdated(desc, user, dataPath string, err error) {
+	if err == nil {
+		currentUid = lib.GetUidPathFromDataPath(parser.NewBarPath(dataPath)).String()
+		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' DataPath:'%s'. Derived currentUid:'%s'", desc, user, dataPath, currentUid))
+		hasDataChanges = true
+	} else {
+		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' DataPath:'%s', Err:'%s'", desc, user, dataPath, err.Error()))
+	}
+	futureReleaseTheBeast(100, MAIN_THREAD_RELOAD_TREE)
 }
 
 /**
@@ -788,20 +807,6 @@ func linkAction(uid, urlStr string) {
 	} else {
 		logInformationDialog("Error: Link could not be opened", "An empty link was provided")
 	}
-}
-
-/**
-Called if there is a structural change in the model
-*/
-func dataMapUpdated(desc, user, dataPath string, err error) {
-	if err == nil {
-		currentUid = lib.GetUidPathFromDataPath(parser.NewBarPath(dataPath)).String()
-		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' DataPath:'%s' Uid:'%s'", desc, user, dataPath, currentUid))
-		hasDataChanges = true
-	} else {
-		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' DataPath:'%s', Err:'%s'", desc, user, dataPath, err.Error()))
-	}
-	futureReleaseTheBeast(100, MAIN_THREAD_RELOAD_TREE)
 }
 
 func flipPositionalData() {
