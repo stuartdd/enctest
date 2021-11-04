@@ -313,20 +313,6 @@ func main() {
 	window.ShowAndRun()
 }
 
-/**
-Select a tree element.
-We need to open the parent branches or we will never see the selected element
-*/
-func selectTreeElement(desc, uid string) {
-	user := lib.GetUserFromUid(uid)
-	parent := lib.GetParentId(uid)
-	log(fmt.Sprintf("selectTreeElement: Desc:'%s' User:'%s' Parent:'%s' Uid:'%s'", desc, user, parent, uid))
-	navTreeLHS.OpenBranch(user)
-	navTreeLHS.OpenBranch(parent)
-	navTreeLHS.Select(uid)
-	navTreeLHS.ScrollTo(uid)
-}
-
 func futureReleaseTheBeast(ms int, status int) {
 	if ms < 1 {
 		releaseTheBeast <- status
@@ -601,6 +587,23 @@ func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 
 func dataPreferencesChanged(path, value, filter string) {
 	futureReleaseTheBeast(100, MAIN_THREAD_RESELECT)
+}
+
+/**
+Select a tree element.
+We need to open the parent branches or we will never see the selected element
+*/
+func selectTreeElement(desc, uid *parser.Path) {
+	if uid.IsEmpty() {
+		uid= jsonData.GetUserRoot()
+	}
+	user := lib.GetUserFromUid(uid)
+	parent := lib.GetParentId(uid)
+	log(fmt.Sprintf("selectTreeElement: Desc:'%s' User:'%s' Parent:'%s' Uid:'%s'", desc, user, parent, uid))
+	navTreeLHS.OpenBranch(user)
+	navTreeLHS.OpenBranch(parent)
+	navTreeLHS.Select(uid)
+	navTreeLHS.ScrollTo(uid)
 }
 
 /**
