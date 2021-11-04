@@ -28,43 +28,43 @@ func removeFile(t *testing.T, fileName string) {
 }
 func TestPutStringList(t *testing.T) {
 	p, _ := pref.NewPrefData("config_001.json")
-	p.PutStringList("new.list.a", "abc", 3)
-	pp, ok := p.GetDataForPath("new.list.a")
+	p.PutStringList("new|list|a", "abc", 3)
+	pp, ok := p.GetDataForPath("new|list|a")
 	if !ok {
 		t.Error("Should find path")
 	}
 	if pp.(*parser.JsonList).Len() != 1 {
 		t.Error("Should be len 1")
 	}
-	p.PutStringList("new.list.a", "abc", 3)
+	p.PutStringList("new|list|a", "abc", 3)
 	if pp.(*parser.JsonList).Len() != 1 {
 		t.Error("Should still be len 1")
 	}
-	p.PutStringList("new.list.a", "123", 3)
+	p.PutStringList("new|list|a", "123", 3)
 	if pp.(*parser.JsonList).Len() != 2 {
 		t.Error("Should be len 2")
 	}
-	p.PutStringList("new.list.a", "123", 3)
+	p.PutStringList("new|list|a", "123", 3)
 	if pp.(*parser.JsonList).Len() != 2 {
 		t.Error("Should still be len 2")
 	}
-	p.PutStringList("new.list.a", "123", 3)
+	p.PutStringList("new|list|a", "123", 3)
 	if pp.(*parser.JsonList).Len() != 2 {
 		t.Error("Should still be len 2")
 	}
-	p.PutStringList("new.list.a", "abc", 3)
+	p.PutStringList("new|list|a", "abc", 3)
 	if pp.(*parser.JsonList).Len() != 2 {
 		t.Error("Should still be len 2")
 	}
-	p.PutStringList("new.list.a", "xyz1", 3)
+	p.PutStringList("new|list|a", "xyz1", 3)
 	if pp.(*parser.JsonList).Len() != 3 {
 		t.Error("Should be len 3")
 	}
-	p.PutStringList("new.list.a", "xyz2", 3)
+	p.PutStringList("new|list|a", "xyz2", 3)
 	if pp.(*parser.JsonList).Len() != 3 {
 		t.Error("Should be len 3")
 	}
-	l := p.GetStringList("new.list.a")
+	l := p.GetStringList("new|list|a")
 	if fmt.Sprintf("%s", l) != "[xyz2 xyz1 abc]" {
 		t.Errorf("List should be %s", l)
 	}
@@ -108,14 +108,14 @@ func TestFloats(t *testing.T) {
 func TestSave(t *testing.T) {
 	defer removeFile(t, "TestSaveData.txt")
 	q, _ := pref.NewPrefData("TestDataTypes.json")
-	v5 := q.GetStringForPathWithFallback("groups.UserA.notes.note", "bla")
+	v5 := q.GetStringForPathWithFallback("groups|UserA|notes|note", "bla")
 	if v5 == "bla" {
 		t.Error("should have found value")
 	}
 	q.SaveAs("TestSaveData.txt")
 
 	p, _ := pref.NewPrefData("TestSaveData.txt")
-	v6 := p.GetStringForPathWithFallback("groups.UserA.notes.note", "bla")
+	v6 := p.GetStringForPathWithFallback("groups|UserA|notes|note", "bla")
 	if v6 != v5 {
 		t.Error("Should be the same value")
 	}
@@ -174,50 +174,50 @@ func TestChangeListeners(t *testing.T) {
 
 func TestPutString(t *testing.T) {
 	p, _ := pref.NewPrefData("TestDataTypes.json")
-	err := p.PutString("groups.UserA.notes.note.hi", "val")
+	err := p.PutString("groups|UserA|notes|note|hi", "val")
 	if err == nil {
 		t.Error("should return error 'not a container node'")
 	}
-	v := p.GetStringForPathWithFallback("groups.UserA.notes.note", "bla")
+	v := p.GetStringForPathWithFallback("groups|UserA|notes|note", "bla")
 	if v == "" || v == "bla" {
 		t.Error("should have found v")
 	}
 
-	err = p.PutString("groups.UserA.notes.note", "val")
+	err = p.PutString("groups|UserA|notes|note", "val")
 	if err != nil {
 		t.Error("should work")
 	}
 
-	v2 := p.GetStringForPathWithFallback("groups.UserA.notes.note", "bla")
+	v2 := p.GetStringForPathWithFallback("groups|UserA|notes|note", "bla")
 	if v2 != "val" {
 		t.Error("should have found new value")
 	}
 
-	err = p.PutString("groups.UserA.noes.hi", "value3")
+	err = p.PutString("groups|UserA|noes|hi", "value3")
 	if err != nil {
 		t.Error("should not return an error")
 	}
-	v3 := p.GetStringForPathWithFallback("groups.UserA.noes.hi", "bla")
+	v3 := p.GetStringForPathWithFallback("groups|UserA|noes|hi", "bla")
 	if v3 != "value3" {
 		t.Error("should have found new value (value3)")
 	}
 
-	err = p.PutString("groups.newUser.notes.note", "newNote")
+	err = p.PutString("groups|newUser|notes|note", "newNote")
 	if err != nil {
 		t.Error("should not return an error")
 	}
 
-	v4 := p.GetStringForPathWithFallback("groups.newUser.notes.note", "bla")
+	v4 := p.GetStringForPathWithFallback("groups|newUser|notes|note", "bla")
 	if v4 != "newNote" {
 		t.Error("should have found new value (newNote)")
 	}
 
-	err = p.PutString("groups.newUser.notes.note", "overwriteNote")
+	err = p.PutString("groups|newUser|notes|note", "overwriteNote")
 	if err != nil {
 		t.Error("should not return an error")
 	}
 
-	v5 := p.GetStringForPathWithFallback("groups.newUser.notes.note", "bla")
+	v5 := p.GetStringForPathWithFallback("groups|newUser|notes|note", "bla")
 	if v5 != "overwriteNote" {
 		t.Error("should have found new value (overwriteNote)")
 	}
@@ -250,17 +250,17 @@ func TestLoadFallback(t *testing.T) {
 	if p.GetFileName() != "TestDataTypes.json" {
 		t.Error("file name was not stored correctly")
 	}
-	m, _ := p.GetDataForPath("groups.UserA.notes.note")
+	m, _ := p.GetDataForPath("groups|UserA|notes|note")
 	if m.String() == "" {
-		t.Error("groups.UserA.notes.note should return a value")
+		t.Error("groups|UserA|notes|note should return a value")
 	}
-	s2 := p.GetStringForPathWithFallback("groups.UserA.notes.note", "x")
+	s2 := p.GetStringForPathWithFallback("groups|UserA|notes|note", "x")
 	if m.String() != s2 {
 		t.Error("GetStringForPathWithFallback should return same as GetDataForPath")
 	}
-	s3 := p.GetStringForPathWithFallback("groups.UserA.notes.not", "fallback")
+	s3 := p.GetStringForPathWithFallback("groups|UserA|notes|not", "fallback")
 	if s3 != "fallback" {
-		t.Error("groups.UserA.notes.not should return \"fallback\" ")
+		t.Error("groups|UserA|notes|not should return \"fallback\" ")
 	}
 
 }
@@ -272,13 +272,13 @@ func TestLoadCacheAfterPut(t *testing.T) {
 	if p.GetFileName() != "TestDataTypes.json" {
 		t.Error("file name was not stored correctly")
 	}
-	p.PutString("a.b.c", "abc")
-	s := p.GetStringForPathWithFallback("a.b.c", "xyz")
+	p.PutString("a|b|c", "abc")
+	s := p.GetStringForPathWithFallback("a|b|c", "xyz")
 	if s != "abc" {
 		t.Error("Incorrect value returned. Not abc")
 	}
-	p.PutString("a.b.c", "123")
-	s = p.GetStringForPathWithFallback("a.b.c", "xyz")
+	p.PutString("a|b|c", "123")
+	s = p.GetStringForPathWithFallback("a|b|c", "xyz")
 	if s != "123" {
 		t.Error("Incorrect value returned. Not 123")
 	}
@@ -293,28 +293,28 @@ func TestLoadCache(t *testing.T) {
 		t.Error("file name was not stored correctly")
 	}
 	sta1 := time.Now().UnixNano()
-	m1, ok1 := p.GetDataForPath("groups.UserA.notes.note")
+	m1, ok1 := p.GetDataForPath("groups|UserA|notes|note")
 	timUnCached := time.Now().UnixNano() - sta1
 
 	for i := 0; i < 5; i++ {
-		p.GetDataForPath("groups.UserA.notes.note")
+		p.GetDataForPath("groups|UserA|notes|note")
 	}
 
 	sta2 := time.Now().UnixNano()
-	m2, ok2 := p.GetDataForPath("groups.UserA.notes.note")
+	m2, ok2 := p.GetDataForPath("groups|UserA|notes|note")
 	timCached := time.Now().UnixNano() - sta2
 
 	if m1.String() == "" {
-		t.Error("v1 groups.UserA.notes.note should return a string")
+		t.Error("v1 groups|UserA|notes|note should return a string")
 	}
 	if m2.String() == "" {
-		t.Error("v2 groups.UserA.notes.note should return a string")
+		t.Error("v2 groups|UserA|notes|note should return a string")
 	}
 	if !ok1 {
-		t.Error("ok1 groups.UserA.notes.note should return true")
+		t.Error("ok1 groups|UserA|notes|note should return true")
 	}
 	if !ok2 {
-		t.Error("ok2 groups.UserA.notes.note should return true")
+		t.Error("ok2 groups|UserA|notes|note should return true")
 	}
 
 	if m1 != m2 {
@@ -346,15 +346,15 @@ func TestLoadComplex(t *testing.T) {
 		t.Error("groups should not return a map")
 	}
 
-	m, ok = p.GetDataForPath("groups.UserA.notes.fred")
+	m, ok = p.GetDataForPath("groups|UserA|notes|fred")
 	if m != nil {
-		t.Error("groups.UserA.notes.fred should return empty string")
+		t.Error("groups|UserA|notes|fred should return empty string")
 	}
 	if ok {
-		t.Error("ok groups.UserA.notes.fred should return false")
+		t.Error("ok groups|UserA|notes|fred should return false")
 	}
 	if m != nil {
-		t.Error("groups.UserA.notes.fred should not return a map")
+		t.Error("groups|UserA|notes|fred should not return a map")
 	}
 
 	m, ok = p.GetDataForPath("groups")
@@ -368,9 +368,9 @@ func TestLoadComplex(t *testing.T) {
 		t.Error("groups should return a map")
 	}
 
-	m, ok = p.GetDataForPath("groups.UserA.notes")
+	m, ok = p.GetDataForPath("groups|UserA|notes")
 	if !ok {
-		t.Error("ok groups.UserA.notes should return true")
+		t.Error("ok groups|UserA|notes should return true")
 	}
 	if m.GetNodeType() != parser.NT_OBJECT {
 		t.Error("groups should  be a JsonObject")
@@ -378,12 +378,12 @@ func TestLoadComplex(t *testing.T) {
 	if m == nil {
 		t.Error("groups should return a map")
 	}
-	m, ok = p.GetDataForPath("groups.UserA.notes.note")
+	m, ok = p.GetDataForPath("groups|UserA|notes|note")
 	if !ok {
-		t.Error("ok groups.UserA.notes.not should return true")
+		t.Error("ok groups|UserA|notes|not should return true")
 	}
 	if m.String() != "An amazing A note (dont panic) fdf" {
-		t.Error("groups.UserA.notes.note should return  'An amazing A note (dont panic) fdf'")
+		t.Error("groups|UserA|notes|note should return  'An amazing A note (dont panic) fdf'")
 	}
 	if m == nil {
 		t.Error("groups should return a node")

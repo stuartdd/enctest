@@ -6,16 +6,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stuartdd/jsonParserGo/parser"
 	"stuartdd.com/lib"
 )
 
 func TestJsonDataRename(t *testing.T) {
 	jd := dataLoad(t, "TestDataTypes.json")
 	testNavIndex(t, jd, "", "[Stuart UserA UserB]")
-	testNavIndex(t, jd, "UserA", "[UserA.notes UserA.pwHints]")
-	testNavIndex(t, jd, "UserA.pwHints", "[UserA.pwHints.MyApp UserA.pwHints.PrincipalityA]")
+	testNavIndex(t, jd, "UserA", "[UserA|notes UserA|pwHints]")
+	testNavIndex(t, jd, "UserA|pwHints", "[UserA|pwHints|MyApp UserA|pwHints|PrincipalityA]")
 
-	err := jd.Rename("UserA", "RenameA")
+	err := jd.Rename(parser.NewBarPath("UserA"), "RenameA")
 	if err != nil {
 		t.Errorf("Should not have thrown an err")
 	}
@@ -28,35 +29,35 @@ func TestJsonDataRename(t *testing.T) {
 		t.Errorf("Should have found RenameA")
 	}
 	testNavIndex(t, jd, "", "[RenameA Stuart UserB]")
-	testNavIndex(t, jd, "RenameA", "[RenameA.notes RenameA.pwHints]")
-	testNavIndex(t, jd, "Stuart", "[Stuart.notes Stuart.pwHints]")
-	testNavIndex(t, jd, "Stuart.pwHints", "[Stuart.pwHints.application]")
+	testNavIndex(t, jd, "RenameA", "[RenameA|notes RenameA|pwHints]")
+	testNavIndex(t, jd, "Stuart", "[Stuart|notes Stuart|pwHints]")
+	testNavIndex(t, jd, "Stuart|pwHints", "[Stuart|pwHints|application]")
 	testNavIndexNot(t, jd, "UserA")
-	testNavIndexNot(t, jd, "UserA.pwHints")
-	testNavIndex(t, jd, "UserB", "[UserB.notes UserB.pwHints]")
-	testNavIndex(t, jd, "UserB.pwHints", "[UserB.pwHints.GMail B UserB.pwHints.Principality B]")
+	testNavIndexNot(t, jd, "UserA|pwHints")
+	testNavIndex(t, jd, "UserB", "[UserB|notes UserB|pwHints]")
+	testNavIndex(t, jd, "UserB|pwHints", "[UserB|pwHints|GMail.B UserB|pwHints|Principality.B]")
 }
 func TestJsonDataRemove(t *testing.T) {
 	jd := dataLoad(t, "TestDataTypes.json")
-	testNavIndex(t, jd, "UserA", "[UserA.notes UserA.pwHints]")
-	testNavIndex(t, jd, "UserA.pwHints", "[UserA.pwHints.MyApp UserA.pwHints.PrincipalityA]")
-	jd.Remove("UserA", 1)
+	testNavIndex(t, jd, "UserA", "[UserA|notes UserA|pwHints]")
+	testNavIndex(t, jd, "UserA|pwHints", "[UserA|pwHints|MyApp UserA|pwHints|PrincipalityA]")
+	jd.Remove(parser.NewBarPath("UserA"), 1)
 	testNavIndex(t, jd, "", "[Stuart UserB]")
-	testNavIndex(t, jd, "Stuart", "[Stuart.notes Stuart.pwHints]")
-	testNavIndex(t, jd, "Stuart.pwHints", "[Stuart.pwHints.application]")
+	testNavIndex(t, jd, "Stuart", "[Stuart|notes Stuart|pwHints]")
+	testNavIndex(t, jd, "Stuart|pwHints", "[Stuart|pwHints|application]")
 	testNavIndexNot(t, jd, "UserA")
-	testNavIndexNot(t, jd, "UserA.pwHints")
-	testNavIndex(t, jd, "UserB", "[UserB.notes UserB.pwHints]")
-	testNavIndex(t, jd, "UserB.pwHints", "[UserB.pwHints.GMail B UserB.pwHints.Principality B]")
-	jd.Remove("UserB", 1)
+	testNavIndexNot(t, jd, "UserA|pwHints")
+	testNavIndex(t, jd, "UserB", "[UserB|notes UserB|pwHints]")
+	testNavIndex(t, jd, "UserB|pwHints", "[UserB|pwHints|GMail.B UserB|pwHints|Principality.B]")
+	jd.Remove(parser.NewBarPath("UserB"), 1)
 	testNavIndex(t, jd, "", "[Stuart]")
-	testNavIndex(t, jd, "Stuart", "[Stuart.notes Stuart.pwHints]")
-	testNavIndex(t, jd, "Stuart.pwHints", "[Stuart.pwHints.application]")
+	testNavIndex(t, jd, "Stuart", "[Stuart|notes Stuart|pwHints]")
+	testNavIndex(t, jd, "Stuart|pwHints", "[Stuart|pwHints|application]")
 	testNavIndexNot(t, jd, "UserA")
-	testNavIndexNot(t, jd, "UserA.pwHints")
+	testNavIndexNot(t, jd, "UserA|pwHints")
 	testNavIndexNot(t, jd, "UserB")
-	testNavIndexNot(t, jd, "UserB.pwHints")
-	err := jd.Remove("Stuart", 1)
+	testNavIndexNot(t, jd, "UserB|pwHints")
+	err := jd.Remove(parser.NewBarPath("Stuart"), 1)
 	if err == nil {
 		t.Errorf("Should have thrown an err")
 	}
@@ -64,12 +65,12 @@ func TestJsonDataRemove(t *testing.T) {
 func TestJsonDataLoad(t *testing.T) {
 	jd := dataLoad(t, "TestDataTypes.json")
 	testNavIndex(t, jd, "", "[Stuart UserA UserB]")
-	testNavIndex(t, jd, "Stuart", "[Stuart.notes Stuart.pwHints]")
-	testNavIndex(t, jd, "Stuart.pwHints", "[Stuart.pwHints.application]")
-	testNavIndex(t, jd, "UserA", "[UserA.notes UserA.pwHints]")
-	testNavIndex(t, jd, "UserA.pwHints", "[UserA.pwHints.MyApp UserA.pwHints.PrincipalityA]")
-	testNavIndex(t, jd, "UserB", "[UserB.notes UserB.pwHints]")
-	testNavIndex(t, jd, "UserB.pwHints", "[UserB.pwHints.GMail B UserB.pwHints.Principality B]")
+	testNavIndex(t, jd, "Stuart", "[Stuart|notes Stuart|pwHints]")
+	testNavIndex(t, jd, "Stuart|pwHints", "[Stuart|pwHints|application]")
+	testNavIndex(t, jd, "UserA", "[UserA|notes UserA|pwHints]")
+	testNavIndex(t, jd, "UserA|pwHints", "[UserA|pwHints|MyApp UserA|pwHints|PrincipalityA]")
+	testNavIndex(t, jd, "UserB", "[UserB|notes UserB|pwHints]")
+	testNavIndex(t, jd, "UserB|pwHints", "[UserB|pwHints|GMail.B UserB|pwHints|Principality.B]")
 }
 
 func dataLoad(t *testing.T, filename string) *lib.JsonData {

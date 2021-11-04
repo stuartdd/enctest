@@ -8,11 +8,12 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/stuartdd/jsonParserGo/parser"
 )
 
 type SearchData struct {
 	desc string
-	path string
+	path *parser.Path
 }
 
 type SearchDataWindow struct {
@@ -20,24 +21,24 @@ type SearchDataWindow struct {
 	checks         map[string]*widget.Button
 	canSelect      bool
 	closeIntercept func()
-	selectFunction func(string, string)
+	selectFunction func(string, *parser.Path)
 	searchWindow   fyne.Window
 }
 
-func newSearchData(path, desc string) *SearchData {
+func newSearchData(path *parser.Path, desc string) *SearchData {
 	return &SearchData{desc: desc, path: path}
 }
 
 func (sd *SearchData) String() string {
-	return sd.path
+	return sd.path.String()
 }
 
-func NewSearchDataWindow(closeIntercept func(), selectFunction func(string, string)) *SearchDataWindow {
+func NewSearchDataWindow(closeIntercept func(), selectFunction func(string, *parser.Path)) *SearchDataWindow {
 	return &SearchDataWindow{closeIntercept: closeIntercept, selectFunction: selectFunction, canSelect: true, paths: make(map[string]*SearchData)}
 }
 
-func (lw *SearchDataWindow) Add(desc, path string) {
-	lw.paths[path] = newSearchData(path, desc)
+func (lw *SearchDataWindow) Add(desc string, path *parser.Path) {
+	lw.paths[path.String()] = newSearchData(path, desc)
 }
 
 func (lw *SearchDataWindow) Reset() {
@@ -89,7 +90,7 @@ func (lw *SearchDataWindow) createRow(sd *SearchData) *fyne.Container {
 	c := container.NewHBox()
 	w := widget.NewButtonWithIcon("", theme.MailForwardIcon(), func() {})
 	w.SetIcon(theme.CheckButtonIcon())
-	lw.checks[sd.path] = w
+	lw.checks[sd.path.String()] = w
 	b := widget.NewButtonWithIcon("", theme.MailForwardIcon(), func() {
 		if lw.canSelect {
 			go lw.selectFunction(sd.desc, sd.path)

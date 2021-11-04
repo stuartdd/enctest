@@ -21,23 +21,23 @@ var (
 go test -v -run TestTreeMapping
 map[:[UserA UserB]
 
-UserA:[UserA.pwHints UserA.notes]
-UserA.notes:[UserA.notes.note]
-UserA.pwHints:[UserA.pwHints.GMailA UserA.pwHints.PrincipalityA]
+UserA:[UserA|pwHints UserA|notes]
+UserA|notes:[UserA|notes|note]
+UserA|pwHints:[UserA|pwHints.GMailA UserA|pwHints|PrincipalityA]
 
-UserB:[UserB.pwHints UserB.notes]
-UserB.notes:[UserB.notes.link UserB.notes.note]
-UserB.pwHints:[UserB.pwHints.GMail B UserB.pwHints.Principality B]]
+UserB:[UserB|pwHints UserB|notes]
+UserB|notes:[UserB|notes|link UserB|notes.note]
+UserB|pwHints:[UserB|pwHints|GMail B UserB|pwHints|Principality B]]
 */
 func TestTreeMapping(t *testing.T) {
 	loadDataMap(dataFileName)
 	assertMapData("", "[Stuart UserA UserB]")
-	assertMapData("UserA", "[UserA.notes UserA.pwHints]")
-	assertMapData("UserA.notes", "[]")
-	assertMapData("UserA.pwHints", "[UserA.pwHints.MyApp UserA.pwHints.PrincipalityA]")
-	assertMapData("UserB", "[UserB.notes UserB.pwHints]")
-	assertMapData("UserB.notes", "[]")
-	assertMapData("UserB.pwHints", "[UserB.pwHints.GMail B UserB.pwHints.Principality B]")
+	assertMapData("UserA", "[UserA|notes UserA|pwHints]")
+	assertMapData("UserA|notes", "[]")
+	assertMapData("UserA|pwHints", "[UserA|pwHints|MyApp UserA|pwHints|PrincipalityA]")
+	assertMapData("UserB", "[UserB|notes UserB|pwHints]")
+	assertMapData("UserB|notes", "[]")
+	assertMapData("UserB|pwHints", "[UserB|pwHints|GMail B UserB|pwHints|Principality B]")
 }
 
 func assertMapData(id, val string) {
@@ -56,19 +56,19 @@ func TestGetLastId(t *testing.T) {
 	if s != "abc" {
 		log.Fatal("1. GetLastId fail. should return 'abc'")
 	}
-	s = lib.GetLastId(".abc")
+	s = lib.GetLastId("|abc")
 	if s != "abc" {
 		log.Fatal("1. GetLastId fail. should return 'abc'")
 	}
-	s = lib.GetLastId(".abc.")
+	s = lib.GetLastId("|abc|")
 	if s != "" {
 		log.Fatal("1. GetLastId fail. should return empty string")
 	}
-	s = lib.GetLastId(".abc.x")
+	s = lib.GetLastId("|abc|x")
 	if s != "x" {
 		log.Fatal("1. GetLastId fail. should 'x'")
 	}
-	s = lib.GetLastId(".abc. x")
+	s = lib.GetLastId("|abc| x")
 	if s != " x" {
 		log.Fatal("1. GetLastId fail. should ' x'")
 	}
@@ -110,17 +110,17 @@ func TestGetParentId(t *testing.T) {
 	if lib.GetParentId("user") != "user" {
 		log.Fatal("1. GetParentId fail. should return 'user'")
 	}
-	if lib.GetParentId("user.id") != "user" {
+	if lib.GetParentId("user|id") != "user" {
 		log.Fatal("2. GetParentId fail. should return 'user'")
 	}
-	if lib.GetParentId("user.id.tew") != "user.id" {
-		log.Fatal("3. GetParentId fail. should return 'user.id'")
+	if lib.GetParentId("user|id|tew") != "user|id" {
+		log.Fatal("3. GetParentId fail. should return 'user|id'")
 	}
-	if lib.GetParentId("user.id.tew.uuu") != "user.id.tew" {
-		log.Fatal("4. GetParentId fail. should return 'user.id.tew'")
+	if lib.GetParentId("user|id|tew|uuu") != "user|id|tew" {
+		log.Fatal("4. GetParentId fail. should return 'user|id|tew'")
 	}
-	if lib.GetParentId("user id.tew.uuu") != "user id.tew" {
-		log.Fatal("4. GetParentId fail. should return 'user id.tew'")
+	if lib.GetParentId("user id|tew|uuu") != "user id|tew" {
+		log.Fatal("4. GetParentId fail. should return 'user id|tew'")
 	}
 }
 func TestGetPathElementAt(t *testing.T) {
@@ -133,25 +133,25 @@ func TestGetPathElementAt(t *testing.T) {
 	if lib.GetPathElementAt("user", -1) != "" {
 		log.Fatal("3. GetPathElementAt fail. should return ''")
 	}
-	if lib.GetPathElementAt("user.abc", 1) != "abc" {
+	if lib.GetPathElementAt("user|abc", 1) != "abc" {
 		log.Fatal("4. GetPathElementAt fail. should return 'abc'")
 	}
-	if lib.GetPathElementAt("user.abc", 0) != "user" {
+	if lib.GetPathElementAt("user|abc", 0) != "user" {
 		log.Fatal("5. GetPathElementAt fail. should return 'user'")
 	}
-	if lib.GetPathElementAt("user.abc", -1) != "" {
+	if lib.GetPathElementAt("user|abc", -1) != "" {
 		log.Fatal("6. GetPathElementAt fail. should return ''")
 	}
-	if lib.GetPathElementAt("user.abc", 2) != "" {
+	if lib.GetPathElementAt("user|abc", 2) != "" {
 		log.Fatal("7. GetPathElementAt fail. should return ''")
 	}
-	if lib.GetPathElementAt("user.abc.1", 2) != "1" {
+	if lib.GetPathElementAt("user|abc|1", 2) != "1" {
 		log.Fatal("8. GetPathElementAt fail. should return '1'")
 	}
-	if lib.GetPathElementAt("user.abc.1", 3) != "" {
+	if lib.GetPathElementAt("user|abc|1", 3) != "" {
 		log.Fatal("9. GetPathElementAt fail. should return ''")
 	}
-	if lib.GetPathElementAt("user.abc.1", 99) != "" {
+	if lib.GetPathElementAt("user|abc|1", 99) != "" {
 		log.Fatal("10. GetPathElementAt fail. should return ''")
 	}
 }
@@ -160,10 +160,10 @@ func TestGetUserFromPath(t *testing.T) {
 	if lib.GetUserFromUid("user") != "user" {
 		log.Fatal("GetUserFromPath fail. should return 'user'")
 	}
-	if lib.GetUserFromUid("user.a") != "user" {
+	if lib.GetUserFromUid("user|a") != "user" {
 		log.Fatal("GetUserFromPath fail. should return 'user'")
 	}
-	if lib.GetUserFromUid("user.a.b.c") != "user" {
+	if lib.GetUserFromUid("user|a|b|c") != "user" {
 		log.Fatal("GetUserFromPath fail. should return 'user'")
 	}
 	if lib.GetUserFromUid("") != "" {
@@ -184,20 +184,20 @@ func TestGetFirstNElements(t *testing.T) {
 	if lib.GetFirstUidElements("user", 3) != "user" {
 		log.Fatal("4. GetFirstPathElements fail. should return 'user'")
 	}
-	if lib.GetFirstUidElements("user.a.b", 0) != "" {
+	if lib.GetFirstUidElements("user|a|b", 0) != "" {
 		log.Fatal("5. GetFirstPathElements fail. should return ''")
 	}
-	if lib.GetFirstUidElements("user.a.b", 1) != "user" {
+	if lib.GetFirstUidElements("user|a|b", 1) != "user" {
 		log.Fatal("6. GetFirstPathElements fail. should return 'user'")
 	}
-	if lib.GetFirstUidElements("user.a.b", 2) != "user.a" {
-		log.Fatal("7. GetFirstPathElements fail. should return 'user.a'")
+	if lib.GetFirstUidElements("user|a|b", 2) != "user|a" {
+		log.Fatal("7. GetFirstPathElements fail. should return 'user|a'")
 	}
-	if lib.GetFirstUidElements("user.a.b", 3) != "user.a.b" {
-		log.Fatal("8. GetFirstPathElements fail. should return 'user.a.b'")
+	if lib.GetFirstUidElements("user|a|b", 3) != "user|a|b" {
+		log.Fatal("8. GetFirstPathElements fail. should return 'user|a|b'")
 	}
-	if lib.GetFirstUidElements("user.a.b", 4) != "user.a.b" {
-		log.Fatal("9. GetUserFromPath fail. should return 'user.a.b'")
+	if lib.GetFirstUidElements("user|a|b", 4) != "user|a|b" {
+		log.Fatal("9. GetUserFromPath fail. should return 'user|a|b'")
 	}
 	if lib.GetFirstUidElements("", 0) != "" {
 		log.Fatal("10. GetFirstPathElements fail. should return ''")

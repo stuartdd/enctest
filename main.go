@@ -285,7 +285,7 @@ func main() {
 				// Init the devider (split)
 				// Populate the window and we are done!
 				navTreeLHS = makeNavTree(setPageRHSFunc)
-				selectTreeElement("MAIN_THREAD_RELOAD_TREE", currentUid)
+				selectTreeElement("MAIN_THREAD_RELOAD_TREE", parser.NewBarPath(currentUid)) // TODO
 				if splitContainerOffset < 0 {
 					splitContainerOffset = splitContainerOffsetPref
 				} else {
@@ -593,17 +593,17 @@ func dataPreferencesChanged(path, value, filter string) {
 Select a tree element.
 We need to open the parent branches or we will never see the selected element
 */
-func selectTreeElement(desc, uid *parser.Path) {
+func selectTreeElement(desc string, uid *parser.Path) {
 	if uid.IsEmpty() {
-		uid= jsonData.GetUserRoot()
+		uid = jsonData.GetUserPath("")
 	}
-	user := lib.GetUserFromUid(uid)
-	parent := lib.GetParentId(uid)
+	user := uid.StringFirst()
+	parent := uid.PathParent().String()
 	log(fmt.Sprintf("selectTreeElement: Desc:'%s' User:'%s' Parent:'%s' Uid:'%s'", desc, user, parent, uid))
 	navTreeLHS.OpenBranch(user)
 	navTreeLHS.OpenBranch(parent)
-	navTreeLHS.Select(uid)
-	navTreeLHS.ScrollTo(uid)
+	navTreeLHS.Select(uid.String())
+	navTreeLHS.ScrollTo(uid.String())
 }
 
 /**
@@ -858,7 +858,7 @@ func search(s string) {
 	// The map key is the human readable results e.g. 'User [Hint] app: noteName'
 	// The values are paths within the model! user.pwHints.app.noteName
 	searchWindow.Reset()
-	jsonData.Search(func(path, desc string) {
+	jsonData.Search(func(path *parser.Path, desc string) {
 		searchWindow.Add(desc, path)
 	}, s, matchCase)
 

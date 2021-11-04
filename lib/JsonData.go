@@ -133,7 +133,14 @@ func (p *JsonData) GetUserRoot() *parser.JsonObject {
 	return p.dataMap.GetNodeWithName(dataMapRootName).(*parser.JsonObject)
 }
 
+func (p *JsonData) GetUserPath(user string) *parser.Path {
+	return parser.NewBarPath(p.GetUserNode(user).GetName())
+}
+
 func (p *JsonData) GetUserNode(user string) *parser.JsonObject {
+	if user == "" {
+		return p.GetUserRoot().GetValuesSorted()[0].(*parser.JsonObject)
+	}
 	u := p.GetUserRoot().GetNodeWithName(user)
 	if u == nil {
 		return nil
@@ -160,7 +167,7 @@ func (p *JsonData) ToJson() string {
 	return p.dataMap.JsonValue()
 }
 
-func (p *JsonData) Search(addPath func(string, string), needle string, matchCase bool) {
+func (p *JsonData) Search(addPath func(*parser.Path, string), needle string, matchCase bool) {
 	groups := p.dataMap.GetNodeWithName(dataMapRootName).(*parser.JsonObject)
 	for _, v := range groups.GetValues() {
 		searchUsers(addPath, needle, v.GetName(), v.(*parser.JsonObject), matchCase)
@@ -326,7 +333,7 @@ func ProcessEntityName(entry string, nt NodeAnnotationEnum) (string, error) {
 	return GetNodeAnnotationNameWithPrefix(nt, entry), nil
 }
 
-func searchUsers(addPath func(string, string), needle, user string, m *parser.JsonObject, matchCase bool) {
+func searchUsers(addPath func(*parser.Path, string), needle, user string, m *parser.JsonObject, matchCase bool) {
 	for _, v := range m.GetValues() {
 		if v.GetName() == hintNodeName {
 			for _, v1 := range v.(*parser.JsonObject).GetValues() {
@@ -338,21 +345,21 @@ func searchUsers(addPath func(string, string), needle, user string, m *parser.Js
 	}
 }
 
-func searchLeafNodes(addPath func(string, string), isHint bool, needle, user, name string, m *parser.JsonObject, matchCase bool) {
+func searchLeafNodes(addPath func(*parser.Path, string), isHint bool, needle, user, name string, m *parser.JsonObject, matchCase bool) {
 	tag1 := PATH_SEP
 	if isHint {
 		tag1 = PATH_SEP + hintNodeName + PATH_SEP
 	}
 	if containsWithCase(name, needle, matchCase) {
-		addPath(user+tag1+name, searchDeriveText(user, isHint, name, "LHS Tree", ""))
+		addPath(parser.NewBarPath(user+tag1+name), searchDeriveText(user, isHint, name, "LHS Tree", ""))
 	}
 	for _, s := range m.GetValues() {
 		if containsWithCase(s.GetName(), needle, matchCase) {
-			addPath(user+tag1+name, searchDeriveText(user, isHint, name, "Field Name", s.GetName()))
+			addPath(parser.NewBarPath(user+tag1+name), searchDeriveText(user, isHint, name, "Field Name", s.GetName()))
 		}
 		if s.GetNodeType() == parser.NT_STRING {
 			if containsWithCase(s.(*parser.JsonString).GetValue(), needle, matchCase) {
-				addPath(user+tag1+name, searchDeriveText(user, isHint, name, "In Text", s.GetName()))
+				addPath(parser.NewBarPath(user+tag1+name), searchDeriveText(user, isHint, name, "In Text", s.GetName()))
 			}
 		} else {
 			searchLeafNodes(addPath, isHint, needle, user, s.GetName(), s.(*parser.JsonObject), matchCase)
@@ -567,7 +574,7 @@ func GetFirstUidElements(uid string, count int) string {
 	var sb strings.Builder
 	dotCount := 0
 	for _, c := range uid {
-		if c == '.' {
+		if c == PATH_SEP_CHAR {
 			dotCount++
 		}
 		if dotCount == count {
