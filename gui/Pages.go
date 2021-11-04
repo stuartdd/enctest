@@ -55,7 +55,7 @@ const (
 	ACTION_LINK       = "link"
 	ACTION_UPDATED    = "update"
 	ACTION_ADD_NOTE   = "addnode"
-	ACTION_HINT_ITEM  = "addhintitem"
+	ACTION_ADD_HINT   = "addhint"
 )
 
 var (
@@ -81,25 +81,25 @@ func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.
 	notesAreCalled := preferences.GetStringForPathWithFallback(DataNoteIsCalledPrefName, "Note")
 	switch uid.Len() {
 	case 1:
-		return NewDetailPage(uid, uid.String(), "", welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(uid, uid.String(), "", welcomeScreen, userControls, dataRootMap, preferences)
 	case 2:
 		if uid.StringAt(1) == idPwDetails {
-			return NewDetailPage(uid, hintsAreCalled+"s", user, welcomeScreen, welcomeControls, dataRootMap, preferences)
+			return NewDetailPage(uid, hintsAreCalled+"s", user, welcomeScreen, hintControls, dataRootMap, preferences)
 		}
 		if uid.StringAt(1) == idNotes {
-			return NewDetailPage(uid, notesAreCalled+"s", user, notesScreen, notesControls, dataRootMap, preferences)
+			return NewDetailPage(uid, notesAreCalled+"s", user, detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
 		return NewDetailPage(uid, "Unknown", user, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	case 3:
 		if uid.StringAt(1) == idPwDetails {
-			return NewDetailPage(uid, uid.StringAt(2), user, notesScreen, hintsControls, dataRootMap, preferences)
+			return NewDetailPage(uid, uid.StringAt(2), user, detailsScreen, hintDetailsControls, dataRootMap, preferences)
 		}
 		if uid.StringAt(1) == idNotes {
-			return NewDetailPage(uid, uid.StringAt(2), user, notesScreen, notesControls, dataRootMap, preferences)
+			return NewDetailPage(uid, uid.StringAt(2), user, detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
 		return NewDetailPage(uid, "Unknown", "", welcomeScreen, welcomeControls, dataRootMap, preferences)
 	}
-	return NewDetailPage(uid, uid.String(), "", welcomeScreen, notesControls, dataRootMap, preferences)
+	return NewDetailPage(uid, uid.String(), "", welcomeScreen, welcomeControls, dataRootMap, preferences)
 }
 
 func loadImage(s string) (*canvas.Image, string) {
@@ -146,6 +146,12 @@ func positional(s string) fyne.CanvasObject {
 
 func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
+	cObj = append(cObj, widget.NewLabel(details.Heading))
+	return container.NewHBox(cObj...)
+}
+
+func userControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, details.Uid, "")
 	}, statusDisplay, fmt.Sprintf("Delete: - '%s'", details.Title)))
@@ -180,7 +186,16 @@ func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 		)))
 }
 
-func notesControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+	cObj := make([]fyne.CanvasObject, 0)
+	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
+		actionFunc(ACTION_ADD_HINT, details.Uid, "")
+	}, statusDisplay, fmt.Sprintf("Add new Hint to user: %s", details.User)))
+	cObj = append(cObj, widget.NewLabel(details.Heading))
+	return container.NewHBox(cObj...)
+}
+
+func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_NOTE, details.Uid, "")
@@ -189,7 +204,7 @@ func notesControls(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 	return container.NewHBox(cObj...)
 }
 
-func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
 	data := details.GetObjectsForUid()
 	cObj := make([]fyne.CanvasObject, 0)
 	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
@@ -201,7 +216,7 @@ func notesScreen(w fyne.Window, details DetailPage, actionFunc func(string, *par
 			editEntry = NewEditEntry(idd, k, v.String(),
 				func(newWalue string, path *parser.Path) { //onChangeFunction
 					entryChangedFunction(newWalue, path)
-					actionFunc(ACTION_UPDATED, path, "")
+					actionFunc(ACTION_UPDATED, parser.NewBarPath(""), "")
 				},
 				unDoFunction, actionFunc, statusDisplay)
 			EditEntryListCache.Add(editEntry)
@@ -281,7 +296,7 @@ func unDoFunction(path *parser.Path) {
 	}
 }
 
-func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func hintDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, details.Uid, "")
@@ -292,7 +307,7 @@ func hintsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 	}, statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
 
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
-		actionFunc(ACTION_HINT_ITEM, details.Uid, "")
+		actionFunc(ACTION_ADD_HINT, details.Uid, "")
 	}, statusDisplay, fmt.Sprintf("Add new item to: %s", details.Title)))
 
 	cObj = append(cObj, NewMyIconButton("", theme.ContentCopyIcon(), func() {

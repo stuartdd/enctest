@@ -36,6 +36,7 @@ const (
 	allowedCharsInName = " *@#$%^&*()_+=?"
 	dateTimeFormatStr  = "Mon Jan 2 15:04:05 MST 2006"
 	PATH_SEP           = "|"
+	PATH_SEP_CHAR      = '|'
 
 	NOTE_TYPE_SL NodeAnnotationEnum = 0 // These are indexes. Found issues when using iota!
 	NOTE_TYPE_ML NodeAnnotationEnum = 1
@@ -236,39 +237,39 @@ func (p *JsonData) AddUser(userUid string) error {
 	return nil
 }
 
-func (p *JsonData) Rename(uid string, newName string) error {
-	n, err := p.GetUserDataForUid(uid)
+func (p *JsonData) Rename(dataPath *parser.Path, newName string) error {
+	n, err := p.GetUserDataForUid(dataPath)
 	if err != nil {
-		return fmt.Errorf("the item to rename '%s' was not found in the data", uid)
+		return fmt.Errorf("the item to rename '%s' was not found in the data", dataPath)
 	}
 	parent, ok := parser.FindParentNode(p.dataMap, n)
 	if !ok {
-		return fmt.Errorf("the item to rename '%s' does not have a valid parent", uid)
+		return fmt.Errorf("the item to rename '%s' does not have a valid parent", dataPath)
 	}
 	err = parser.Rename(p.dataMap, n, newName)
 	if err != nil {
-		return fmt.Errorf("rename '%s' failed. Error: '%s'", uid, err.Error())
+		return fmt.Errorf("rename '%s' failed. Error: '%s'", dataPath, err.Error())
 	}
 	p.navIndex = createNavIndex(p.dataMap)
 	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
-		p.dataMapUpdated("Renamed", GetUserFromUid(newName), newName, nil)
+		p.dataMapUpdated("Renamed User", newName, newName, nil)
 	} else {
-		p.dataMapUpdated("Renamed", GetUserFromUid(uid), GetParentId(uid)+PATH_SEP+newName, nil)
+		p.dataMapUpdated("Renamed Entity", dataPath.StringFirst(), dataPath.PathParent().StringAppend(newName).String(), nil) // TODO
 	}
 	return nil
 }
 
-func (p *JsonData) Remove(uid string, min int) error {
-	n, err := p.GetUserDataForUid(uid)
+func (p *JsonData) Remove(dataPath *parser.Path, min int) error {
+	n, err := p.GetUserDataForUid(dataPath)
 	if err != nil {
-		return fmt.Errorf("the item to remove '%s' was not found in the data", uid)
+		return fmt.Errorf("the item to remove '%s' was not found in the data", dataPath)
 	}
 	parent, ok := parser.FindParentNode(p.dataMap, n)
 	if !ok {
-		return fmt.Errorf("the item to remove '%s' does not have a valid parent", uid)
+		return fmt.Errorf("the item to remove '%s' does not have a valid parent", dataPath)
 	}
 	if parent.GetNodeType() != parser.NT_OBJECT {
-		return fmt.Errorf("the item to remove '%s' does not have an object parent", uid)
+		return fmt.Errorf("the item to remove '%s' does not have an object parent", dataPath)
 	}
 	parentObj := parent.(*parser.JsonObject)
 	count := parentObj.Len()
@@ -277,7 +278,7 @@ func (p *JsonData) Remove(uid string, min int) error {
 	}
 	parser.Remove(p.dataMap, n)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Removed", GetUserFromUid(uid), GetParentId(uid), nil)
+	p.dataMapUpdated("Removed", dataPath.StringFirst(), dataPath.String(), nil)
 	return nil
 }
 
@@ -285,12 +286,12 @@ func (p *JsonData) IsStringNode(n parser.NodeI) bool {
 	return n.GetNodeType() == parser.NT_STRING
 }
 
-func (p *JsonData) GetUserDataForUid(uid string) (parser.NodeI, error) {
-	return GetUserDataForUid(p.GetDataRoot(), parser.NewBarPath(uid))
+func (p *JsonData) GetUserDataForUid(dataPath *parser.Path) (parser.NodeI, error) {
+	return GetUserDataForUid(p.GetDataRoot(), dataPath)
 }
 
-func GetUserDataForUid(root parser.NodeI, uid *parser.Path) (parser.NodeI, error) {
-	path := dataMapRootPath.PathAppend(uid)
+func GetUserDataForUid(root parser.NodeI, dataPath *parser.Path) (parser.NodeI, error) {
+	path := dataMapRootPath.PathAppend(dataPath)
 	nodes, err := parser.Find(root, path)
 	if err != nil {
 		return nil, err
@@ -503,7 +504,7 @@ func GetLastId(uid string) string {
 	if uid == "" {
 		return uid
 	}
-	p := strings.LastIndexByte(uid, '.')
+	p := strings.LastIndexByte(uid, PATH_SEP_CHAR)
 	switch p {
 	case -1:
 		return uid
@@ -514,11 +515,21 @@ func GetLastId(uid string) string {
 	}
 }
 
+func GetUidPathFromDataPath(dataPath *parser.Path) *parser.Path {
+	if dataPath.Len() == 0 {
+		return dataPath
+	}
+	if dataPath.StringFirst() == dataMapRootName {
+		dataPath = dataPath.PathLast(dataPath.Len() - 1)
+	}
+	return dataPath
+}
+
 func GetParentId(uid string) string {
 	if uid == "" {
 		return uid
 	}
-	p := strings.LastIndexByte(uid, '.')
+	p := strings.LastIndexByte(uid, PATH_SEP_CHAR)
 	switch p {
 	case -1:
 		return uid

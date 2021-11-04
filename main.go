@@ -285,9 +285,7 @@ func main() {
 				// Init the devider (split)
 				// Populate the window and we are done!
 				navTreeLHS = makeNavTree(setPageRHSFunc)
-				uid := jsonData.GetRootUidOrCurrentUid(currentUid)
-				log(fmt.Sprintf("Re-build nav tree. Sel:'%s' uid:'%s'", currentUid, uid))
-				selectTreeElement("MAIN_THREAD_RELOAD_TREE", uid)
+				selectTreeElement("MAIN_THREAD_RELOAD_TREE", currentUid)
 				if splitContainerOffset < 0 {
 					splitContainerOffset = splitContainerOffsetPref
 				} else {
@@ -601,6 +599,10 @@ func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	return container.NewVBox(widget.NewSeparator(), c)
 }
 
+func dataPreferencesChanged(path, value, filter string) {
+	futureReleaseTheBeast(100, MAIN_THREAD_RESELECT)
+}
+
 /**
 This is called when a heading button is pressed of the RH page
 */
@@ -608,53 +610,193 @@ func controlActionFunction(action string, uid *parser.Path, extra string) {
 	viewActionFunction(action, uid, extra)
 }
 
-func dataPreferencesChanged(path, value, filter string) {
-	futureReleaseTheBeast(100, MAIN_THREAD_RESELECT)
-}
-
 /**
-This is called when a detail button is pressed of the RH page
+This is called when a button is pressed of the RH page
 */
 func viewActionFunction(action string, dataPath *parser.Path, extra string) {
 	log(fmt.Sprintf("Action:%s path:'%s' extra:'%s'", action, dataPath, extra))
 	switch action {
-	case gui.ACTION_LOG:
-		log(gui.LogCleanString(extra, 100))
 	case gui.ACTION_REMOVE:
-		removeAction(dataPath.String()) // TODO
-	case gui.ACTION_HINT_ITEM:
-		addNewHintItem()
+		removeAction(dataPath)
+	case gui.ACTION_RENAME:
+		renameAction(dataPath, extra)
+	case gui.ACTION_LINK:
+		linkAction(dataPath.String(), extra) // TODO
 	case gui.ACTION_ADD_NOTE:
 		addNewNoteItem()
-	case gui.ACTION_RENAME:
-		renameAction(dataPath.String(), extra) // TODO
+	case gui.ACTION_ADD_HINT:
+		addNewHintItem()
 	case gui.ACTION_CLONE_FULL:
 		cloneHintFull()
 	case gui.ACTION_CLONE:
 		cloneHint()
-	case gui.ACTION_LINK:
-		linkAction(dataPath.String(), extra) // TODO
 	case gui.ACTION_UPDATED:
 		futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
 	case gui.ACTION_COPIED:
 		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 2500), "Copied item text to clipboard", dataPath.String())
+	case gui.ACTION_LOG:
+		log(gui.LogCleanString(extra, 100))
+	}
+}
+
+func cloneHint() {
+	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE, false)
+}
+
+func cloneHintFull() {
+	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE_FULL, false)
+}
+
+/**
+Add a user via addNewEntity
+*/
+func addNewUser() {
+	addNewEntity("User", "User", ADD_TYPE_USER, false)
+}
+
+/**
+Add a hint via addNewEntity
+*/
+func addNewHint() {
+	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	addNewEntity(n+" for ", n, ADD_TYPE_HINT, false)
+}
+
+/**
+Selecting the menu to add an item to a hint
+*/
+func addNewHintItem() {
+	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Hint")
+	ch := lib.GetHintFromUid(currentUid)
+	if ch == "" {
+		logInformationDialog("Add New "+n, fmt.Sprintf("A %s needs to be selected", n))
+	} else {
+		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_HINT_ITEM, true)
+	}
+}
+
+/**
+Selecting the menu to add an item to the notes
+*/
+func addNewNoteItem() {
+	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
+	addNewEntity(n+" Item for ", n, ADD_TYPE_NOTE_ITEM, true)
+}
+
+/**
+Add an entity to the model.
+Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
+*/
+func addNewEntity(head string, name string, addType int, isNote bool) {
+	cu := lib.GetUserFromUid(currentUid)
+	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, lib.NOTE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
+		if accept {
+			entityName, err := lib.ProcessEntityName(newName, nt)
+			if err == nil {
+				switch addType {
+				case ADD_TYPE_USER:
+					err = jsonData.AddUser(entityName)
+				case ADD_TYPE_NOTE_ITEM:
+					err = jsonData.AddNoteItem(cu, entityName)
+				case ADD_TYPE_HINT:
+					err = jsonData.AddHint(cu, entityName)
+				case ADD_TYPE_HINT_CLONE:
+					err = jsonData.CloneHint(cu, currentUid, entityName, false)
+				case ADD_TYPE_HINT_CLONE_FULL:
+					err = jsonData.CloneHint(cu, currentUid, entityName, true)
+				case ADD_TYPE_HINT_ITEM:
+					err = jsonData.AddHintItem(cu, currentUid, entityName)
+				}
+			}
+			if err != nil {
+				logInformationDialog("Add New "+name, "Error: "+err.Error())
+			}
+		}
+	})
+}
+
+/**
+Remove a node from the main data (model) and update the tree view
+dataMapUpdated id called if a change is made to the model
+*/
+func removeAction(dataPath *parser.Path) {
+	log(fmt.Sprintf("removeAction Uid:'%s'", dataPath))
+	_, removeName := lib.GetNodeAnnotationTypeAndName(dataPath.StringLast())
+	dialog.NewConfirm("Remove entry", fmt.Sprintf("'%s'\nAre you sure?", removeName), func(ok bool) {
+		if ok {
+			err := jsonData.Remove(dataPath, 1)
+			if err != nil {
+				logInformationDialog("Remove item error", err.Error())
+			}
+		}
+	}, window).Show()
+}
+
+/**
+Rename a node from the main data (model) and update the tree view
+dataMapUpdated id called if a change is made to the model
+*/
+func renameAction(dataPath *parser.Path, extra string) {
+	log(fmt.Sprintf("renameAction dataPath:'%s' Extra:'%s'", dataPath, extra))
+	m, _ := jsonData.GetUserDataForUid(dataPath)
+	if m != nil {
+		at, fromName := lib.GetNodeAnnotationTypeAndName(dataPath.StringLast())
+		toName := ""
+		isNote := false
+		if jsonData.IsStringNode(m) {
+			toName = fromName
+			isNote = true
+		}
+		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), toName, isNote, at, func(accept bool, toName string, nt lib.NodeAnnotationEnum) {
+			if accept {
+				s, err := lib.ProcessEntityName(toName, nt)
+				if err != nil {
+					logInformationDialog("Name validation error", err.Error())
+				} else {
+					err := jsonData.Rename(dataPath, s)
+					if err != nil {
+						logInformationDialog("Rename item error", err.Error())
+					}
+				}
+			}
+		})
+	}
+}
+
+/**
+Activate a link in a browser if it is contained in a note or hint
+*/
+func linkAction(uid, urlStr string) {
+	log(fmt.Sprintf("linkAction Uid:'%s' Url:%s", uid, urlStr))
+	if urlStr != "" {
+		s, err := url.Parse(urlStr)
+		if err != nil {
+			logInformationDialog("Error: Link failed to parse", err.Error())
+		} else {
+			err = fyne.CurrentApp().OpenURL(s)
+			if err != nil {
+				logInformationDialog("Error: Link could not be opened", err.Error())
+			} else {
+				timedNotification(preferences.GetInt64WithFallback(linkDialogTimePrefName, 2500), "Open Link (URL)", urlStr)
+			}
+		}
+	} else {
+		logInformationDialog("Error: Link could not be opened", "An empty link was provided")
 	}
 }
 
 /**
 Called if there is a structural change in the model
 */
-func dataMapUpdated(desc, user, path string, err error) {
+func dataMapUpdated(desc, user, dataPath string, err error) {
 	if err == nil {
-		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' Path:'%s'", desc, user, path))
-		pp := lib.GetParentId(path)
-		if jsonData.GetNavIndex(pp) == nil {
-			path = pp
-		}
-		currentUid = path
+		currentUid = lib.GetUidPathFromDataPath(parser.NewBarPath(dataPath)).String()
+		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' DataPath:'%s' Uid:'%s'", desc, user, dataPath, currentUid))
 		hasDataChanges = true
 	} else {
-		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' Path:'%s', Err:'%s'", desc, user, path, err.Error()))
+		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' DataPath:'%s', Err:'%s'", desc, user, dataPath, err.Error()))
 	}
 	futureReleaseTheBeast(100, MAIN_THREAD_RELOAD_TREE)
 }
@@ -693,76 +835,6 @@ func setFullScreen(fullScreen, refreshMenu bool) {
 	}
 }
 
-/**
-Remove a node from the main data (model) and update the tree view
-dataMapUpdated id called if a change is made to the model
-*/
-func removeAction(uid string) {
-	log(fmt.Sprintf("removeAction Uid:'%s'", uid))
-	_, removeName := lib.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
-	dialog.NewConfirm("Remove entry", fmt.Sprintf("'%s'\nAre you sure?", removeName), func(ok bool) {
-		if ok {
-			err := jsonData.Remove(uid, 1)
-			if err != nil {
-				logInformationDialog("Remove item error", err.Error())
-			}
-		}
-	}, window).Show()
-}
-
-/**
-Rename a node from the main data (model) and update the tree view
-dataMapUpdated id called if a change is made to the model
-*/
-func renameAction(uid string, extra string) {
-	log(fmt.Sprintf("renameAction Uid:'%s'  Extra:'%s'", uid, extra))
-	m, _ := jsonData.GetUserDataForUid(uid)
-	if m != nil {
-		at, fromName := lib.GetNodeAnnotationTypeAndName(lib.GetLastId(uid))
-		toName := ""
-		isNote := false
-		if jsonData.IsStringNode(m) {
-			toName = fromName
-			isNote = true
-		}
-		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), toName, isNote, at, func(accept bool, toName string, nt lib.NodeAnnotationEnum) {
-			if accept {
-				s, err := lib.ProcessEntityName(toName, nt)
-				if err != nil {
-					logInformationDialog("Name validation error", err.Error())
-				} else {
-					err := jsonData.Rename(uid, s)
-					if err != nil {
-						logInformationDialog("Rename item error", err.Error())
-					}
-				}
-			}
-		})
-	}
-}
-
-/**
-Activate a link in a browser if it is contained in a note or hint
-*/
-func linkAction(uid, urlStr string) {
-	log(fmt.Sprintf("linkAction Uid:'%s' Url:%s", uid, urlStr))
-	if urlStr != "" {
-		s, err := url.Parse(urlStr)
-		if err != nil {
-			logInformationDialog("Error: Link failed to parse", err.Error())
-		} else {
-			err = fyne.CurrentApp().OpenURL(s)
-			if err != nil {
-				logInformationDialog("Error: Link could not be opened", err.Error())
-			} else {
-				timedNotification(preferences.GetInt64WithFallback(linkDialogTimePrefName, 2500), "Open Link (URL)", urlStr)
-			}
-		}
-	} else {
-		logInformationDialog("Error: Link could not be opened", "An empty link was provided")
-	}
-}
-
 func closeSearchWindow() {
 	if searchWindow != nil {
 		searchWindow.Close()
@@ -795,84 +867,6 @@ func search(s string) {
 	} else {
 		logInformationDialog("Search results", fmt.Sprintf("Nothing found for search '%s'", s))
 	}
-}
-
-/**
-Selecting the menu to add a user
-*/
-func addNewUser() {
-	addNewEntity("User", "User", ADD_TYPE_USER, false)
-}
-
-/**
-Selecting the menu to add a hint
-*/
-func addNewHint() {
-	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
-	addNewEntity(n+" for ", n, ADD_TYPE_HINT, false)
-}
-
-func cloneHint() {
-	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
-	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE, false)
-}
-
-func cloneHintFull() {
-	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
-	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE_FULL, false)
-}
-
-/**
-Selecting the menu to add an item to a hint
-*/
-func addNewHintItem() {
-	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Hint")
-	ch := lib.GetHintFromUid(currentUid)
-	if ch == "" {
-		logInformationDialog("Add New "+n, fmt.Sprintf("A %s needs to be selected", n))
-	} else {
-		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_HINT_ITEM, true)
-	}
-}
-
-/**
-Selecting the menu to add an item to the notes
-*/
-func addNewNoteItem() {
-	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
-	addNewEntity(n+" Item for ", n, ADD_TYPE_NOTE_ITEM, true)
-}
-
-/**
-Add an entity to the model.
-Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
-*/
-func addNewEntity(head string, name string, addType int, isNote bool) {
-	cu := lib.GetUserFromUid(currentUid)
-	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, lib.NOTE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
-		if accept {
-			s, err := lib.ProcessEntityName(newName, nt)
-			if err == nil {
-				switch addType {
-				case ADD_TYPE_USER:
-					err = jsonData.AddUser(s)
-				case ADD_TYPE_NOTE_ITEM:
-					err = jsonData.AddNoteItem(cu, s)
-				case ADD_TYPE_HINT:
-					err = jsonData.AddHint(cu, s)
-				case ADD_TYPE_HINT_CLONE:
-					err = jsonData.CloneHint(cu, currentUid, s, false)
-				case ADD_TYPE_HINT_CLONE_FULL:
-					err = jsonData.CloneHint(cu, currentUid, s, true)
-				case ADD_TYPE_HINT_ITEM:
-					err = jsonData.AddHintItem(cu, currentUid, s)
-				}
-			}
-			if err != nil {
-				logInformationDialog("Add New "+name, "Error: "+err.Error())
-			}
-		}
-	})
 }
 
 /**
