@@ -647,6 +647,8 @@ func viewActionFunction(action string, dataPath *parser.Path, extra string) {
 	case gui.ACTION_ADD_NOTE:
 		addNewNoteItem()
 	case gui.ACTION_ADD_HINT:
+		addNewHint()
+	case gui.ACTION_ADD_HINT_ITEM:
 		addNewHintItem()
 	case gui.ACTION_CLONE_FULL:
 		cloneHintFull()

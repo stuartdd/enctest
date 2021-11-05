@@ -46,16 +46,17 @@ const (
 
 	PATH_SEP = "|"
 
-	ACTION_LOG        = "log"
-	ACTION_COPIED     = "copied"
-	ACTION_REMOVE     = "remove"
-	ACTION_RENAME     = "rename"
-	ACTION_CLONE      = "clone"
-	ACTION_CLONE_FULL = "clonefull"
-	ACTION_LINK       = "link"
-	ACTION_UPDATED    = "update"
-	ACTION_ADD_NOTE   = "addnode"
-	ACTION_ADD_HINT   = "addhint"
+	ACTION_LOG           = "log"
+	ACTION_COPIED        = "copied"
+	ACTION_REMOVE        = "remove"
+	ACTION_RENAME        = "rename"
+	ACTION_CLONE         = "clone"
+	ACTION_CLONE_FULL    = "clonefull"
+	ACTION_LINK          = "link"
+	ACTION_UPDATED       = "update"
+	ACTION_ADD_NOTE      = "addnode"
+	ACTION_ADD_HINT      = "addhint"
+	ACTION_ADD_HINT_ITEM = "addhintitem"
 )
 
 var (
@@ -307,7 +308,7 @@ func hintDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(stri
 	}, statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
 
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
-		actionFunc(ACTION_ADD_HINT, details.Uid, "")
+		actionFunc(ACTION_ADD_HINT_ITEM, details.Uid, "")
 	}, statusDisplay, fmt.Sprintf("Add new item to: %s", details.Title)))
 
 	cObj = append(cObj, NewMyIconButton("", theme.ContentCopyIcon(), func() {
