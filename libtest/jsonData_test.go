@@ -122,7 +122,7 @@ func TestJsonDataNoTimeStamp(t *testing.T) {
 	}
 }
 
-func updateMap(a, b, c string, e error) {
+func updateMap(a, b string, c *parser.Path, e error) {
 	// if e == nil {
 	// 	fmt.Printf("Updated:%s, %s, %s\n", a, b, c)
 	// } else {

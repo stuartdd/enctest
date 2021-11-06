@@ -58,10 +58,10 @@ var (
 type JsonData struct {
 	dataMap        *parser.JsonObject
 	navIndex       *map[string][]string
-	dataMapUpdated func(string, string, string, error)
+	dataMapUpdated func(string, string, *parser.Path, error)
 }
 
-func NewJsonData(j []byte, dataMapUpdated func(string, string, string, error)) (*JsonData, error) {
+func NewJsonData(j []byte, dataMapUpdated func(string, string, *parser.Path, error)) (*JsonData, error) {
 	mIn, err := parser.Parse(j)
 	if err != nil {
 		return nil, err
@@ -174,64 +174,67 @@ func (p *JsonData) Search(addPath func(*parser.Path, string), needle string, mat
 	}
 }
 
-func (p *JsonData) CloneHint(userUid, path, hintItemName string, cloneLeafNodeData bool) error {
-	h, err := parser.Find(p.GetUserRoot(), parser.NewBarPath(path))
+// TODO path -> Path
+func (p *JsonData) CloneHint(userUid string, path string, hintItemName string, cloneLeafNodeData bool) error {
+	dataPath := parser.NewBarPath(path)
+	h, err := parser.Find(p.GetUserRoot(), dataPath)
 	if err != nil {
-		return fmt.Errorf("the clone hint '%s' cannot be found", path)
+		return fmt.Errorf("the clone hint '%s' cannot be found", dataPath)
 	}
 	if h.GetNodeType() != parser.NT_OBJECT {
-		return fmt.Errorf("the clone hint item '%s' was not an object node", path)
+		return fmt.Errorf("the clone hint item '%s' was not an object node", dataPath)
 	}
 	parent, _ := parser.FindParentNode(p.dataMap, h)
 	if parent.(parser.NodeC).GetNodeWithName(hintItemName) != nil {
-		return fmt.Errorf("the cloned item '%s' name already exists", path)
+		return fmt.Errorf("the cloned item '%s' name already exists", dataPath)
 	}
 	cl := parser.Clone(h, hintItemName, cloneLeafNodeData)
 	parent.(parser.NodeC).Add(cl)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated(fmt.Sprintf("Cloned Item '%s' added", hintItemName), GetUserFromUid(userUid), GetFirstUidElements(path, 2)+PATH_SEP+hintItemName, nil)
+	p.dataMapUpdated(fmt.Sprintf("Cloned Item '%s' added", hintItemName), dataPath.StringAt(0), dataPath.PathFirst(2).StringAppend(hintItemName), nil)
 	return nil
 }
 
 func (p *JsonData) AddHintItem(userUid, path, hintItemName string) error {
-	h, err := parser.Find(p.GetUserRoot(), parser.NewBarPath(path))
+	dataPath := parser.NewBarPath(path)
+	h, err := parser.Find(p.GetUserRoot(), dataPath)
 	if err != nil {
-		return fmt.Errorf("the hint '%s' cannot be found", path)
+		return fmt.Errorf("the hint '%s' cannot be found", dataPath)
 	}
 	if h.GetNodeType() != parser.NT_OBJECT {
-		return fmt.Errorf("the hint item '%s' was not an object node", path)
+		return fmt.Errorf("the hint item '%s' was not an object node", dataPath)
 	}
 	hO := h.(*parser.JsonObject)
 	addStringIfDoesNotExist(hO, hintItemName)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Note Item", GetUserFromUid(userUid), path, nil)
+	p.dataMapUpdated("Add Note Item", GetUserFromUid(userUid), dataPath, nil)
 	return nil
 }
 
 func (p *JsonData) AddHint(userUid, hintName string) error {
-	u := p.GetUserNode(userUid)
+	u := p.GetUserNode(userUid) // TODO userId -> Path
 	if u == nil {
 		return fmt.Errorf("the user '%s' cannot be found", userUid)
 	}
 	addHintToUser(u, hintName)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Note Item", GetUserFromUid(userUid), userUid+PATH_SEP+hintNodeName+PATH_SEP+hintName, nil)
+	p.dataMapUpdated("Add Note Item", GetUserFromUid(userUid), parser.NewBarPath(userUid).StringAppend(hintName), nil)
 	return nil
 }
 
 func (p *JsonData) AddNoteItem(userUid, itemName string) error {
-	u := p.GetUserNode(userUid)
+	u := p.GetUserNode(userUid) // TODO userId -> Path
 	if u == nil {
 		return fmt.Errorf("the user '%s' cannot be found", userUid)
 	}
 	addNoteToUser(u, itemName, "")
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Note Item", GetUserFromUid(userUid), userUid+PATH_SEP+noteNodeName, nil)
+	p.dataMapUpdated("Add Note Item", GetUserFromUid(userUid), parser.NewBarPath(userUid).StringAppend(noteNodeName), nil)
 	return nil
 }
 
 func (p *JsonData) AddUser(userUid string) error {
-	u := p.GetUserNode(userUid)
+	u := p.GetUserNode(userUid) // TODO userId -> Path
 	if u != nil {
 		return fmt.Errorf("the user '%s' already exists", userUid)
 	}
@@ -240,7 +243,7 @@ func (p *JsonData) AddUser(userUid string) error {
 	addHintToUser(userO, "App1")
 	p.GetUserRoot().Add(userO)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("New User", GetUserFromUid(userUid), userUid, nil)
+	p.dataMapUpdated("New User", GetUserFromUid(userUid), parser.NewBarPath(userUid), nil)
 	return nil
 }
 
@@ -259,9 +262,9 @@ func (p *JsonData) Rename(dataPath *parser.Path, newName string) error {
 	}
 	p.navIndex = createNavIndex(p.dataMap)
 	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
-		p.dataMapUpdated(fmt.Sprintf("Renamed User '%s'", n.GetName()), newName, newName, nil) // TODO No Strings
+		p.dataMapUpdated(fmt.Sprintf("Renamed User '%s'", n.GetName()), newName, parser.NewBarPath(newName), nil) // TODO No Strings
 	} else {
-		p.dataMapUpdated(fmt.Sprintf("Renamed Item '%s'", n.GetName()), dataPath.StringFirst(), dataPath.PathParent().StringAppend(newName).String(), nil) // TODO No Strings
+		p.dataMapUpdated(fmt.Sprintf("Renamed Item '%s'", n.GetName()), dataPath.StringFirst(), dataPath.PathParent().StringAppend(newName), nil) // TODO No Strings
 	}
 	return nil
 }
@@ -286,9 +289,9 @@ func (p *JsonData) Remove(dataPath *parser.Path, min int) error {
 	parser.Remove(p.dataMap, n)
 	p.navIndex = createNavIndex(p.dataMap)
 	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
-		p.dataMapUpdated(fmt.Sprintf("Removed User '%s'", n.GetName()), "", "", nil) // TODO No Strings
+		p.dataMapUpdated(fmt.Sprintf("Removed User '%s'", n.GetName()), "", parser.NewBarPath(""), nil) // TODO No Strings
 	} else {
-		p.dataMapUpdated(fmt.Sprintf("Removed Item '%s'", n.GetName()), dataPath.StringFirst(), dataPath.PathParent().String(), nil) // TODO No Strings
+		p.dataMapUpdated(fmt.Sprintf("Removed Item '%s'", n.GetName()), dataPath.StringFirst(), dataPath.PathParent(), nil) //
 	}
 	return nil
 }

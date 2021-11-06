@@ -614,9 +614,9 @@ func selectTreeElement(desc string, uid *parser.Path) {
 /**
 Called if there is a structural change in the model
 */
-func dataMapUpdated(desc, user, dataPath string, err error) {
+func dataMapUpdated(desc, user string, dataPath *parser.Path, err error) {
 	if err == nil {
-		currentUid = lib.GetUidPathFromDataPath(parser.NewBarPath(dataPath)).String()
+		currentUid = lib.GetUidPathFromDataPath(dataPath).String() // TODO currentId --> path
 		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' DataPath:'%s'. Derived currentUid:'%s'", desc, user, dataPath, currentUid))
 		hasDataChanges = true
 	} else {
