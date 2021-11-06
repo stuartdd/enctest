@@ -244,7 +244,7 @@ func loadDataMap(fileName string) {
 	}
 }
 
-func dataMapUpdated(desc, user string, path *parser.Path, err error) {
+func dataMapUpdated(desc string, path *parser.Path, err error) {
 	// fmt.Printf("Updated: %s User: %s Path:%s Err:%s\n", desc, user, path, err.Error())
 }
 

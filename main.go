@@ -614,13 +614,13 @@ func selectTreeElement(desc string, uid *parser.Path) {
 /**
 Called if there is a structural change in the model
 */
-func dataMapUpdated(desc, user string, dataPath *parser.Path, err error) {
+func dataMapUpdated(desc string, dataPath *parser.Path, err error) {
 	if err == nil {
 		currentUid = lib.GetUidPathFromDataPath(dataPath).String() // TODO currentId --> path
-		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' DataPath:'%s'. Derived currentUid:'%s'", desc, user, dataPath, currentUid))
+		log(fmt.Sprintf("dataMapUpdated Desc:'%s' DataPath:'%s'. Derived currentUid:'%s'", desc, dataPath, currentUid))
 		hasDataChanges = true
 	} else {
-		log(fmt.Sprintf("dataMapUpdated Desc:'%s' User:'%s' DataPath:'%s', Err:'%s'", desc, user, dataPath, err.Error()))
+		log(fmt.Sprintf("dataMapUpdated Desc:'%s' DataPath:'%s', Err:'%s'", desc, dataPath, err.Error()))
 	}
 	futureReleaseTheBeast(100, MAIN_THREAD_RELOAD_TREE)
 }
@@ -727,11 +727,11 @@ func addNewEntity(head string, name string, addType int, isNote bool) {
 				case ADD_TYPE_HINT:
 					err = jsonData.AddHint(cu, entityName)
 				case ADD_TYPE_HINT_CLONE:
-					err = jsonData.CloneHint(cu, currentUid, entityName, false)
+					err = jsonData.CloneHint(currentUid, entityName, false)
 				case ADD_TYPE_HINT_CLONE_FULL:
-					err = jsonData.CloneHint(cu, currentUid, entityName, true)
+					err = jsonData.CloneHint(currentUid, entityName, true)
 				case ADD_TYPE_HINT_ITEM:
-					err = jsonData.AddHintItem(cu, currentUid, entityName)
+					err = jsonData.AddHintItem(currentUid, entityName)
 				}
 			}
 			if err != nil {
