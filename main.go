@@ -204,9 +204,9 @@ func main() {
 		This updates the contentRHS which is the RHS page for editing data
 	*/
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
-		currentUid = detailPage.Uid.String() //// TODO
+		currentUid = detailPage.Uid.String() // TODO currentUid -> Path
 		if searchWindow != nil {
-			go searchWindow.Select(currentUid) // TODO
+			go searchWindow.Select(currentUid) // TODO currentUid -> Path
 		}
 		log(fmt.Sprintf("Page User:'%s' Uid:'%s'", lib.GetUserFromUid(currentUid), currentUid))
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), lib.GetUserFromUid(currentUid)))
@@ -285,7 +285,7 @@ func main() {
 				// Init the devider (split)
 				// Populate the window and we are done!
 				navTreeLHS = makeNavTree(setPageRHSFunc)
-				selectTreeElement("MAIN_THREAD_RELOAD_TREE", parser.NewBarPath(currentUid)) // TODO
+				selectTreeElement("MAIN_THREAD_RELOAD_TREE", parser.NewBarPath(currentUid)) // TODO currentUid -> Path
 				if splitContainerOffset < 0 {
 					splitContainerOffset = splitContainerOffsetPref
 				} else {
@@ -410,7 +410,7 @@ func logDataRequest(action string) {
 	case "navmap":
 		log(fmt.Sprintf("NavMap: ----------------\n%s", jsonData.GetNavIndexAsString()))
 	case "select":
-		m, err := lib.GetUserDataForUid(jsonData.GetDataRoot(), parser.NewBarPath(currentUid)) /// TODO
+		m, err := lib.GetUserDataForUid(jsonData.GetDataRoot(), parser.NewBarPath(currentUid)) // TODO currentUid -> Path
 		if err != nil {
 			log(fmt.Sprintf("Data for uid [%s] not found. %s", currentUid, err.Error()))
 		}
@@ -643,7 +643,7 @@ func viewActionFunction(action string, dataPath *parser.Path, extra string) {
 	case gui.ACTION_RENAME:
 		renameAction(dataPath, extra)
 	case gui.ACTION_LINK:
-		linkAction(dataPath.String(), extra) // TODO
+		linkAction(dataPath, extra)
 	case gui.ACTION_ADD_NOTE:
 		addNewNoteItem()
 	case gui.ACTION_ADD_HINT:
@@ -792,7 +792,7 @@ func renameAction(dataPath *parser.Path, extra string) {
 /**
 Activate a link in a browser if it is contained in a note or hint
 */
-func linkAction(uid, urlStr string) {
+func linkAction(uid *parser.Path, urlStr string) {
 	log(fmt.Sprintf("linkAction Uid:'%s' Url:%s", uid, urlStr))
 	if urlStr != "" {
 		s, err := url.Parse(urlStr)
