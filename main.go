@@ -41,20 +41,21 @@ import (
 )
 
 const (
-	SAVE_AS_IS              = iota
-	SAVE_ENCRYPTED          = iota
-	SAVE_UN_ENCRYPTED       = iota
-	MAIN_THREAD_LOAD        = iota
-	MAIN_THREAD_RELOAD_TREE = iota
-	MAIN_THREAD_RESELECT    = iota
-	MAIN_THREAD_RE_MENU     = iota
+	SAVE_AS_IS = iota
+	SAVE_ENCRYPTED
+	SAVE_UN_ENCRYPTED
 
-	ADD_TYPE_USER            = iota
-	ADD_TYPE_HINT            = iota
-	ADD_TYPE_HINT_CLONE      = iota
-	ADD_TYPE_HINT_CLONE_FULL = iota
-	ADD_TYPE_HINT_ITEM       = iota
-	ADD_TYPE_NOTE_ITEM       = iota
+	MAIN_THREAD_LOAD = iota
+	MAIN_THREAD_RELOAD_TREE
+	MAIN_THREAD_RESELECT
+	MAIN_THREAD_RE_MENU
+
+	ADD_TYPE_USER = iota
+	ADD_TYPE_HINT
+	ADD_TYPE_HINT_CLONE
+	ADD_TYPE_HINT_CLONE_FULL
+	ADD_TYPE_HINT_ITEM
+	ADD_TYPE_NOTE_ITEM
 
 	UID_POS_USER   = 0
 	UID_POS_PWHINT = 2
@@ -217,7 +218,7 @@ func main() {
 		navTreeLHS.OpenBranch(currentUid.String())
 		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction, statusDisplay)}
 		title.Refresh()
-		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage, viewActionFunction, statusDisplay)}
+		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage, controlActionFunction, statusDisplay)}
 		contentRHS.Refresh()
 	}
 
@@ -225,7 +226,7 @@ func main() {
 		Thread keeps running in background
 		To Trigger it:
 			set loadThreadFileName = filename
-			requestMainThreadIn(1000, MAIN_THREAD_LOAD)
+			futureReleaseTheBeast(1000, MAIN_THREAD_LOAD)
 	*/
 	go func() {
 		/*
@@ -313,6 +314,7 @@ func main() {
 	futureReleaseTheBeast(500, MAIN_THREAD_LOAD)
 	preferences.AddChangeListener(dataPreferencesChanged, "data.")
 	setFullScreen(preferences.GetBoolWithFallback(screenFullPrefName, false), false)
+	log("ShowAndRun")
 	window.ShowAndRun()
 }
 
@@ -325,16 +327,22 @@ func futureReleaseTheBeast(ms int, status int) {
 			// Wait for the required time before sending the request
 			//
 			time.Sleep(time.Duration(ms) * time.Millisecond)
+			// MAIN_THREAD_LOAD has priority
+			if status == MAIN_THREAD_LOAD {
+				releaseTheBeast <- status
+				return
+			}
 			//
-			// Cannot do anything until MAIN_THREAD_LOAD is run and dataIsLoaded = true
+			// Cannot do anything until MAIN_THREAD_LOAD is run and dataIsNotLoadedYet = false
 			// But we cannot give in so we wait. But not forever!
 			//
-			if status != MAIN_THREAD_LOAD && dataIsNotLoadedYet {
+			if dataIsNotLoadedYet {
 				count := 0
 				for dataIsNotLoadedYet {
 					time.Sleep(100 * time.Millisecond)
 					count++
-					if count > 10 {
+					if count > 100 {
+						log(fmt.Sprintf("ReleaseTheBeast timed out waiting for data to load. Status:%d", status))
 						return
 					}
 				}
@@ -607,7 +615,7 @@ func selectTreeElement(desc string, uid *parser.Path) {
 	}
 	user := uid.StringFirst()
 	parent := uid.PathParent().String()
-	log(fmt.Sprintf("selectTreeElement: Desc:'%s' User:'%s' Parent:'%s' Uid:'%s'", desc, user, parent, uid))
+	log(fmt.Sprintf("SelectTreeElement: Desc:'%s' User:'%s' Parent:'%s' Uid:'%s'", desc, user, parent, uid))
 	navTreeLHS.OpenBranch(user)
 	navTreeLHS.OpenBranch(parent)
 	navTreeLHS.Select(uid.String())
@@ -631,20 +639,12 @@ func dataMapUpdated(desc string, dataPath *parser.Path, err error) {
 	} else {
 		log(fmt.Sprintf("dataMapUpdated Error. Desc:'%s' DataPath:'%s', Err:'%s'", desc, dataPath, err.Error()))
 	}
-
-}
-
-/**
-This is called when a heading button is pressed of the RH page
-*/
-func controlActionFunction(action string, uid *parser.Path, extra string) {
-	viewActionFunction(action, uid, extra)
 }
 
 /**
 This is called when a button is pressed of the RH page
 */
-func viewActionFunction(action string, dataPath *parser.Path, extra string) {
+func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 	log(fmt.Sprintf("Action:%s path:'%s' extra:'%s'", action, dataPath, extra))
 	switch action {
 	case gui.ACTION_REMOVE:
@@ -666,7 +666,7 @@ func viewActionFunction(action string, dataPath *parser.Path, extra string) {
 	case gui.ACTION_UPDATED:
 		futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
 	case gui.ACTION_COPIED:
-		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 2500), "Copied item text to clipboard", dataPath.String())
+		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 1500), "Copied item text to clipboard", dataPath.String())
 	case gui.ACTION_LOG:
 		log(gui.LogCleanString(extra, 100))
 	}

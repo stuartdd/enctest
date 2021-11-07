@@ -9,7 +9,7 @@ replace stuartdd.com/pref => ../pref
 replace stuartdd.com/theme2 => ../theme2
 
 require (
-	fyne.io/fyne/v2 v2.1.1
+	fyne.io/fyne/v2 v2.1.2-0.20211103153407-1c0e05f066dd
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect
 	github.com/stuartdd/jsonParserGo/parser v0.0.0-20211107002007-e7ea95bb74a6

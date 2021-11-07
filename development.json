@@ -1,19 +1,28 @@
 
     {
-        "screen": {
-            "split": 0.2,
-            "width": 935.714355,
-            "height": 558.571472,
-            "fullScreen": false
+        "data": {
+            "noteIsCalled": "Note",
+            "presentationmode": true,
+            "hintIsCalled": "Hint"
         },
         "log.active": false,
-        "log.prefix": "INFO",
-        "data.noteIsCalled": "Note",
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
+        "data.hintIsCalled": "Hint",
+        "data.presentationmode": true,
+        "file.postDataUrl": "",
+        "file.datafile": "data.json",
+        "log": {
+            "prefix": "INFO",
+            "fileName": "enctest.log",
+            "active": true
         },
-        "file.getDataUrl": "",
+        "data.noteIsCalled": "Note",
+        "screen": {
+            "fullScreen": false,
+            "split": 0.2,
+            "width": 935.714355,
+            "height": 556.190491
+        },
+        "theme": "dark",
         "search": {
             "lastGoodList": [
                 "notes",
@@ -23,27 +32,18 @@
             ],
             "case": true
         },
-        "search.case": true,
+        "log.prefix": "INFO",
+        "screen.split": 0.2,
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
+        },
+        "log.fileName": "enctest.log",
         "file": {
             "datafile": "libtest/TestDataTypes.json",
             "getDataUrl": "",
             "postDataUrl": ""
         },
-        "screen.split": 0.2,
-        "data": {
-            "presentationmode": true,
-            "hintIsCalled": "Hint",
-            "noteIsCalled": "Note"
-        },
-        "log.fileName": "enctest.log",
-        "file.datafile": "data.json",
-        "theme": "dark",
-        "data.hintIsCalled": "Hint",
-        "data.presentationmode": true,
-        "file.postDataUrl": "",
-        "log": {
-            "prefix": "INFO",
-            "fileName": "enctest.log",
-            "active": true
-        }
+        "file.getDataUrl": "",
+        "search.case": true
     }
