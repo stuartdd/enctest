@@ -133,15 +133,15 @@ func (p *JsonData) GetUserRoot() *parser.JsonObject {
 	return p.dataMap.GetNodeWithName(dataMapRootName).(*parser.JsonObject)
 }
 
-func (p *JsonData) GetUserPath(user string) *parser.Path {
-	return parser.NewBarPath(p.GetUserNode(user).GetName())
+func (p *JsonData) GetUserPath(userPath *parser.Path) *parser.Path {
+	return parser.NewBarPath(p.GetUserNode(userPath).GetName())
 }
 
-func (p *JsonData) GetUserNode(user string) *parser.JsonObject {
-	if user == "" {
+func (p *JsonData) GetUserNode(userPath *parser.Path) *parser.JsonObject {
+	if userPath.IsEmpty() {
 		return p.GetUserRoot().GetValuesSorted()[0].(*parser.JsonObject)
 	}
-	u := p.GetUserRoot().GetNodeWithName(user)
+	u := p.GetUserRoot().GetNodeWithName(userPath.String())
 	if u == nil {
 		return nil
 	}
@@ -174,9 +174,7 @@ func (p *JsonData) Search(addPath func(*parser.Path, string), needle string, mat
 	}
 }
 
-// TODO path -> Path
-func (p *JsonData) CloneHint(path string, hintItemName string, cloneLeafNodeData bool) error {
-	dataPath := parser.NewBarPath(path)
+func (p *JsonData) CloneHint(dataPath *parser.Path, hintItemName string, cloneLeafNodeData bool) error {
 	h, err := parser.Find(p.GetUserRoot(), dataPath)
 	if err != nil {
 		return fmt.Errorf("the clone hint '%s' cannot be found", dataPath)
@@ -195,8 +193,7 @@ func (p *JsonData) CloneHint(path string, hintItemName string, cloneLeafNodeData
 	return nil
 }
 
-func (p *JsonData) AddHintItem(path, hintItemName string) error {
-	dataPath := parser.NewBarPath(path)
+func (p *JsonData) AddHintItem(dataPath *parser.Path, hintItemName string) error {
 	h, err := parser.Find(p.GetUserRoot(), dataPath)
 	if err != nil {
 		return fmt.Errorf("the hint '%s' cannot be found", dataPath)
@@ -211,39 +208,40 @@ func (p *JsonData) AddHintItem(path, hintItemName string) error {
 	return nil
 }
 
-func (p *JsonData) AddHint(userUid, hintName string) error {
-	u := p.GetUserNode(userUid) // TODO userId -> Path
+func (p *JsonData) AddHint(userUid *parser.Path, hintName string) error {
+	u := p.GetUserNode(userUid)
 	if u == nil {
 		return fmt.Errorf("the user '%s' cannot be found", userUid)
 	}
 	addHintToUser(u, hintName)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Note Item", parser.NewBarPath(userUid).StringAppend(hintNodeName).StringAppend(hintName), nil)
+	p.dataMapUpdated("Add Note Item", userUid.StringAppend(hintNodeName).StringAppend(hintName), nil)
 	return nil
 }
 
-func (p *JsonData) AddNoteItem(userUid, itemName string) error {
-	u := p.GetUserNode(userUid) // TODO userId -> Path
+func (p *JsonData) AddNoteItem(userUid *parser.Path, itemName string) error {
+	u := p.GetUserNode(userUid)
 	if u == nil {
 		return fmt.Errorf("the user '%s' cannot be found", userUid)
 	}
 	addNoteToUser(u, itemName, "")
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Note Item", parser.NewBarPath(userUid).StringAppend(noteNodeName), nil)
+	p.dataMapUpdated("Add Note Item", userUid.StringAppend(noteNodeName), nil)
 	return nil
 }
 
-func (p *JsonData) AddUser(userUid string) error {
-	u := p.GetUserNode(userUid) // TODO userId -> Path
+func (p *JsonData) AddUser(userName string) error {
+	userPath := parser.NewBarPath(userName)
+	u := p.GetUserNode(userPath)
 	if u != nil {
-		return fmt.Errorf("the user '%s' already exists", userUid)
+		return fmt.Errorf("the user '%s' already exists", userName)
 	}
-	userO := parser.NewJsonObject(userUid)
+	userO := parser.NewJsonObject(userName)
 	addNoteToUser(userO, "note", "text")
 	addHintToUser(userO, "App1")
 	p.GetUserRoot().Add(userO)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("New User", parser.NewBarPath(userUid), nil)
+	p.dataMapUpdated("New User", userPath, nil)
 	return nil
 }
 
@@ -262,9 +260,9 @@ func (p *JsonData) Rename(dataPath *parser.Path, newName string) error {
 	}
 	p.navIndex = createNavIndex(p.dataMap)
 	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
-		p.dataMapUpdated(fmt.Sprintf("Renamed User '%s'", n.GetName()), parser.NewBarPath(newName), nil) // TODO No Strings
+		p.dataMapUpdated(fmt.Sprintf("Renamed User '%s'", n.GetName()), parser.NewBarPath(newName), nil)
 	} else {
-		p.dataMapUpdated(fmt.Sprintf("Renamed Item '%s'", n.GetName()), dataPath.PathParent().StringAppend(newName), nil) // TODO No Strings
+		p.dataMapUpdated(fmt.Sprintf("Renamed Item '%s'", n.GetName()), dataPath.PathParent().StringAppend(newName), nil)
 	}
 	return nil
 }
@@ -289,9 +287,9 @@ func (p *JsonData) Remove(dataPath *parser.Path, min int) error {
 	parser.Remove(p.dataMap, n)
 	p.navIndex = createNavIndex(p.dataMap)
 	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
-		p.dataMapUpdated(fmt.Sprintf("Removed User '%s'", n.GetName()), parser.NewBarPath(""), nil) // TODO No Strings
+		p.dataMapUpdated(fmt.Sprintf("Removed User '%s'", n.GetName()), parser.NewBarPath(""), nil)
 	} else {
-		p.dataMapUpdated(fmt.Sprintf("Removed Item '%s'", n.GetName()), dataPath.PathParent(), nil) //
+		p.dataMapUpdated(fmt.Sprintf("Removed Item '%s'", n.GetName()), dataPath.PathParent(), nil)
 	}
 	return nil
 }

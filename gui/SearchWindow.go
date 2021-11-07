@@ -67,7 +67,7 @@ func (lw *SearchDataWindow) IsShowing() bool {
 	return lw.searchWindow != nil
 }
 
-func (lw *SearchDataWindow) Select(path string) {
+func (lw *SearchDataWindow) Select(path *parser.Path) {
 	lw.canSelect = false
 	defer func() {
 		lw.canSelect = true
@@ -77,8 +77,8 @@ func (lw *SearchDataWindow) Select(path string) {
 			v.SetIcon(theme.CheckButtonIcon())
 			v.Disable()
 		}
-		if path != "" {
-			c := lw.checks[path]
+		if !path.IsEmpty() {
+			c := lw.checks[path.String()]
 			if c != nil {
 				c.SetIcon(theme.CheckButtonCheckedIcon())
 				c.Enable()
@@ -86,6 +86,7 @@ func (lw *SearchDataWindow) Select(path string) {
 		}
 	}
 }
+
 func (lw *SearchDataWindow) createRow(sd *SearchData) *fyne.Container {
 	c := container.NewHBox()
 	w := widget.NewButtonWithIcon("", theme.MailForwardIcon(), func() {})
