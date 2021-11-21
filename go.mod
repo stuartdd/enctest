@@ -13,7 +13,7 @@ replace stuartdd.com/pref => ./pref
 // replace fyne.io/fyne/v2 => github.com/andydotxyz/fyne/v2 07e8477c8
 
 require (
-	fyne.io/fyne/v2 v2.1.2-0.20211103153407-1c0e05f066dd
+	fyne.io/fyne/v2 v2.1.2-0.20211115215131-f4f41d0cbb40
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-gl/gl v0.0.0-20210905235341-f7a045908259 // indirect
 	github.com/godbus/dbus/v5 v5.0.5 // indirect
