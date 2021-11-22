@@ -86,6 +86,12 @@ func NewAppTheme(varient string) *AppTheme {
 	return &AppTheme{lightName: DN, variant: theme.VariantDark}
 }
 
+func ColorForName(name fyne.ThemeColorName) color.Color {
+	th := fyne.CurrentApp().Settings().Theme()
+	thv := fyne.CurrentApp().Settings().ThemeVariant()
+	return th.Color(name, thv)
+}
+
 func (m AppTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	c, ok := colorPalette[string(name)+m.lightName]
 	if ok {

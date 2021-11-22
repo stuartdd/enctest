@@ -130,19 +130,20 @@ func loadImage(s string) (*canvas.Image, string) {
 }
 
 func positional(s string) fyne.CanvasObject {
-	g1 := container.NewHBox()
-	g1.Add(widget.NewSeparator())
-	for i, c := range s {
-		v1 := container.NewVBox()
-		v1.Add(widget.NewSeparator())
-		v1.Add(container.New(NewFixedWHLayout(20, 15), widget.NewLabel(fmt.Sprintf("%d", i+1))))
-		v1.Add(widget.NewSeparator())
-		v1.Add(container.New(NewFixedWHLayout(20, 15), widget.NewLabel(string(c))))
-		v1.Add(widget.NewSeparator())
-		g1.Add(v1)
-		g1.Add(widget.NewSeparator())
-	}
-	return g1
+	return NewPositional(s, 17, theme2.ColorForName(theme.ColorNameForeground), theme2.ColorForName(theme.ColorNameButton))
+	// g1 := container.NewHBox()
+	// g1.Add(widget.NewSeparator())
+	// for i, c := range s {
+	// 	v1 := container.NewVBox()
+	// 	v1.Add(widget.NewSeparator())
+	// 	v1.Add(container.New(NewFixedWHLayout(20, 15), widget.NewLabel(fmt.Sprintf("%d", i+1))))
+	// 	v1.Add(widget.NewSeparator())
+	// 	v1.Add(container.New(NewFixedWHLayout(20, 15), widget.NewLabel(string(c))))
+	// 	v1.Add(widget.NewSeparator())
+	// 	g1.Add(v1)
+	// 	g1.Add(widget.NewSeparator())
+	// }
+	// return g1
 }
 
 func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
