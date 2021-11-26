@@ -1,18 +1,5 @@
 
     {
-        "theme": "dark",
-        "file": {
-            "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
-            "datafile": "moredata.data",
-            "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name"
-        },
-        "search": {
-            "case": true
-        },
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 1000
-        },
         "data": {
             "hintIsCalled": "DVD",
             "noteIsCalled": "Note",
@@ -24,9 +11,22 @@
             "fileName": "enctest.log"
         },
         "screen": {
-            "fullScreen": false,
             "width": 1378.333252,
             "height": 551.25,
-            "split": 0.2
+            "split": 0.2,
+            "fullScreen": false
+        },
+        "theme": "dark",
+        "file": {
+            "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
+            "datafile": "moredata.data",
+            "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name"
+        },
+        "search": {
+            "case": true
+        },
+        "dialog": {
+            "saveTimeOutMS": 1000,
+            "copyTimeOutMS": 2500
         }
     }

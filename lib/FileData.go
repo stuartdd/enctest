@@ -29,7 +29,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/stuartdd/jsonParserGo/parser"
+	"github.com/stuartdd2/JsonParser4go/parser"
 
 	"golang.org/x/crypto/scrypt"
 )

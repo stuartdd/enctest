@@ -1,5 +1,4 @@
 fyne.io/fyne/v2 v2.1.1/go.mod h1:c1vwI38Ebd0dAdxVa6H1Pj6/+cK1xtDy61+I31g+s14=
-fyne.io/fyne/v2 v2.1.2-0.20211103153407-1c0e05f066dd/go.mod h1:mddyAvGLDbbRmECVVSdZsf6oquUyn5QqPYRim0O7aPA=
 fyne.io/fyne/v2 v2.1.2-0.20211115215131-f4f41d0cbb40 h1:pmEDe/dFinnDdM9m1L71HGoLu8X02C1/Y82EGKO5Xv8=
 fyne.io/fyne/v2 v2.1.2-0.20211115215131-f4f41d0cbb40/go.mod h1:mddyAvGLDbbRmECVVSdZsf6oquUyn5QqPYRim0O7aPA=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -55,8 +54,8 @@ github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXf
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/stuartdd/jsonParserGo/parser v0.0.0-20211107002007-e7ea95bb74a6 h1:nmkfB/qfqaSEm38+EtFbPH1tBVCDc6t8f0nrWt2i0Zg=
-github.com/stuartdd/jsonParserGo/parser v0.0.0-20211107002007-e7ea95bb74a6/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
+github.com/stuartdd2/JsonParser4go/parser v0.0.0-20211126161907-dbcc82483018 h1:xSK0QwZdxgtGrUNH7SLFLPyQc2tskHxqJuEzhO7WrQ0=
+github.com/stuartdd2/JsonParser4go/parser v0.0.0-20211126161907-dbcc82483018/go.mod h1:iZz2uQpL/RYspzC475fh2quOw9RuM6snxRuqH3s95Rw=
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/goldmark v1.3.8/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=

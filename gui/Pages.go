@@ -29,7 +29,7 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/stuartdd/jsonParserGo/parser"
+	"github.com/stuartdd2/JsonParser4go/parser"
 	"stuartdd.com/lib"
 	"stuartdd.com/pref"
 	"stuartdd.com/theme2"

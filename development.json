@@ -1,28 +1,19 @@
 
     {
         "data": {
+            "hintIsCalled": "Hint",
             "noteIsCalled": "Note",
-            "presentationmode": true,
-            "hintIsCalled": "Hint"
+            "presentationmode": true
         },
-        "log.active": false,
-        "data.hintIsCalled": "Hint",
-        "data.presentationmode": true,
-        "file.postDataUrl": "",
-        "file.datafile": "data.json",
-        "log": {
-            "prefix": "INFO",
-            "fileName": "enctest.log",
-            "active": true
-        },
-        "data.noteIsCalled": "Note",
         "screen": {
             "fullScreen": false,
             "split": 0.2,
-            "width": 935.714355,
-            "height": 556.190491
+            "width": 949.583313,
+            "height": 555.416626
         },
-        "theme": "dark",
+        "screen.split": 0.2,
+        "file.postDataUrl": "",
+        "file.datafile": "data.json",
         "search": {
             "lastGoodList": [
                 "notes",
@@ -32,18 +23,27 @@
             ],
             "case": true
         },
-        "log.prefix": "INFO",
-        "screen.split": 0.2,
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
-        "log.fileName": "enctest.log",
         "file": {
             "datafile": "libtest/TestDataTypes.json",
             "getDataUrl": "",
             "postDataUrl": ""
         },
+        "data.noteIsCalled": "Note",
+        "log.prefix": "INFO",
+        "dialog": {
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
+        },
+        "log.fileName": "enctest.log",
         "file.getDataUrl": "",
-        "search.case": true
+        "search.case": true,
+        "log.active": false,
+        "data.hintIsCalled": "Hint",
+        "data.presentationmode": true,
+        "log": {
+            "fileName": "enctest.log",
+            "active": true,
+            "prefix": "INFO"
+        },
+        "theme": "dark"
     }

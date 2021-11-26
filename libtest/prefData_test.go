@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stuartdd/jsonParserGo/parser"
+	"github.com/stuartdd2/JsonParser4go/parser"
 	"stuartdd.com/pref"
 )
 

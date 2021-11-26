@@ -12,7 +12,7 @@ require (
 	fyne.io/fyne/v2 v2.1.2-0.20211115215131-f4f41d0cbb40
 	github.com/srwiley/oksvg v0.0.0-20210519022825-9fc0c575d5fe // indirect
 	github.com/srwiley/rasterx v0.0.0-20210519020934-456a8d69b780 // indirect
-	github.com/stuartdd/jsonParserGo/parser v0.0.0-20211107002007-e7ea95bb74a6
+	github.com/stuartdd2/JsonParser4go/parser v0.0.0-20211126161907-dbcc82483018
 	github.com/yuin/goldmark v1.4.1 // indirect
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
 	golang.org/x/net v0.0.0-20211014222326-fd004c51d1d6 // indirect

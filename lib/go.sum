@@ -1,5 +1,5 @@
-github.com/stuartdd/jsonParserGo/parser v0.0.0-20211107002007-e7ea95bb74a6 h1:nmkfB/qfqaSEm38+EtFbPH1tBVCDc6t8f0nrWt2i0Zg=
-github.com/stuartdd/jsonParserGo/parser v0.0.0-20211107002007-e7ea95bb74a6/go.mod h1:rNEcGGJN7/6O/944GNb4DU8CYFmM3upPVF4qjY/Svs8=
+github.com/stuartdd2/JsonParser4go/parser v0.0.0-20211126161907-dbcc82483018 h1:xSK0QwZdxgtGrUNH7SLFLPyQc2tskHxqJuEzhO7WrQ0=
+github.com/stuartdd2/JsonParser4go/parser v0.0.0-20211126161907-dbcc82483018/go.mod h1:iZz2uQpL/RYspzC475fh2quOw9RuM6snxRuqH3s95Rw=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 h1:7I4JAnoQBe7ZtJcBaYHi5UtiO8tQHbUSXxL+pnGRANg=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=

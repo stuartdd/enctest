@@ -33,7 +33,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/stuartdd/jsonParserGo/parser"
+	"github.com/stuartdd2/JsonParser4go/parser"
 	"stuartdd.com/gui"
 	"stuartdd.com/lib"
 	"stuartdd.com/pref"

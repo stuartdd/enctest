@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"fyne.io/fyne/v2"
-	"github.com/stuartdd/jsonParserGo/parser"
+	"github.com/stuartdd2/JsonParser4go/parser"
 	"stuartdd.com/lib"
 	"stuartdd.com/pref"
 )
