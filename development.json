@@ -1,39 +1,39 @@
 
     {
-        "theme": "dark",
-        "data": {
-            "assetIsCalled": "Finance",
-            "noteIsCalled": "Note",
-            "presentationmode": true,
-            "hintIsCalled": "Hint"
-        },
-        "screen": {
-            "height": 522.380981,
-            "fullScreen": false,
-            "split": 0.2,
-            "width": 934.285767
-        },
         "dialog": {
             "saveTimeOutMS": 3000,
             "copyTimeOutMS": 2500
         },
         "search": {
-            "case": true,
             "lastGoodList": [
                 "notes",
                 "note",
                 "app",
                 "Principality note"
-            ]
+            ],
+            "case": true
         },
         "log": {
+            "prefix": "INFO",
             "fileName": "enctest.log",
-            "active": true,
-            "prefix": "INFO"
+            "active": true
         },
         "file": {
-            "getDataUrl": "",
             "postDataUrl": "",
-            "datafile": "libtest/TestDataTypes.json"
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
+        },
+        "theme": "dark",
+        "data": {
+            "presentationmode": true,
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset",
+            "noteIsCalled": "Note"
+        },
+        "screen": {
+            "height": 518.095276,
+            "fullScreen": false,
+            "split": 0.2,
+            "width": 929.523865
         }
     }

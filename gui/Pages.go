@@ -106,7 +106,7 @@ func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.
 		}
 		nodeType, name := lib.GetNodeAnnotationTypeAndName(uid.StringAt(1))
 		if nodeType == lib.NOTE_TYPE_AS {
-			return NewDetailPage(uid, uid.StringAt(2), assetsAreCalled, welcomeScreen, welcomeControls, dataRootMap, preferences)
+			return NewDetailPage(uid, uid.StringAt(2), assetsAreCalled, assetScreen, assetControls, dataRootMap, preferences)
 		}
 		return NewDetailPage(uid, name, user, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	}
@@ -190,6 +190,37 @@ func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 				container.NewHBox(
 					widget.NewHyperlink("fyne.io", parseURL("https://fyne.io/")),
 					widget.NewLabel("-"),
+					widget.NewHyperlink("SDD", parseURL("https://github.com/stuartdd")),
+					widget.NewLabel("-"),
+					widget.NewHyperlink("go", parseURL("https://golang.org/")),
+				),
+			),
+		)))
+}
+
+func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+	cObj := make([]fyne.CanvasObject, 0)
+	cObj = append(cObj, NewMyIconButton("Asset", theme.ContentAddIcon(), func() {
+		actionFunc(ACTION_ADD_HINT, details.Uid, "")
+	}, statusDisplay, fmt.Sprintf("Add new Hint to user: %s", details.User)))
+	cObj = append(cObj, widget.NewLabel(details.Heading))
+	return container.NewHBox(cObj...)
+}
+
+func assetScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+	logo := canvas.NewImageFromFile("background.png")
+	logo.FillMode = canvas.ImageFillContain
+	logo.SetMinSize(fyne.NewSize(228, 167))
+
+	return container.NewVBox(
+		widget.NewSeparator(),
+		container.NewCenter(container.NewVBox(
+			widget.NewLabelWithStyle(appDesc, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+			logo,
+			container.NewCenter(
+				container.NewHBox(
+					widget.NewHyperlink("fyne.io", parseURL("https://fyne.io/")),
+					widget.NewLabel("ASSET"),
 					widget.NewHyperlink("SDD", parseURL("https://github.com/stuartdd")),
 					widget.NewLabel("-"),
 					widget.NewHyperlink("go", parseURL("https://golang.org/")),
