@@ -80,7 +80,7 @@ func (p *PrefData) String() string {
 }
 
 func (p *PrefData) PutStringList(path, value string, maxLen int) error {
-	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewBarPath(path), parser.NT_LIST)
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewDotPath(path), parser.NT_LIST)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (p *PrefData) PutStringList(path, value string, maxLen int) error {
 }
 
 func (p *PrefData) PutString(path, value string) error {
-	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewBarPath(path), parser.NT_STRING)
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewDotPath(path), parser.NT_STRING)
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (p *PrefData) PutString(path, value string) error {
 }
 
 func (p *PrefData) PutBool(path string, value bool) error {
-	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewBarPath(path), parser.NT_BOOL)
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewDotPath(path), parser.NT_BOOL)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (p *PrefData) PutFloat32(path string, value float32) error {
 }
 
 func (p *PrefData) PutFloat64(path string, value float64) error {
-	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewBarPath(path), parser.NT_NUMBER)
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewDotPath(path), parser.NT_NUMBER)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (p *PrefData) PutFloat64(path string, value float64) error {
 }
 
 func (p *PrefData) PutInt64(path string, value int64) error {
-	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewBarPath(path), parser.NT_NUMBER)
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewDotPath(path), parser.NT_NUMBER)
 	if err != nil {
 		return err
 	}
@@ -268,7 +268,7 @@ func (p *PrefData) getNodeForPath(path string, cache bool) (parser.NodeI, bool) 
 			return *cached, true
 		}
 	}
-	n, err := parser.Find(p.data, parser.NewBarPath(path))
+	n, err := parser.Find(p.data, parser.NewDotPath(path))
 	if err != nil || n == nil {
 		return nil, false
 	}

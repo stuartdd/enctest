@@ -1,37 +1,18 @@
 
     {
-        "data.noteIsCalled": "Note",
-        "log": {
-            "fileName": "enctest.log",
-            "active": true,
-            "prefix": "INFO"
-        },
-        "file": {
-            "getDataUrl": "",
-            "postDataUrl": "",
-            "datafile": "libtest/TestDataTypes.json"
-        },
-        "data.hintIsCalled": "Hint",
         "theme": "dark",
-        "file.postDataUrl": "",
-        "file.datafile": "data.json",
-        "log.prefix": "INFO",
         "data": {
-            "assetIsCalled": "ASSET",
+            "assetIsCalled": "Finance",
             "noteIsCalled": "Note",
             "presentationmode": true,
             "hintIsCalled": "Hint"
         },
         "screen": {
+            "height": 522.380981,
+            "fullScreen": false,
             "split": 0.2,
-            "width": 935.714355,
-            "height": 524.761902,
-            "fullScreen": false
+            "width": 934.285767
         },
-        "screen.split": 0.2,
-        "file.getDataUrl": "",
-        "data.assetIsCalled": "NOGOOD",
-        "search.case": true,
         "dialog": {
             "saveTimeOutMS": 3000,
             "copyTimeOutMS": 2500
@@ -45,7 +26,14 @@
                 "Principality note"
             ]
         },
-        "log.fileName": "enctest.log",
-        "log.active": false,
-        "data.presentationmode": false
+        "log": {
+            "fileName": "enctest.log",
+            "active": true,
+            "prefix": "INFO"
+        },
+        "file": {
+            "getDataUrl": "",
+            "postDataUrl": "",
+            "datafile": "libtest/TestDataTypes.json"
+        }
     }
