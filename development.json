@@ -25,15 +25,15 @@
         },
         "theme": "dark",
         "data": {
+            "noteIsCalled": "Note",
             "presentationmode": true,
             "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
-            "noteIsCalled": "Note"
+            "assetIsCalled": "Asset"
         },
         "screen": {
-            "height": 518.095276,
+            "height": 518,
             "fullScreen": false,
             "split": 0.2,
-            "width": 929.523865
+            "width": 930
         }
     }

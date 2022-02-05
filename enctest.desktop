@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=EncTest
+Comment=Fake Desktop app
+Exec=/home/stuart/git/enctest/enctest /home/stuart/git/enctest/dvdData.json
+Icon=/home/stuart/git/enctest/Icon.png
+Type=Application
+Categories=WhateveryourProgramis
