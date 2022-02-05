@@ -36,13 +36,14 @@ import (
 )
 
 const (
-	welcomeTitle             = "Welcome"
-	appDesc                  = "Welcome to Valt"
-	idNotes                  = "notes"
-	idPwDetails              = "pwHints"
-	DataPresModePrefName     = "data.presentationmode"
-	DataHintIsCalledPrefName = "data.hintIsCalled"
-	DataNoteIsCalledPrefName = "data.noteIsCalled"
+	welcomeTitle              = "Welcome"
+	appDesc                   = "Welcome to Valt"
+	idNotes                   = "notes"
+	idPwDetails               = "pwHints"
+	DataPresModePrefName      = "data.presentationmode"
+	DataHintIsCalledPrefName  = "data.hintIsCalled"
+	DataNoteIsCalledPrefName  = "data.noteIsCalled"
+	DataAssetIsCalledPrefName = "data.assetIsCalled"
 
 	PATH_SEP = "|"
 
@@ -80,6 +81,7 @@ func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.
 	user := uid.StringAt(0)
 	hintsAreCalled := preferences.GetStringForPathWithFallback(DataHintIsCalledPrefName, "Hint")
 	notesAreCalled := preferences.GetStringForPathWithFallback(DataNoteIsCalledPrefName, "Note")
+	assetsAreCalled := preferences.GetStringForPathWithFallback(DataAssetIsCalledPrefName, "Asset")
 	switch uid.Len() {
 	case 1:
 		return NewDetailPage(uid, uid.String(), "", welcomeScreen, userControls, dataRootMap, preferences)
@@ -90,7 +92,11 @@ func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.
 		if uid.StringAt(1) == idNotes {
 			return NewDetailPage(uid, notesAreCalled+"s", user, detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(uid, "Unknown", user, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		nodeType, name := lib.GetNodeAnnotationTypeAndName(uid.StringLast())
+		if nodeType == lib.NOTE_TYPE_AS {
+			return NewDetailPage(uid, name, user, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		}
+		return NewDetailPage(uid, name, user, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	case 3:
 		if uid.StringAt(1) == idPwDetails {
 			return NewDetailPage(uid, uid.StringAt(2), user, detailsScreen, hintDetailsControls, dataRootMap, preferences)
@@ -98,7 +104,11 @@ func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.
 		if uid.StringAt(1) == idNotes {
 			return NewDetailPage(uid, uid.StringAt(2), user, detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(uid, "Unknown", "", welcomeScreen, welcomeControls, dataRootMap, preferences)
+		nodeType, name := lib.GetNodeAnnotationTypeAndName(uid.StringAt(1))
+		if nodeType == lib.NOTE_TYPE_AS {
+			return NewDetailPage(uid, uid.StringAt(2), assetsAreCalled, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		}
+		return NewDetailPage(uid, name, user, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	}
 	return NewDetailPage(uid, uid.String(), "", welcomeScreen, welcomeControls, dataRootMap, preferences)
 }

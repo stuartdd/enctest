@@ -1,49 +1,51 @@
 
     {
-        "data": {
-            "hintIsCalled": "Hint",
-            "noteIsCalled": "Note",
-            "presentationmode": true
-        },
-        "screen": {
-            "fullScreen": false,
-            "split": 0.2,
-            "width": 949.583313,
-            "height": 555.416626
-        },
-        "screen.split": 0.2,
-        "file.postDataUrl": "",
-        "file.datafile": "data.json",
-        "search": {
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note"
-            ],
-            "case": true
-        },
-        "file": {
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": "",
-            "postDataUrl": ""
-        },
         "data.noteIsCalled": "Note",
-        "log.prefix": "INFO",
-        "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
-        },
-        "log.fileName": "enctest.log",
-        "file.getDataUrl": "",
-        "search.case": true,
-        "log.active": false,
-        "data.hintIsCalled": "Hint",
-        "data.presentationmode": true,
         "log": {
             "fileName": "enctest.log",
             "active": true,
             "prefix": "INFO"
         },
-        "theme": "dark"
+        "file": {
+            "getDataUrl": "",
+            "postDataUrl": "",
+            "datafile": "libtest/TestDataTypes.json"
+        },
+        "data.hintIsCalled": "Hint",
+        "theme": "dark",
+        "file.postDataUrl": "",
+        "file.datafile": "data.json",
+        "log.prefix": "INFO",
+        "data": {
+            "assetIsCalled": "ASSET",
+            "noteIsCalled": "Note",
+            "presentationmode": true,
+            "hintIsCalled": "Hint"
+        },
+        "screen": {
+            "split": 0.2,
+            "width": 935.714355,
+            "height": 524.761902,
+            "fullScreen": false
+        },
+        "screen.split": 0.2,
+        "file.getDataUrl": "",
+        "data.assetIsCalled": "NOGOOD",
+        "search.case": true,
+        "dialog": {
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
+        },
+        "search": {
+            "case": true,
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note"
+            ]
+        },
+        "log.fileName": "enctest.log",
+        "log.active": false,
+        "data.presentationmode": false
     }

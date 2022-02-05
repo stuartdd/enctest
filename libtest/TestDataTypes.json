@@ -1,1 +1,71 @@
-{"timeStamp": "Mon Nov 22 14:39:10 GMT 2021","groups": {"UserB": {"pwHints": {"Principality.B": {"post": "456","pre": "efg","userId": "Buser","link": "https://www.principality.co.uk/en/your-account","notes": "Principality note"},"GMail.B": {"post": "123 Fred","pre": "abc","some More Notes": "hi","some More!": "hi","userId": "another@gmail.com","notes": "a note to User B","positional!po": "1234567890ThisIsthe"}},"notes": {"link": "https://www.principality.co.uk/en/your-account","note for B": "An amazing B note 123"}},"Stuart": {"notes": {"MDTest!rt": "# Heading 1\nUnder Heading 1\n> Quote\n\n**Another** line\n## Heading 2\nUnder Heading 2\n\n![s_banner](/home/stuart/git/golang/enctest/fs_banner.jpg)\n\n![s_banner](fs_banner.jpg)\n\n1. First item\n2. Second item\n3. Third item\n### Heading 3\nUnder Heading 3\n- First item\n- Second item\n- Third item\n---\n`Code`","Image!im": "https://go.dev/images/logos/google.svg"},"pwHints": {"application": {"notes": "","post": "","pre": "","userId": ""}}},"UserA": {"notes": {"posit": "This is a note","note": "An amazing A note (dont panic) fdf"},"pwHints": {"MyApp": {"userId": "fakeuser@gmail.com","notes": "a note to User A","post": "123","pre": "abc"},"PrincipalityA": {"userId": "Puser","notes": "https://www.principality.co.uk/en/your-account","post": "456","pre": "efg"}}}}}
+{
+    "timeStamp": "Mon Nov 22 14:39:10 GMT 2021",
+    "groups": {
+        "UserB": {
+            "pwHints": {
+                "Principality.B": {
+                    "post": "456",
+                    "pre": "efg",
+                    "userId": "Buser",
+                    "link": "https://www.principality.co.uk/en/your-account",
+                    "notes": "Principality note"
+                },
+                "GMail.B": {
+                    "post": "123 Fred",
+                    "pre": "abc",
+                    "some More Notes": "hi",
+                    "some More!": "hi",
+                    "userId": "another@gmail.com",
+                    "notes": "a note to User B",
+                    "positional!po": "1234567890ThisIsthe"
+                }
+            },
+            "notes": {
+                "link": "https://www.principality.co.uk/en/your-account",
+                "note for B": "An amazing B note 123"
+            }
+        },
+        "Stuart": {
+            "notes": {
+                "MDTest!rt": "# Heading 1\nUnder Heading 1\n> Quote\n\n**Another** line\n## Heading 2\nUnder Heading 2\n\n![s_banner](/home/stuart/git/golang/enctest/fs_banner.jpg)\n\n![s_banner](fs_banner.jpg)\n\n1. First item\n2. Second item\n3. Third item\n### Heading 3\nUnder Heading 3\n- First item\n- Second item\n- Third item\n---\n`Code`",
+                "Image!im": "https://go.dev/images/logos/google.svg"
+            },
+            "pwHints": {
+                "application": {
+                    "notes": "",
+                    "post": "",
+                    "pre": "",
+                    "userId": ""
+                }
+            }
+        },
+        "AUser": {
+            "Assets!as": {
+                "Lloyds": {
+                    "acc":"Lloyds"
+                },
+                "Principality": {
+                    "acc":"Principality"
+                }
+            },
+            "notes": {
+                "posit": "This is a note",
+                "note": "An amazing A note (dont panic) fdf"
+            },
+            "pwHints": {
+                "MyApp": {
+                    "userId": "fakeuser@gmail.com",
+                    "notes": "a note to User A",
+                    "post": "123",
+                    "pre": "abc"
+                },
+                "PrincipalityA": {
+                    "userId": "Puser",
+                    "notes": "https://www.principality.co.uk/en/your-account",
+                    "post": "456",
+                    "pre": "efg"
+                }
+            }
+        }
+    }
+}
