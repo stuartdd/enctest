@@ -38,18 +38,19 @@ const (
 	PATH_SEP           = "|"
 	PATH_SEP_CHAR      = '|'
 
-	NOTE_TYPE_SL NodeAnnotationEnum = 0 // These are indexes. Found issues when using iota!
-	NOTE_TYPE_ML NodeAnnotationEnum = 1
-	NOTE_TYPE_RT NodeAnnotationEnum = 2
-	NOTE_TYPE_PO NodeAnnotationEnum = 3
-	NOTE_TYPE_IM NodeAnnotationEnum = 4
-	NOTE_TYPE_AS NodeAnnotationEnum = 5
+	NOTE_TYPE_SL NodeAnnotationEnum = 0 // Single Line: These are indexes. Found issues when using iota!
+	NOTE_TYPE_ML NodeAnnotationEnum = 1 // Multi Line
+	NOTE_TYPE_RT NodeAnnotationEnum = 2 // Rich Text
+	NOTE_TYPE_PO NodeAnnotationEnum = 3 // POsitinal
+	NOTE_TYPE_IM NodeAnnotationEnum = 4 // IMage
+	NODE_TYPE_UK NodeAnnotationEnum = 5 // UnKnown
+	NODE_TYPE_AS NodeAnnotationEnum = 6 // ASset
 )
 
 var (
 	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po", "!im", "!as"}
 	NodeAnnotationPrefixNames = []string{"Single Line", "Multi Line", "Rich Text", "Positional", "Image", "Asset"}
-	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO, NOTE_TYPE_IM, NOTE_TYPE_AS}
+	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO, NOTE_TYPE_IM, NODE_TYPE_AS}
 	NodeAnnotationsSingleLine = []bool{true, false, false, true, true, true}
 	defaultHintNames          = []string{"notes", "post", "pre", "userId"}
 	timeStampPath             = parser.NewBarPath(timeStampName)

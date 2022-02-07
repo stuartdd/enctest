@@ -78,39 +78,42 @@ func GetWelcomePage(uid *parser.Path, preferences pref.PrefData) *DetailPage {
 }
 
 func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.PrefData) *DetailPage {
-	user := uid.StringAt(0)
+	user0 := uid.StringAt(0)
 	hintsAreCalled := preferences.GetStringForPathWithFallback(DataHintIsCalledPrefName, "Hint")
 	notesAreCalled := preferences.GetStringForPathWithFallback(DataNoteIsCalledPrefName, "Note")
-	assetsAreCalled := preferences.GetStringForPathWithFallback(DataAssetIsCalledPrefName, "Asset")
+	name1 := ""
+	nodeType1 := lib.NODE_TYPE_UK
 	switch uid.Len() {
 	case 1:
 		return NewDetailPage(uid, uid.String(), "", welcomeScreen, userControls, dataRootMap, preferences)
 	case 2:
-		if uid.StringAt(1) == idPwDetails {
-			return NewDetailPage(uid, hintsAreCalled+"s", user, welcomeScreen, hintControls, dataRootMap, preferences)
+		nodeType1, name1 = lib.GetNodeAnnotationTypeAndName(uid.StringLast())
+		if name1 == idPwDetails {
+			return NewDetailPage(uid, hintsAreCalled+"s", user0, welcomeScreen, hintControls, dataRootMap, preferences)
 		}
-		if uid.StringAt(1) == idNotes {
-			return NewDetailPage(uid, notesAreCalled+"s", user, detailsScreen, noteDetailsControls, dataRootMap, preferences)
+		if name1 == idNotes {
+			return NewDetailPage(uid, notesAreCalled+"s", user0, detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
-		nodeType, name := lib.GetNodeAnnotationTypeAndName(uid.StringLast())
-		if nodeType == lib.NOTE_TYPE_AS {
-			return NewDetailPage(uid, name, user, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		if nodeType1 == lib.NODE_TYPE_AS {
+			return NewDetailPage(uid, name1, user0, welcomeScreen, assetSummaryControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(uid, name, user, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(uid, name1, user0, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	case 3:
-		if uid.StringAt(1) == idPwDetails {
-			return NewDetailPage(uid, uid.StringAt(2), user, detailsScreen, hintDetailsControls, dataRootMap, preferences)
+		nodeType1, name1 = lib.GetNodeAnnotationTypeAndName(uid.StringAt(1))
+		_, name2 := lib.GetNodeAnnotationTypeAndName(uid.StringAt(2))
+		if name1 == idPwDetails {
+			return NewDetailPage(uid, name2, user0, detailsScreen, hintDetailsControls, dataRootMap, preferences)
 		}
-		if uid.StringAt(1) == idNotes {
-			return NewDetailPage(uid, uid.StringAt(2), user, detailsScreen, noteDetailsControls, dataRootMap, preferences)
+		if name1 == idNotes {
+			return NewDetailPage(uid, name2, user0, detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
-		nodeType, name := lib.GetNodeAnnotationTypeAndName(uid.StringAt(1))
-		if nodeType == lib.NOTE_TYPE_AS {
-			return NewDetailPage(uid, uid.StringAt(2), assetsAreCalled, assetScreen, assetControls, dataRootMap, preferences)
+		if nodeType1 == lib.NODE_TYPE_AS {
+			return NewDetailPage(uid, name2, user0, assetScreen, assetControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(uid, name, user, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(uid, name2, user0, welcomeScreen, welcomeControls, dataRootMap, preferences)
+	default:
+		return NewDetailPage(uid, uid.String(), user0, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	}
-	return NewDetailPage(uid, uid.String(), "", welcomeScreen, welcomeControls, dataRootMap, preferences)
 }
 
 func loadImage(s string) (*canvas.Image, string) {
@@ -199,11 +202,22 @@ func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 }
 
 func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+	head := fmt.Sprintf("%s: Asset - %s", details.User, details.Title)
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, NewMyIconButton("Asset", theme.ContentAddIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_HINT, details.Uid, "")
-	}, statusDisplay, fmt.Sprintf("Add new Hint to user: %s", details.User)))
-	cObj = append(cObj, widget.NewLabel(details.Heading))
+	}, statusDisplay, fmt.Sprintf("Add new Item to Asset: %s", details.Title)))
+	cObj = append(cObj, widget.NewLabel(head))
+	return container.NewHBox(cObj...)
+}
+
+func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+	head := fmt.Sprintf("Asset Summary for user %s", details.User)
+	cObj := make([]fyne.CanvasObject, 0)
+	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
+		actionFunc(ACTION_ADD_HINT, details.Uid, details.Title)
+	}, statusDisplay, fmt.Sprintf("Add new Asset for user %s", details.User)))
+	cObj = append(cObj, widget.NewLabel(head))
 	return container.NewHBox(cObj...)
 }
 

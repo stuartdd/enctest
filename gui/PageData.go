@@ -45,7 +45,7 @@ func NewDetailPage(
 
 	heading := fmt.Sprintf("User:  %s", title)
 	if user != "" {
-		heading = fmt.Sprintf("User:  %s:  %s", user, title)
+		heading = fmt.Sprintf("User:  %s - %s", user, title)
 	}
 	return &DetailPage{Uid: uid, Heading: heading, Title: title, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, DataRootMap: dataRootMap, Preferences: preferences}
 }
