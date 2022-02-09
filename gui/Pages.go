@@ -74,7 +74,7 @@ func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool
 }
 
 func GetWelcomePage(uid *parser.Path, preferences pref.PrefData) *DetailPage {
-	return NewDetailPage(uid, "", welcomeTitle, welcomeScreen, welcomeControls, nil, preferences)
+	return NewDetailPage(uid, welcomeTitle, "", "", welcomeScreen, welcomeControls, nil, preferences)
 }
 
 func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.PrefData) *DetailPage {
@@ -85,34 +85,34 @@ func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.
 	nodeType1 := lib.NODE_TYPE_UK
 	switch uid.Len() {
 	case 1:
-		return NewDetailPage(uid, uid.String(), "", welcomeScreen, userControls, dataRootMap, preferences)
+		return NewDetailPage(uid, "", "", uid.String(), welcomeScreen, userControls, dataRootMap, preferences)
 	case 2:
 		nodeType1, name1 = lib.GetNodeAnnotationTypeAndName(uid.StringLast())
 		if name1 == idPwDetails {
-			return NewDetailPage(uid, hintsAreCalled+"s", user0, welcomeScreen, hintControls, dataRootMap, preferences)
+			return NewDetailPage(uid, user0, "", hintsAreCalled+"s", welcomeScreen, hintControls, dataRootMap, preferences)
 		}
 		if name1 == idNotes {
-			return NewDetailPage(uid, notesAreCalled+"s", user0, detailsScreen, noteDetailsControls, dataRootMap, preferences)
+			return NewDetailPage(uid, user0, "", notesAreCalled+"s", detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
 		if nodeType1 == lib.NODE_TYPE_AS {
-			return NewDetailPage(uid, name1, user0, welcomeScreen, assetSummaryControls, dataRootMap, preferences)
+			return NewDetailPage(uid, user0, "", name1, welcomeScreen, assetSummaryControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(uid, name1, user0, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(uid, user0, "", name1, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	case 3:
 		nodeType1, name1 = lib.GetNodeAnnotationTypeAndName(uid.StringAt(1))
 		_, name2 := lib.GetNodeAnnotationTypeAndName(uid.StringAt(2))
 		if name1 == idPwDetails {
-			return NewDetailPage(uid, name2, user0, detailsScreen, hintDetailsControls, dataRootMap, preferences)
+			return NewDetailPage(uid, user0, name1, name2, detailsScreen, hintDetailsControls, dataRootMap, preferences)
 		}
 		if name1 == idNotes {
-			return NewDetailPage(uid, name2, user0, detailsScreen, noteDetailsControls, dataRootMap, preferences)
+			return NewDetailPage(uid, user0, name1, name2, detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
 		if nodeType1 == lib.NODE_TYPE_AS {
-			return NewDetailPage(uid, name2, user0, assetScreen, assetControls, dataRootMap, preferences)
+			return NewDetailPage(uid, user0, name1, name2, assetScreen, assetControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(uid, name2, user0, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(uid, user0, name1, name2, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	default:
-		return NewDetailPage(uid, uid.String(), user0, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(uid, user0, name1, uid.String(), welcomeScreen, welcomeControls, dataRootMap, preferences)
 	}
 }
 

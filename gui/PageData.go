@@ -26,18 +26,19 @@ import (
 )
 
 type DetailPage struct {
-	Uid                  *parser.Path
-	Heading, Title, User string
-	ViewFunc             func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject
-	CntlFunc             func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject
-	DataRootMap          parser.NodeI
-	Preferences          pref.PrefData
+	Uid                         *parser.Path
+	Heading, User, Group, Title string
+	ViewFunc                    func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject
+	CntlFunc                    func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject
+	DataRootMap                 parser.NodeI
+	Preferences                 pref.PrefData
 }
 
 func NewDetailPage(
 	uid *parser.Path,
-	title string,
 	user string,
+	group string,
+	title string,
 	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject,
 	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject,
 	dataRootMap parser.NodeI,
@@ -47,7 +48,7 @@ func NewDetailPage(
 	if user != "" {
 		heading = fmt.Sprintf("User:  %s - %s", user, title)
 	}
-	return &DetailPage{Uid: uid, Heading: heading, Title: title, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, DataRootMap: dataRootMap, Preferences: preferences}
+	return &DetailPage{Uid: uid, Heading: heading, Title: title, Group: group, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, DataRootMap: dataRootMap, Preferences: preferences}
 }
 
 func (p *DetailPage) GetObjectsForUid() *parser.JsonObject {

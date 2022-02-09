@@ -1,5 +1,17 @@
 
     {
+        "file": {
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": "",
+            "postDataUrl": ""
+        },
+        "theme": "dark",
+        "data": {
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset",
+            "noteIsCalled": "Note",
+            "presentationmode": true
+        },
         "screen": {
             "height": 518,
             "fullScreen": false,
@@ -7,8 +19,8 @@
             "width": 930
         },
         "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
         },
         "search": {
             "lastGoodList": [
@@ -20,20 +32,8 @@
             "case": true
         },
         "log": {
-            "fileName": "enctest.log",
             "active": true,
-            "prefix": "INFO"
-        },
-        "file": {
-            "getDataUrl": "",
-            "postDataUrl": "",
-            "datafile": "libtest/TestDataTypes.json"
-        },
-        "theme": "dark",
-        "data": {
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
-            "noteIsCalled": "Note",
-            "presentationmode": true
+            "prefix": "INFO",
+            "fileName": "enctest.log"
         }
     }
