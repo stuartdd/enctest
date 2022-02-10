@@ -42,7 +42,8 @@
         "AUser": {
             "Assets!as": {
                 "Lloyds": {
-                    "acc":"Lloyds"
+                    "acc":"Lloyds",
+                    "ent!ae":"X"
                 },
                 "Principality": {
                     "acc":"Principality"

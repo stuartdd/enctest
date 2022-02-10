@@ -221,28 +221,6 @@ func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(str
 	return container.NewHBox(cObj...)
 }
 
-func assetScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
-	logo := canvas.NewImageFromFile("background.png")
-	logo.FillMode = canvas.ImageFillContain
-	logo.SetMinSize(fyne.NewSize(228, 167))
-
-	return container.NewVBox(
-		widget.NewSeparator(),
-		container.NewCenter(container.NewVBox(
-			widget.NewLabelWithStyle(appDesc, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-			logo,
-			container.NewCenter(
-				container.NewHBox(
-					widget.NewHyperlink("fyne.io", parseURL("https://fyne.io/")),
-					widget.NewLabel("ASSET"),
-					widget.NewHyperlink("SDD", parseURL("https://github.com/stuartdd")),
-					widget.NewLabel("-"),
-					widget.NewHyperlink("go", parseURL("https://golang.org/")),
-				),
-			),
-		)))
-}
-
 func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
@@ -259,6 +237,86 @@ func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(stri
 	}, statusDisplay, fmt.Sprintf("Add new Note to user: %s", details.User)))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
+}
+
+func assetScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+	data := details.GetObjectsForUid()
+	cObj := make([]fyne.CanvasObject, 0)
+	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
+	for _, k := range keys {
+		v := data.GetNodeWithName(k)
+		idd := details.Uid.StringAppend(k)
+		editEntry, ok := EditEntryListCache.Get(idd)
+		if !ok {
+			editEntry = NewEditEntry(idd, k, v.String(),
+				func(newWalue string, path *parser.Path) { //onChangeFunction
+					entryChangedFunction(newWalue, path)
+					actionFunc(ACTION_UPDATED, parser.NewBarPath(""), "")
+				},
+				unDoFunction, actionFunc, statusDisplay)
+			EditEntryListCache.Add(editEntry)
+		}
+		editEntry.RefreshData()
+
+		clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {
+			w.Clipboard().SetContent(editEntry.GetCurrentText())
+			actionFunc(ACTION_COPIED, editEntry.Path, editEntry.GetCurrentText())
+		}, statusDisplay, fmt.Sprintf("Copy the contents of '%s' to the clipboard", k))
+		flClipboard := container.New(&FixedLayout{10, 1}, clip)
+		flLab := container.New(&FixedLayout{100, 1}, editEntry.Lab)
+		flLink := container.New(&FixedLayout{10, 0}, editEntry.Link)
+		flUnDo := container.New(&FixedLayout{10, 0}, editEntry.UnDo)
+		if len(keys) < 2 {
+			editEntry.Remove.Disable()
+		} else {
+			editEntry.Remove.Enable()
+		}
+		flRemove := container.New(&FixedLayout{10, 0}, editEntry.Remove)
+		flRename := container.New(&FixedLayout{10, 0}, editEntry.Rename)
+		na := editEntry.NodeAnnotation
+		dp := details.Preferences.GetBoolWithFallback(DataPresModePrefName, true)
+		cObj = append(cObj, widget.NewSeparator())
+		if dp {
+			switch na {
+			case lib.NOTE_TYPE_RT:
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())))
+			case lib.NOTE_TYPE_PO:
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
+			case lib.NOTE_TYPE_IM:
+				image, message := loadImage(editEntry.GetCurrentText())
+				if message == "" {
+					image.FillMode = canvas.ImageFillOriginal
+					cObj = append(cObj, image)
+				} else {
+					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewLabel(message)))
+				}
+			// case lib.NODE_TYPE_AE:
+			// 	cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
+			default:
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
+			}
+		} else {
+			var we *widget.Entry
+			editEntry.Rename.Enable()
+			contHeight := editEntry.Lab.MinSize().Height
+			if lib.NodeAnnotationsSingleLine[na] {
+				we = widget.NewEntry()
+			} else {
+				we = widget.NewMultiLineEntry()
+				if na != lib.NOTE_TYPE_PO {
+					contHeight = 250
+				}
+			}
+			we.OnChanged = func(newWalue string) {
+				entryChangedFunction(newWalue, editEntry.Path)
+				actionFunc(ACTION_UPDATED, editEntry.Path, "")
+			}
+			we.SetText(editEntry.GetCurrentText())
+			editEntry.We = we
+			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
+		}
+	}
+	return container.NewScroll(container.NewVBox(cObj...))
 }
 
 func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {

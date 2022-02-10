@@ -45,13 +45,14 @@ const (
 	NOTE_TYPE_IM NodeAnnotationEnum = 4 // IMage
 	NODE_TYPE_UK NodeAnnotationEnum = 5 // UnKnown
 	NODE_TYPE_AS NodeAnnotationEnum = 6 // ASset
+	NODE_TYPE_AE NodeAnnotationEnum = 7 // AssetEntry
 )
 
 var (
-	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po", "!im", "!as"}
-	NodeAnnotationPrefixNames = []string{"Single Line", "Multi Line", "Rich Text", "Positional", "Image", "Asset"}
-	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO, NOTE_TYPE_IM, NODE_TYPE_AS}
-	NodeAnnotationsSingleLine = []bool{true, false, false, true, true, true}
+	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po", "!im", "!as", "!ae"}
+	NodeAnnotationPrefixNames = []string{"Single Line", "Multi Line", "Rich Text", "Positional", "Image", "Asset", "AssetEntry"}
+	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO, NOTE_TYPE_IM, NODE_TYPE_AS, NODE_TYPE_AE}
+	NodeAnnotationsSingleLine = []bool{true, false, false, true, true, true, true}
 	defaultHintNames          = []string{"notes", "post", "pre", "userId"}
 	timeStampPath             = parser.NewBarPath(timeStampName)
 	dataMapRootPath           = parser.NewBarPath(dataMapRootName)
