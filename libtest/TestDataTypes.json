@@ -42,9 +42,9 @@
         "AUser": {
             "Assets!as": {
                 "Lloyds Current Account": {
-                    "acc":"12345678",
-                    "sort":"30:96:91",
-                    "transactions!tx":[
+                    "Acc Number":"12345678",
+                    "Sort Code":"30:96:91",
+                    "Transactions!tx":[
                             {"date":"Mon Nov 22 14:39:10 GMT 2021", 
                             "val":126.6,
                             "desc":"Add 126.6"},

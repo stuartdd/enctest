@@ -198,7 +198,7 @@ func main() {
 	statusDisplay = gui.NewStatusDisplay("Select an item from the list above", "Hint")
 	wp := gui.GetWelcomePage(parser.NewBarPath(""), *preferences)
 	title := container.NewHBox()
-	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil, statusDisplay)}
+	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil, preferences, statusDisplay)}
 	contentRHS := container.NewMax()
 	layoutRHS := container.NewBorder(title, container.NewWithoutLayout(), nil, nil, contentRHS)
 	buttonBar := makeButtonBar()
@@ -216,9 +216,9 @@ func main() {
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentUid.StringFirst()))
 		window.SetMainMenu(makeMenus())
 		navTreeLHS.OpenBranch(currentUid.String())
-		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction, statusDisplay)}
+		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction, preferences, statusDisplay)}
 		title.Refresh()
-		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage, controlActionFunction, statusDisplay)}
+		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage, controlActionFunction, preferences, statusDisplay)}
 		contentRHS.Refresh()
 	}
 

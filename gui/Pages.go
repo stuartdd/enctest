@@ -43,7 +43,7 @@ const (
 	DataPresModePrefName      = "data.presentationmode"
 	DataHintIsCalledPrefName  = "data.hintIsCalled"
 	DataNoteIsCalledPrefName  = "data.noteIsCalled"
-	DataAssetIsCalledPrefName = "data.assetIsCalled"
+	DataTransIsCalledPrefName = "data.transIsCalled"
 
 	PATH_SEP = "|"
 
@@ -108,7 +108,7 @@ func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.
 			return NewDetailPage(uid, user0, name1, name2, detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
 		if nodeType1 == lib.NODE_TYPE_AS {
-			return NewDetailPage(uid, user0, name1, name2, assetScreen, assetControls, dataRootMap, preferences)
+			return NewDetailPage(uid, user0, name1, name2, detailsScreen, assetControls, dataRootMap, preferences)
 		}
 		return NewDetailPage(uid, user0, name1, name2, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	default:
@@ -144,28 +144,15 @@ func loadImage(s string) (*canvas.Image, string) {
 
 func positional(s string) fyne.CanvasObject {
 	return NewPositional(s, 17, theme2.ColorForName(theme.ColorNameForeground), theme2.ColorForName(theme.ColorNameButton))
-	// g1 := container.NewHBox()
-	// g1.Add(widget.NewSeparator())
-	// for i, c := range s {
-	// 	v1 := container.NewVBox()
-	// 	v1.Add(widget.NewSeparator())
-	// 	v1.Add(container.New(NewFixedWHLayout(20, 15), widget.NewLabel(fmt.Sprintf("%d", i+1))))
-	// 	v1.Add(widget.NewSeparator())
-	// 	v1.Add(container.New(NewFixedWHLayout(20, 15), widget.NewLabel(string(c))))
-	// 	v1.Add(widget.NewSeparator())
-	// 	g1.Add(v1)
-	// 	g1.Add(widget.NewSeparator())
-	// }
-	// return g1
 }
 
-func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
 
-func userControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func userControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, details.Uid, "")
@@ -179,7 +166,7 @@ func userControls(_ fyne.Window, details DetailPage, actionFunc func(string, *pa
 	return container.NewHBox(cObj...)
 }
 
-func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
 	logo := canvas.NewImageFromFile("background.png")
 	logo.FillMode = canvas.ImageFillContain
 	logo.SetMinSize(fyne.NewSize(228, 167))
@@ -201,7 +188,7 @@ func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 		)))
 }
 
-func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
 	head := fmt.Sprintf("%s: Asset - %s", details.User, details.Title)
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
@@ -211,7 +198,7 @@ func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 	return container.NewHBox(cObj...)
 }
 
-func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
 	head := fmt.Sprintf("Asset Summary for user %s", details.User)
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
@@ -221,7 +208,7 @@ func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(str
 	return container.NewHBox(cObj...)
 }
 
-func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_HINT, details.Uid, "")
@@ -230,7 +217,7 @@ func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *pa
 	return container.NewHBox(cObj...)
 }
 
-func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_NOTE, details.Uid, "")
@@ -239,87 +226,15 @@ func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(stri
 	return container.NewHBox(cObj...)
 }
 
-func assetScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
-	data := details.GetObjectsForUid()
-	cObj := make([]fyne.CanvasObject, 0)
-	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
-	for _, k := range keys {
-		v := data.GetNodeWithName(k)
-		idd := details.Uid.StringAppend(k)
-		editEntry, ok := EditEntryListCache.Get(idd)
-		if !ok {
-			editEntry = NewEditEntry(idd, k, v.String(),
-				func(newWalue string, path *parser.Path) { //onChangeFunction
-					entryChangedFunction(newWalue, path)
-					actionFunc(ACTION_UPDATED, parser.NewBarPath(""), "")
-				},
-				unDoFunction, actionFunc, statusDisplay)
-			EditEntryListCache.Add(editEntry)
-		}
-		editEntry.RefreshData()
-
-		clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {
-			w.Clipboard().SetContent(editEntry.GetCurrentText())
-			actionFunc(ACTION_COPIED, editEntry.Path, editEntry.GetCurrentText())
-		}, statusDisplay, fmt.Sprintf("Copy the contents of '%s' to the clipboard", k))
-		flClipboard := container.New(&FixedLayout{10, 1}, clip)
-		flLab := container.New(&FixedLayout{100, 1}, editEntry.Lab)
-		flLink := container.New(&FixedLayout{10, 0}, editEntry.Link)
-		flUnDo := container.New(&FixedLayout{10, 0}, editEntry.UnDo)
-		if len(keys) < 2 {
-			editEntry.Remove.Disable()
-		} else {
-			editEntry.Remove.Enable()
-		}
-		flRemove := container.New(&FixedLayout{10, 0}, editEntry.Remove)
-		flRename := container.New(&FixedLayout{10, 0}, editEntry.Rename)
-		na := editEntry.NodeAnnotation
-		dp := details.Preferences.GetBoolWithFallback(DataPresModePrefName, true)
-		cObj = append(cObj, widget.NewSeparator())
-		if dp {
-			switch na {
-			case lib.NOTE_TYPE_RT:
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())))
-			case lib.NOTE_TYPE_PO:
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
-			case lib.NOTE_TYPE_IM:
-				image, message := loadImage(editEntry.GetCurrentText())
-				if message == "" {
-					image.FillMode = canvas.ImageFillOriginal
-					cObj = append(cObj, image)
-				} else {
-					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewLabel(message)))
-				}
-			// case lib.NODE_TYPE_AE:
-			// 	cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
-			default:
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
-			}
-		} else {
-			var we *widget.Entry
-			editEntry.Rename.Enable()
-			contHeight := editEntry.Lab.MinSize().Height
-			if lib.NodeAnnotationsSingleLine[na] {
-				we = widget.NewEntry()
-			} else {
-				we = widget.NewMultiLineEntry()
-				if na != lib.NOTE_TYPE_PO {
-					contHeight = 250
-				}
-			}
-			we.OnChanged = func(newWalue string) {
-				entryChangedFunction(newWalue, editEntry.Path)
-				actionFunc(ACTION_UPDATED, editEntry.Path, "")
-			}
-			we.SetText(editEntry.GetCurrentText())
-			editEntry.We = we
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
-		}
-	}
-	return container.NewScroll(container.NewVBox(cObj...))
+func getTransactionalCanvasObjects(cObj []fyne.CanvasObject, n parser.NodeI, editEntry *EditEntry, pref *pref.PrefData) []fyne.CanvasObject {
+	transAreCalled := pref.GetStringForPathWithFallback(DataTransIsCalledPrefName, "Transaction")
+	cObj = append(cObj, widget.NewLabel(fmt.Sprintf("List of %s(s):", transAreCalled)))
+	cObj = append(cObj, widget.NewSeparator())
+	cObj = append(cObj, widget.NewLabel(n.JsonValue()))
+	return cObj
 }
 
-func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
 	data := details.GetObjectsForUid()
 	cObj := make([]fyne.CanvasObject, 0)
 	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
@@ -337,62 +252,67 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 			EditEntryListCache.Add(editEntry)
 		}
 		editEntry.RefreshData()
-
-		clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {
-			w.Clipboard().SetContent(editEntry.GetCurrentText())
-			actionFunc(ACTION_COPIED, editEntry.Path, editEntry.GetCurrentText())
-		}, statusDisplay, fmt.Sprintf("Copy the contents of '%s' to the clipboard", k))
-		flClipboard := container.New(&FixedLayout{10, 1}, clip)
-		flLab := container.New(&FixedLayout{100, 1}, editEntry.Lab)
-		flLink := container.New(&FixedLayout{10, 0}, editEntry.Link)
-		flUnDo := container.New(&FixedLayout{10, 0}, editEntry.UnDo)
-		if len(keys) < 2 {
-			editEntry.Remove.Disable()
-		} else {
-			editEntry.Remove.Enable()
-		}
-		flRemove := container.New(&FixedLayout{10, 0}, editEntry.Remove)
-		flRename := container.New(&FixedLayout{10, 0}, editEntry.Rename)
 		na := editEntry.NodeAnnotation
-		dp := details.Preferences.GetBoolWithFallback(DataPresModePrefName, true)
-		cObj = append(cObj, widget.NewSeparator())
-		if dp {
-			switch na {
-			case lib.NOTE_TYPE_RT:
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())))
-			case lib.NOTE_TYPE_PO:
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
-			case lib.NOTE_TYPE_IM:
-				image, message := loadImage(editEntry.GetCurrentText())
-				if message == "" {
-					image.FillMode = canvas.ImageFillOriginal
-					cObj = append(cObj, image)
-				} else {
-					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewLabel(message)))
-				}
-			default:
-				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
-			}
+		if na == lib.NODE_TYPE_TX {
+			cObj = append(cObj, widget.NewSeparator())
+			cObj = getTransactionalCanvasObjects(cObj, v, editEntry, pref)
 		} else {
-			var we *widget.Entry
-			editEntry.Rename.Enable()
-			contHeight := editEntry.Lab.MinSize().Height
-			if lib.NodeAnnotationsSingleLine[na] {
-				we = widget.NewEntry()
+			clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {
+				w.Clipboard().SetContent(editEntry.GetCurrentText())
+				actionFunc(ACTION_COPIED, editEntry.Path, editEntry.GetCurrentText())
+			}, statusDisplay, fmt.Sprintf("Copy the contents of '%s' to the clipboard", k))
+			flClipboard := container.New(&FixedLayout{10, 1}, clip)
+			flLab := container.New(&FixedLayout{100, 1}, editEntry.Lab)
+			flLink := container.New(&FixedLayout{10, 0}, editEntry.Link)
+			flUnDo := container.New(&FixedLayout{10, 0}, editEntry.UnDo)
+			if len(keys) < 2 {
+				editEntry.Remove.Disable()
 			} else {
-				we = widget.NewMultiLineEntry()
-				if na != lib.NOTE_TYPE_PO {
-					contHeight = 250
+				editEntry.Remove.Enable()
+			}
+			flRemove := container.New(&FixedLayout{10, 0}, editEntry.Remove)
+			flRename := container.New(&FixedLayout{10, 0}, editEntry.Rename)
+			dp := details.Preferences.GetBoolWithFallback(DataPresModePrefName, true)
+			cObj = append(cObj, widget.NewSeparator())
+			if dp {
+				switch na {
+				case lib.NOTE_TYPE_RT:
+					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())))
+				case lib.NOTE_TYPE_PO:
+					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
+				case lib.NOTE_TYPE_IM:
+					image, message := loadImage(editEntry.GetCurrentText())
+					if message == "" {
+						image.FillMode = canvas.ImageFillOriginal
+						cObj = append(cObj, image)
+					} else {
+						cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewLabel(message)))
+					}
+				default:
+					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab, flClipboard), nil, widget.NewLabel(editEntry.GetCurrentText())))
 				}
+			} else {
+				var we *widget.Entry
+				editEntry.Rename.Enable()
+				contHeight := editEntry.Lab.MinSize().Height
+				if lib.NodeAnnotationsSingleLine[na] {
+					we = widget.NewEntry()
+				} else {
+					we = widget.NewMultiLineEntry()
+					if na != lib.NOTE_TYPE_PO {
+						contHeight = 250
+					}
+				}
+				we.OnChanged = func(newWalue string) {
+					entryChangedFunction(newWalue, editEntry.Path)
+					actionFunc(ACTION_UPDATED, editEntry.Path, "")
+				}
+				we.SetText(editEntry.GetCurrentText())
+				editEntry.We = we
+				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
 			}
-			we.OnChanged = func(newWalue string) {
-				entryChangedFunction(newWalue, editEntry.Path)
-				actionFunc(ACTION_UPDATED, editEntry.Path, "")
-			}
-			we.SetText(editEntry.GetCurrentText())
-			editEntry.We = we
-			cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
 		}
+
 	}
 	return container.NewScroll(container.NewVBox(cObj...))
 }
@@ -411,7 +331,7 @@ func unDoFunction(path *parser.Path) {
 	}
 }
 
-func hintDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), statusDisplay *StatusDisplay) fyne.CanvasObject {
+func hintDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, details.Uid, "")
