@@ -43,7 +43,7 @@
             "Assets!as": {
                 "Lloyds": {
                     "acc":"Lloyds",
-                    "ent!ae":"Z"
+                    "ent!ae":{}
                 },
                 "Principality": {
                     "acc":"Principality"

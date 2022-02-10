@@ -478,8 +478,12 @@ func createNavIndexDetail(id string, uids *map[string][]string, nodeI parser.Nod
 								m3O := m3.(*parser.JsonObject)
 								for _, v3 := range m3O.GetValuesSorted() {
 									if v3.GetNodeType() == parser.NT_OBJECT {
-										_, ll3 := keysToList(ll2[ii3], m3O)
-										(*uids)[ll2[ii3]] = ll3
+										an, _ := GetNodeAnnotationTypeAndName(v3.GetName())
+										if an == NOTE_TYPE_SL {
+											l3 := make([]string, 1)
+											l3[0] = v3.GetName()
+											(*uids)[ll2[ii3]] = l3
+										}
 									}
 								}
 							}

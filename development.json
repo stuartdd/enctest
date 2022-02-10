@@ -1,5 +1,21 @@
 
     {
+        "data": {
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset",
+            "noteIsCalled": "Note",
+            "presentationmode": true
+        },
+        "screen": {
+            "fullScreen": false,
+            "split": 0.41308,
+            "width": 930,
+            "height": 518
+        },
+        "dialog": {
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
+        },
         "search": {
             "lastGoodList": [
                 "notes",
@@ -15,25 +31,9 @@
             "active": true
         },
         "file": {
-            "getDataUrl": "",
             "postDataUrl": "",
-            "datafile": "libtest/TestDataTypes.json"
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
         },
-        "theme": "dark",
-        "data": {
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
-            "noteIsCalled": "Note",
-            "presentationmode": true
-        },
-        "screen": {
-            "width": 930,
-            "height": 518,
-            "fullScreen": false,
-            "split": 0.41308
-        },
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        }
+        "theme": "dark"
     }
