@@ -1,16 +1,10 @@
 
     {
-        "data": {
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
-            "noteIsCalled": "Note",
-            "presentationmode": true
-        },
         "screen": {
+            "height": 518,
             "fullScreen": false,
-            "split": 0.41308,
-            "width": 930,
-            "height": 518
+            "split": 0.236157,
+            "width": 1308
         },
         "dialog": {
             "saveTimeOutMS": 3000,
@@ -35,5 +29,11 @@
             "datafile": "libtest/TestDataTypes.json",
             "getDataUrl": ""
         },
-        "theme": "dark"
+        "theme": "dark",
+        "data": {
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset",
+            "noteIsCalled": "Note",
+            "presentationmode": true
+        }
     }

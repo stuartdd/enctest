@@ -41,9 +41,17 @@
         },
         "AUser": {
             "Assets!as": {
-                "Lloyds": {
-                    "acc":"Lloyds",
-                    "ent!ae":{}
+                "Lloyds Current Account": {
+                    "acc":"12345678",
+                    "sort":"30:96:91",
+                    "transactions!tx":[
+                            {"date":"Mon Nov 22 14:39:10 GMT 2021", 
+                            "val":126.6,
+                            "desc":"Add 126.6"},
+                            {"date":"Mon Nov 22 14:10:10 GMT 2021", 
+                                "val":-126.6,
+                                "desc":"Sub 126.6"}
+                        ]
                 },
                 "Principality": {
                     "acc":"Principality"
