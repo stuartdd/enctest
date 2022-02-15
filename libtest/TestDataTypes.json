@@ -45,12 +45,9 @@
                     "Acc Number":"12345678",
                     "Sort Code":"30:96:91",
                     "Transactions!tx":[
-                            {"date":"Mon Nov 22 14:39:10 GMT 2021", 
-                            "val":126.6,
-                            "desc":"Add 126.6"},
-                            {"date":"Mon Nov 22 14:10:10 GMT 2021", 
-                                "val":-126.6,
-                                "desc":"Sub 126.6"}
+                            {"date":"2021-07-08T15:31:10", "val":126.6,"ref":"Add 126.6"},
+                            {"date":"2021-07-10T15:31:10", "val":-126.6, "ref":"Subtract 126.6"},
+                            {"date":"2021-07-09T15:31:10", "val":-126.6, "ref":"Subtract 126.6"}
                         ]
                 },
                 "Principality": {

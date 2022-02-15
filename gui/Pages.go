@@ -226,11 +226,13 @@ func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(stri
 	return container.NewHBox(cObj...)
 }
 
-func getTransactionalCanvasObjects(cObj []fyne.CanvasObject, n parser.NodeI, editEntry *EditEntry, pref *pref.PrefData) []fyne.CanvasObject {
+func getTransactionalCanvasObjects(cObj []fyne.CanvasObject, n parser.NodeC, editEntry *EditEntry, pref *pref.PrefData) []fyne.CanvasObject {
 	transAreCalled := pref.GetStringForPathWithFallback(DataTransIsCalledPrefName, "Transaction")
-	cObj = append(cObj, widget.NewLabel(fmt.Sprintf("List of %s(s):", transAreCalled)))
-	cObj = append(cObj, widget.NewSeparator())
-	cObj = append(cObj, widget.NewLabel(n.JsonValue()))
+	txList := lib.NewTranactionDataList(n, 200)
+	cObj = append(cObj, widget.NewLabel(fmt.Sprintf("List of %s(s). Current balance %0.2f", transAreCalled, txList.ClosingValue)))
+	for _, v := range txList.Data {
+		cObj = append(cObj, widget.NewLabel(v.String()))
+	}
 	return cObj
 }
 
@@ -253,9 +255,9 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 		}
 		editEntry.RefreshData()
 		na := editEntry.NodeAnnotation
-		if na == lib.NODE_TYPE_TX {
+		if na == lib.NODE_TYPE_TX && v.IsContainer() {
 			cObj = append(cObj, widget.NewSeparator())
-			cObj = getTransactionalCanvasObjects(cObj, v, editEntry, pref)
+			cObj = getTransactionalCanvasObjects(cObj, v.(parser.NodeC), editEntry, pref)
 		} else {
 			clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {
 				w.Clipboard().SetContent(editEntry.GetCurrentText())
