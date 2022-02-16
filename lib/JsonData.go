@@ -43,14 +43,12 @@ const (
 	NOTE_TYPE_RT NodeAnnotationEnum = 2 // Rich Text
 	NOTE_TYPE_PO NodeAnnotationEnum = 3 // POsitinal
 	NOTE_TYPE_IM NodeAnnotationEnum = 4 // IMage
-	NODE_TYPE_AS NodeAnnotationEnum = 5 // ASset
-	NODE_TYPE_TX NodeAnnotationEnum = 6 // Transactions
 )
 
 var (
-	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po", "!im", "!as", "!tx"}
-	NodeAnnotationPrefixNames = []string{"Single Line", "Multi Line", "Rich Text", "Positional", "Image", "Asset", "Transaction"}
-	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO, NOTE_TYPE_IM, NODE_TYPE_AS, NODE_TYPE_TX}
+	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po", "!im"}
+	NodeAnnotationPrefixNames = []string{"Single Line", "Multi Line", "Rich Text", "Positional", "Image"}
+	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO, NOTE_TYPE_IM}
 	NodeAnnotationsSingleLine = []bool{true, false, false, true, true, true, true}
 	defaultHintNames          = []string{"notes", "post", "pre", "userId"}
 	timeStampPath             = parser.NewBarPath(timeStampName)
@@ -350,6 +348,17 @@ func searchUsers(addPath func(*parser.Path, string), needle, user string, m *par
 			searchLeafNodes(addPath, false, needle, user, v.GetName(), v.(*parser.JsonObject), matchCase)
 		}
 	}
+}
+
+func SearchNodesWithName(name string, m *parser.JsonObject, f func(node, parent parser.NodeI)) {
+	parser.WalkNodeTree(m, nil, func(node, parent, target parser.NodeI) bool {
+		if (node != nil) && (parent != nil) {
+			if node.GetName() == name {
+				f(node, parent)
+			}
+		}
+		return false
+	})
 }
 
 func searchLeafNodes(addPath func(*parser.Path, string), isHint bool, needle, user, name string, m *parser.JsonObject, matchCase bool) {

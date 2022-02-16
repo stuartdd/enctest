@@ -90,6 +90,7 @@ var (
 	logData                  *gui.LogData
 	fileData                 *lib.FileData
 	jsonData                 *lib.JsonData
+	userAssetCache           *lib.UserAssetCache
 	preferences              *pref.PrefData
 	navTreeLHS               *widget.Tree
 	saveShortcutButton       *gui.MyButton
@@ -108,6 +109,15 @@ var (
 	releaseTheBeast    = make(chan int, 1)
 	dataIsNotLoadedYet = true
 )
+
+func initAssets() {
+	userAssetCache = lib.NewUserAssetCache()
+	lib.SearchNodesWithName("assets", jsonData.GetDataRoot(), func(node, parent parser.NodeI) {
+		if node.IsContainer() && parent.IsContainer() {
+			userAssetCache.Add(lib.NewUserAsset(parent.(parser.NodeC), node.(parser.NodeC)))
+		}
+	})
+}
 
 func abortWithUsage(message string) {
 	fmt.Printf(message+"\n  Usage: %s <configfile>\n  Where: <configfile> is a json file. E.g. config.json\n", os.Args[0])
@@ -288,6 +298,7 @@ func main() {
 				// Select the root of current user if defined.
 				// Init the devider (split)
 				// Populate the window and we are done!
+				initAssets()
 				navTreeLHS = makeNavTree(setPageRHSFunc)
 				selectTreeElement("MAIN_THREAD_RELOAD_TREE", currentUid)
 				if splitContainerOffset < 0 {

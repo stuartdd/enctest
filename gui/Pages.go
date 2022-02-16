@@ -40,10 +40,12 @@ const (
 	appDesc                   = "Welcome to Valt"
 	idNotes                   = "notes"
 	idPwDetails               = "pwHints"
+	idAssets                  = "assets"
 	DataPresModePrefName      = "data.presentationmode"
 	DataHintIsCalledPrefName  = "data.hintIsCalled"
 	DataNoteIsCalledPrefName  = "data.noteIsCalled"
 	DataTransIsCalledPrefName = "data.transIsCalled"
+	DataAssetIsCalledPrefName = "data.assetIsCalled"
 
 	PATH_SEP = "|"
 
@@ -87,6 +89,9 @@ func GetDetailTypeGroupTitle(uid *parser.Path, preferences pref.PrefData) (lib.N
 		if group1 == idNotes {
 			return type1, group1, preferences.GetStringForPathWithFallback(DataNoteIsCalledPrefName, "Note")
 		}
+		if group1 == idAssets {
+			return type1, group1, preferences.GetStringForPathWithFallback(DataAssetIsCalledPrefName, "Asset")
+		}
 		return type1, group1, group1
 	case 3:
 		type1, group1 := lib.GetNodeAnnotationTypeAndName(uid.StringAt(1))
@@ -99,7 +104,7 @@ func GetDetailTypeGroupTitle(uid *parser.Path, preferences pref.PrefData) (lib.N
 
 func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.PrefData) *DetailPage {
 	user0 := uid.StringAt(0)
-	type1, group1, title := GetDetailTypeGroupTitle(uid, preferences)
+	_, group1, title := GetDetailTypeGroupTitle(uid, preferences)
 	switch uid.Len() {
 	case 1:
 		return NewDetailPage(uid, "", "", uid.String(), welcomeScreen, userControls, dataRootMap, preferences)
@@ -110,8 +115,8 @@ func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.
 		if group1 == idNotes {
 			return NewDetailPage(uid, user0, group1, title+"s", detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
-		if type1 == lib.NODE_TYPE_AS {
-			return NewDetailPage(uid, user0, group1, title, welcomeScreen, assetSummaryControls, dataRootMap, preferences)
+		if group1 == idAssets {
+			return NewDetailPage(uid, user0, group1, title+"s", welcomeScreen, assetSummaryControls, dataRootMap, preferences)
 		}
 		return NewDetailPage(uid, user0, group1, title, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	case 3:
@@ -122,7 +127,7 @@ func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.
 		if group1 == idNotes {
 			return NewDetailPage(uid, user0, group1, name2, detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
-		if type1 == lib.NODE_TYPE_AS {
+		if group1 == idAssets {
 			return NewDetailPage(uid, user0, group1, name2, detailsScreen, assetControls, dataRootMap, preferences)
 		}
 		return NewDetailPage(uid, user0, group1, name2, welcomeScreen, welcomeControls, dataRootMap, preferences)
@@ -241,13 +246,13 @@ func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(stri
 	return container.NewHBox(cObj...)
 }
 
-func getTransactionalCanvasObjects(cObj []fyne.CanvasObject, n parser.NodeC, editEntry *EditEntry, pref *pref.PrefData) []fyne.CanvasObject {
-	transAreCalled := pref.GetStringForPathWithFallback(DataTransIsCalledPrefName, "Transaction")
-	txList := lib.NewTranactionDataList(n, 0)
-	cObj = append(cObj, widget.NewLabel(fmt.Sprintf("List of %s(s). Current balance %0.2f", transAreCalled, txList.ClosingValue)))
-	for _, v := range txList.Data {
-		cObj = append(cObj, widget.NewLabel(v.String()))
-	}
+func getTransactionalCanvasObjects(name string, cObj []fyne.CanvasObject, n parser.NodeC, editEntry *EditEntry, pref *pref.PrefData) []fyne.CanvasObject {
+	// transAreCalled := pref.GetStringForPathWithFallback(DataTransIsCalledPrefName, "Transaction")
+	// txList := lib.NewTranactionDataList(name, n, 0)
+	// cObj = append(cObj, widget.NewLabel(fmt.Sprintf("%s. List of %s(s). Current balance %0.2f", txList.AssetName, transAreCalled, txList.ClosingValue)))
+	// for _, v := range txList.Data {
+	// 	cObj = append(cObj, widget.NewLabel(v.String()))
+	// }
 	return cObj
 }
 
@@ -270,9 +275,9 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 		}
 		editEntry.RefreshData()
 		na := editEntry.NodeAnnotation
-		if na == lib.NODE_TYPE_TX && v.IsContainer() {
+		if details.Group == idAssets && data.IsContainer() {
 			cObj = append(cObj, widget.NewSeparator())
-			cObj = getTransactionalCanvasObjects(cObj, v.(parser.NodeC), editEntry, pref)
+			cObj = getTransactionalCanvasObjects(data.GetName(), cObj, data, editEntry, pref)
 		} else {
 			clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {
 				w.Clipboard().SetContent(editEntry.GetCurrentText())

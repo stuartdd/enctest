@@ -40,18 +40,19 @@
             }
         },
         "AUser": {
-            "Assets!as": {
+            "assets": {
                 "Lloyds Current Account": {
                     "Acc Number":"12345678",
                     "Sort Code":"30:96:91",
-                    "Transactions!tx":[
+                    "transactions":[
                             {"date":"2021-07-08T15:31:10", "val":126.6,"ref":"Add 126.6"},
                             {"date":"2021-07-10T15:31:10", "val":-126.6, "ref":"Subtract 126.6"},
                             {"date":"2021-07-09T15:31:10", "val":-126.6, "ref":"Subtract 126.6"}
                         ]
                 },
                 "Principality": {
-                    "acc":"Principality"
+                    "Acc Number":"12345678",
+                    "Sort Code":"30:96:91"
                 }
             },
             "notes": {
