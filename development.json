@@ -1,23 +1,29 @@
 
     {
+        "data": {
+            "transIsCalled": "Transaction",
+            "noteIsCalled": "Note",
+            "presentationmode": true,
+            "hintIsCalled": "Hint"
+        },
         "screen": {
-            "fullScreen": false,
-            "split": 0.236157,
             "width": 1173,
-            "height": 518
+            "height": 518,
+            "fullScreen": false,
+            "split": 0.236157
         },
         "dialog": {
             "saveTimeOutMS": 3000,
             "copyTimeOutMS": 2500
         },
         "search": {
+            "case": false,
             "lastGoodList": [
                 "notes",
                 "note",
                 "app",
                 "Principality note"
-            ],
-            "case": false
+            ]
         },
         "log": {
             "fileName": "enctest.log",
@@ -29,11 +35,5 @@
             "getDataUrl": "",
             "postDataUrl": ""
         },
-        "theme": "dark",
-        "data": {
-            "presentationmode": true,
-            "hintIsCalled": "Hint",
-            "transIsCalled": "Transaction",
-            "noteIsCalled": "Note"
-        }
+        "theme": "dark"
     }

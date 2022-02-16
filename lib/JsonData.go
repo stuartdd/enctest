@@ -43,9 +43,8 @@ const (
 	NOTE_TYPE_RT NodeAnnotationEnum = 2 // Rich Text
 	NOTE_TYPE_PO NodeAnnotationEnum = 3 // POsitinal
 	NOTE_TYPE_IM NodeAnnotationEnum = 4 // IMage
-	NODE_TYPE_UK NodeAnnotationEnum = 5 // UnKnown
-	NODE_TYPE_AS NodeAnnotationEnum = 6 // ASset
-	NODE_TYPE_TX NodeAnnotationEnum = 7 // Transactions
+	NODE_TYPE_AS NodeAnnotationEnum = 5 // ASset
+	NODE_TYPE_TX NodeAnnotationEnum = 6 // Transactions
 )
 
 var (

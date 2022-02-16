@@ -566,10 +566,12 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 			return widget.NewLabel("?")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			t := gui.GetDetailPage(parser.NewBarPath(uid), jsonData.GetDataRoot(), *preferences)
-			obj.(*widget.Label).SetText(t.Title)
+			type1, group1, title := gui.GetDetailTypeGroupTitle(parser.NewBarPath(uid), *preferences)
+			log(fmt.Sprintf("On Update:'UID:%s Type:[%s] Group:%s Title:%s'", uid, lib.NodeAnnotationPrefixNames[type1], group1, title))
+			obj.(*widget.Label).SetText(title)
 		},
 		OnSelected: func(uid string) {
+			log(fmt.Sprintf("On Select:'%s'", uid))
 			t := gui.GetDetailPage(parser.NewBarPath(uid), jsonData.GetDataRoot(), *preferences)
 			setPage(*t)
 		},

@@ -39,12 +39,14 @@ type TranactionData struct {
 }
 
 type TranactionDataList struct {
-	Node         parser.NodeC
-	InitialValue float64
-	ClosingValue float64
-	Data         []*TranactionData
+	Node         parser.NodeC      // The !tx node
+	InitialValue float64           // initial value.
+	ClosingValue float64           // initial value -+ all transactions
+	Data         []*TranactionData // Each transaction
 }
 
+// !tx node. List of all transactions.
+// Sorted by datetime.
 func NewTranactionDataList(n parser.NodeC, initialValue float64) *TranactionDataList {
 	d := make([]*TranactionData, n.Len())
 	v := initialValue

@@ -77,42 +77,57 @@ func GetWelcomePage(uid *parser.Path, preferences pref.PrefData) *DetailPage {
 	return NewDetailPage(uid, welcomeTitle, "", "", welcomeScreen, welcomeControls, nil, preferences)
 }
 
+func GetDetailTypeGroupTitle(uid *parser.Path, preferences pref.PrefData) (lib.NodeAnnotationEnum, string, string) {
+	switch uid.Len() {
+	case 2:
+		type1, group1 := lib.GetNodeAnnotationTypeAndName(uid.StringAt(1))
+		if group1 == idPwDetails {
+			return type1, group1, preferences.GetStringForPathWithFallback(DataHintIsCalledPrefName, "Hint")
+		}
+		if group1 == idNotes {
+			return type1, group1, preferences.GetStringForPathWithFallback(DataNoteIsCalledPrefName, "Note")
+		}
+		return type1, group1, group1
+	case 3:
+		type1, group1 := lib.GetNodeAnnotationTypeAndName(uid.StringAt(1))
+		_, name2 := lib.GetNodeAnnotationTypeAndName(uid.StringAt(2))
+		return type1, group1, name2
+	default:
+		return lib.NOTE_TYPE_SL, uid.String(), uid.String()
+	}
+}
+
 func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.PrefData) *DetailPage {
 	user0 := uid.StringAt(0)
-	hintsAreCalled := preferences.GetStringForPathWithFallback(DataHintIsCalledPrefName, "Hint")
-	notesAreCalled := preferences.GetStringForPathWithFallback(DataNoteIsCalledPrefName, "Note")
-	name1 := ""
-	nodeType1 := lib.NODE_TYPE_UK
+	type1, group1, title := GetDetailTypeGroupTitle(uid, preferences)
 	switch uid.Len() {
 	case 1:
 		return NewDetailPage(uid, "", "", uid.String(), welcomeScreen, userControls, dataRootMap, preferences)
 	case 2:
-		nodeType1, name1 = lib.GetNodeAnnotationTypeAndName(uid.StringLast())
-		if name1 == idPwDetails {
-			return NewDetailPage(uid, user0, "", hintsAreCalled+"s", welcomeScreen, hintControls, dataRootMap, preferences)
+		if group1 == idPwDetails {
+			return NewDetailPage(uid, user0, group1, title+"s", welcomeScreen, hintControls, dataRootMap, preferences)
 		}
-		if name1 == idNotes {
-			return NewDetailPage(uid, user0, "", notesAreCalled+"s", detailsScreen, noteDetailsControls, dataRootMap, preferences)
+		if group1 == idNotes {
+			return NewDetailPage(uid, user0, group1, title+"s", detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
-		if nodeType1 == lib.NODE_TYPE_AS {
-			return NewDetailPage(uid, user0, "", name1, welcomeScreen, assetSummaryControls, dataRootMap, preferences)
+		if type1 == lib.NODE_TYPE_AS {
+			return NewDetailPage(uid, user0, group1, title, welcomeScreen, assetSummaryControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(uid, user0, "", name1, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(uid, user0, group1, title, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	case 3:
-		nodeType1, name1 = lib.GetNodeAnnotationTypeAndName(uid.StringAt(1))
 		_, name2 := lib.GetNodeAnnotationTypeAndName(uid.StringAt(2))
-		if name1 == idPwDetails {
-			return NewDetailPage(uid, user0, name1, name2, detailsScreen, hintDetailsControls, dataRootMap, preferences)
+		if group1 == idPwDetails {
+			return NewDetailPage(uid, user0, group1, name2, detailsScreen, hintDetailsControls, dataRootMap, preferences)
 		}
-		if name1 == idNotes {
-			return NewDetailPage(uid, user0, name1, name2, detailsScreen, noteDetailsControls, dataRootMap, preferences)
+		if group1 == idNotes {
+			return NewDetailPage(uid, user0, group1, name2, detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
-		if nodeType1 == lib.NODE_TYPE_AS {
-			return NewDetailPage(uid, user0, name1, name2, detailsScreen, assetControls, dataRootMap, preferences)
+		if type1 == lib.NODE_TYPE_AS {
+			return NewDetailPage(uid, user0, group1, name2, detailsScreen, assetControls, dataRootMap, preferences)
 		}
-		return NewDetailPage(uid, user0, name1, name2, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(uid, user0, group1, name2, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	default:
-		return NewDetailPage(uid, user0, name1, uid.String(), welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(uid, user0, group1, title, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	}
 }
 
@@ -228,7 +243,7 @@ func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(stri
 
 func getTransactionalCanvasObjects(cObj []fyne.CanvasObject, n parser.NodeC, editEntry *EditEntry, pref *pref.PrefData) []fyne.CanvasObject {
 	transAreCalled := pref.GetStringForPathWithFallback(DataTransIsCalledPrefName, "Transaction")
-	txList := lib.NewTranactionDataList(n, 200)
+	txList := lib.NewTranactionDataList(n, 0)
 	cObj = append(cObj, widget.NewLabel(fmt.Sprintf("List of %s(s). Current balance %0.2f", transAreCalled, txList.ClosingValue)))
 	for _, v := range txList.Data {
 		cObj = append(cObj, widget.NewLabel(v.String()))

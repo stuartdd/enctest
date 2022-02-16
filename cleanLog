@@ -1,5 +1,5 @@
 #!/bin/bash
-
+clear
 rm enctest.log
 touch enctest.log
 tail -f -n 100 enctest.log
