@@ -91,7 +91,7 @@ func (t *UserAsset) Key() string {
 }
 
 func UserAssetKey(userNode, assetsNode parser.NodeC) string {
-	return fmt.Sprintf("%s|%s", userNode.(parser.NodeI).GetName(), assetsNode.(parser.NodeI).GetName())
+	return fmt.Sprintf("%s|%s", userNode.GetName(), assetsNode.GetName())
 }
 
 // !tx node. List of all transactions.

@@ -1,26 +1,26 @@
 #!/bin/bash
 
-go get github.com/stuartdd/JsonParser4go/parser@$1
+go get github.com/stuartdd2/JsonParser4go/parser@$1
 go mod tidy
 echo DONE
 pwd
 
 cd gui
-go get github.com/stuartdd/JsonParser4go/parser@$1
+go get github.com/stuartdd2/JsonParser4go/parser@$1
 go mod tidy
 echo DONE
 pwd
 cd ..
 
 cd lib
-go get github.com/stuartdd/JsonParser4go/parser@$1
+go get github.com/stuartdd2/JsonParser4go/parser@$1
 go mod tidy
 echo DONE
 pwd
 cd ..
 
 cd pref
-go get github.com/stuartdd/JsonParser4go/parser@$1
+go get github.com/stuartdd2/JsonParser4go/parser@$1
 go mod tidy
 echo DONE
 pwd

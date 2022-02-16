@@ -117,6 +117,7 @@ func initAssets() {
 			userAssetCache.Add(lib.NewUserAsset(parent.(parser.NodeC), node.(parser.NodeC)))
 		}
 	})
+	fmt.Print("HI")
 }
 
 func abortWithUsage(message string) {

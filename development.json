@@ -1,5 +1,19 @@
 
     {
+        "theme": "dark",
+        "data": {
+            "noteIsCalled": "Note",
+            "presentationmode": true,
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset",
+            "transIsCalled": "Transaction"
+        },
+        "screen": {
+            "width": 1163.80957,
+            "height": 507.61908,
+            "fullScreen": false,
+            "split": 0.236157
+        },
         "dialog": {
             "saveTimeOutMS": 3000,
             "copyTimeOutMS": 2500
@@ -22,19 +36,5 @@
             "datafile": "libtest/TestDataTypes.json",
             "getDataUrl": "",
             "postDataUrl": ""
-        },
-        "theme": "dark",
-        "data": {
-            "noteIsCalled": "Note",
-            "presentationmode": true,
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction"
-        },
-        "screen": {
-            "split": 0.236157,
-            "width": 1163.80957,
-            "height": 507.61908,
-            "fullScreen": false
         }
     }
