@@ -51,9 +51,13 @@
                         ]
                 },
                 "Principality": {
-                    "Acc Number":"12345678",
-                    "Sort Code":"30:96:91"
-                }
+                    "Acc Number":"8654321",
+                    "Sort Code":"30:96:91",
+                    "transactions":[
+                        {"date":"2021-07-08T15:31:10", "val":126.6,"ref":"Add"},
+                        {"date":"2021-07-09T15:31:10", "val":-126.6, "ref":"Subt"}
+                    ]
+            }
             },
             "notes": {
                 "posit": "This is a note",

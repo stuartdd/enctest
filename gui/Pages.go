@@ -40,7 +40,6 @@ const (
 	appDesc                   = "Welcome to Valt"
 	idNotes                   = "notes"
 	idPwDetails               = "pwHints"
-	idAssets                  = "assets"
 	DataPresModePrefName      = "data.presentationmode"
 	DataHintIsCalledPrefName  = "data.hintIsCalled"
 	DataNoteIsCalledPrefName  = "data.noteIsCalled"
@@ -89,7 +88,7 @@ func GetDetailTypeGroupTitle(uid *parser.Path, preferences pref.PrefData) (lib.N
 		if group1 == idNotes {
 			return type1, group1, preferences.GetStringForPathWithFallback(DataNoteIsCalledPrefName, "Note")
 		}
-		if group1 == idAssets {
+		if group1 == lib.IdAssets {
 			return type1, group1, preferences.GetStringForPathWithFallback(DataAssetIsCalledPrefName, "Asset")
 		}
 		return type1, group1, group1
@@ -115,8 +114,8 @@ func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.
 		if group1 == idNotes {
 			return NewDetailPage(uid, user0, group1, title+"s", detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
-		if group1 == idAssets {
-			return NewDetailPage(uid, user0, group1, title+"s", welcomeScreen, assetSummaryControls, dataRootMap, preferences)
+		if group1 == lib.IdAssets {
+			return NewDetailPage(uid, user0, group1, title+"s", assetScreen, assetSummaryControls, dataRootMap, preferences)
 		}
 		return NewDetailPage(uid, user0, group1, title, welcomeScreen, welcomeControls, dataRootMap, preferences)
 	case 3:
@@ -127,7 +126,7 @@ func GetDetailPage(uid *parser.Path, dataRootMap parser.NodeI, preferences pref.
 		if group1 == idNotes {
 			return NewDetailPage(uid, user0, group1, name2, detailsScreen, noteDetailsControls, dataRootMap, preferences)
 		}
-		if group1 == idAssets {
+		if group1 == lib.IdAssets {
 			return NewDetailPage(uid, user0, group1, name2, detailsScreen, assetControls, dataRootMap, preferences)
 		}
 		return NewDetailPage(uid, user0, group1, name2, welcomeScreen, welcomeControls, dataRootMap, preferences)
@@ -246,14 +245,71 @@ func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(stri
 	return container.NewHBox(cObj...)
 }
 
-func getTransactionalCanvasObjects(name string, cObj []fyne.CanvasObject, n parser.NodeC, editEntry *EditEntry, pref *pref.PrefData) []fyne.CanvasObject {
-	// transAreCalled := pref.GetStringForPathWithFallback(DataTransIsCalledPrefName, "Transaction")
-	// txList := lib.NewTranactionDataList(name, n, 0)
-	// cObj = append(cObj, widget.NewLabel(fmt.Sprintf("%s. List of %s(s). Current balance %0.2f", txList.AssetName, transAreCalled, txList.ClosingValue)))
-	// for _, v := range txList.Data {
-	// 	cObj = append(cObj, widget.NewLabel(v.String()))
-	// }
+func getTransactionalCanvasObjects(cObj []fyne.CanvasObject, accData *lib.AccountData, editEntry *EditEntry, pref *pref.PrefData) []fyne.CanvasObject {
+	transAreCalled := pref.GetStringForPathWithFallback(DataTransIsCalledPrefName, "Transaction")
+	txList := accData.Transactions
+	refMax := 10
+	for _, tx := range txList {
+		if refMax < len(tx.Ref()) {
+			refMax = len(tx.Ref())
+		}
+	}
+	cObj = append(cObj, widget.NewLabel(fmt.Sprintf("%s. List of %s(s). Current balance %0.2f", accData.AccountName, transAreCalled, accData.ClosingValue)))
+	hb := container.NewHBox()
+	hb.Add(NewStringFieldRight("Date:", 19))
+	hb.Add(NewStringFieldRight("Reference:", refMax))
+	hb.Add(NewStringFieldRight("D/C", 3))
+	hb.Add(NewStringFieldRight("Amount:", 10))
+	hb.Add(NewStringFieldRight("Balance:", 10))
+	cObj = append(cObj, hb)
+	for _, tx := range txList {
+		hb := container.NewHBox()
+		hb.Add(NewStringFieldRight(tx.DateTime(), 19))
+		hb.Add(NewStringFieldRight(tx.Ref(), refMax))
+		if tx.Value() >= 0 {
+			hb.Add(NewStringFieldRight("D  ", 3))
+		} else {
+			hb.Add(NewStringFieldRight("  C", 3))
+		}
+		hb.Add(NewFloatFieldRight(tx.Value(), 10))
+		hb.Add(NewFloatFieldRight(tx.LineValue(), 10))
+		cObj = append(cObj, hb)
+	}
 	return cObj
+}
+
+func assetScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
+	cObj := make([]fyne.CanvasObject, 0)
+	cObj = append(cObj, widget.NewSeparator())
+	assetData, err := lib.FindUserAssets(details.User)
+	tot := 0.0
+	if err == nil {
+		refMax := 10
+		for _, asset := range assetData {
+			if refMax < len(asset.AccountName) {
+				refMax = len(asset.AccountName)
+			}
+		}
+		for _, asset := range assetData {
+			hb := container.NewHBox()
+			lt := asset.LatestTransaction()
+			if lt != nil {
+				hb.Add(NewStringFieldRight(lt.DateTime(), 20))
+			} else {
+				hb.Add(NewStringFieldRight("No trans data!", 20))
+			}
+			hb.Add(NewStringFieldRight(asset.AccountName, refMax))
+			hb.Add(NewFloatFieldRight(asset.ClosingValue, 10))
+			tot = tot + asset.ClosingValue
+			cObj = append(cObj, hb)
+		}
+		cObj = append(cObj, widget.NewSeparator())
+		hb := container.NewHBox()
+		hb.Add(NewStringFieldRight("Total Value:", refMax))
+		hb.Add(NewFloatFieldRight(tot, 10))
+		cObj = append(cObj, hb)
+	}
+	return container.NewScroll(container.NewVBox(cObj...))
 }
 
 func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
@@ -275,9 +331,12 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 		}
 		editEntry.RefreshData()
 		na := editEntry.NodeAnnotation
-		if details.Group == idAssets && data.IsContainer() {
+		if v.GetName() == lib.IdTransactions && v.IsContainer() {
 			cObj = append(cObj, widget.NewSeparator())
-			cObj = getTransactionalCanvasObjects(data.GetName(), cObj, data, editEntry, pref)
+			accountData, err := lib.FindUserAccount(details.User, details.Title)
+			if err == nil {
+				cObj = getTransactionalCanvasObjects(cObj, accountData, editEntry, pref)
+			}
 		} else {
 			clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {
 				w.Clipboard().SetContent(editEntry.GetCurrentText())
@@ -334,7 +393,6 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
 			}
 		}
-
 	}
 	return container.NewScroll(container.NewVBox(cObj...))
 }

@@ -110,16 +110,6 @@ var (
 	dataIsNotLoadedYet = true
 )
 
-func initAssets() {
-	userAssetCache = lib.NewUserAssetCache()
-	lib.SearchNodesWithName("assets", jsonData.GetDataRoot(), func(node, parent parser.NodeI) {
-		if node.IsContainer() && parent.IsContainer() {
-			userAssetCache.Add(lib.NewUserAsset(parent.(parser.NodeC), node.(parser.NodeC)))
-		}
-	})
-	fmt.Print("HI")
-}
-
 func abortWithUsage(message string) {
 	fmt.Printf(message+"\n  Usage: %s <configfile>\n  Where: <configfile> is a json file. E.g. config.json\n", os.Args[0])
 	fmt.Println("    Minimum content for this file is:\n      {\"datafile\": \"dataFile.json\"}")
@@ -299,8 +289,8 @@ func main() {
 				// Select the root of current user if defined.
 				// Init the devider (split)
 				// Populate the window and we are done!
-				initAssets()
 				navTreeLHS = makeNavTree(setPageRHSFunc)
+				lib.InitUserAssetsCache(jsonData.GetDataRoot())
 				selectTreeElement("MAIN_THREAD_RELOAD_TREE", currentUid)
 				if splitContainerOffset < 0 {
 					splitContainerOffset = splitContainerOffsetPref

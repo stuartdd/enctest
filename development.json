@@ -5,27 +5,27 @@
             "noteIsCalled": "Note",
             "presentationmode": true,
             "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
+            "assetIsCalled": "Assets",
             "transIsCalled": "Transaction"
         },
         "screen": {
-            "width": 1163.80957,
-            "height": 507.61908,
+            "width": 1201,
+            "height": 695,
             "fullScreen": false,
-            "split": 0.236157
+            "split": 0.223558
         },
         "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
         },
         "search": {
-            "case": false,
             "lastGoodList": [
                 "notes",
                 "note",
                 "app",
                 "Principality note"
-            ]
+            ],
+            "case": false
         },
         "log": {
             "active": true,
@@ -33,8 +33,8 @@
             "fileName": "enctest.log"
         },
         "file": {
-            "datafile": "libtest/TestDataTypes.json",
             "getDataUrl": "",
-            "postDataUrl": ""
+            "postDataUrl": "",
+            "datafile": "libtest/TestDataTypes.json"
         }
     }

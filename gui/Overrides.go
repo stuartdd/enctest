@@ -23,6 +23,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
+	"stuartdd.com/lib"
 )
 
 var Padding50 = container.New(NewFixedWLayout(50))
@@ -58,6 +59,16 @@ func (d *FixedHLayout) Layout(objects []fyne.CanvasObject, containerSize fyne.Si
 type FixedWLayout struct {
 	w float32
 	h float32
+}
+
+func NewFloatFieldRight(f float64, w int) *widget.Label {
+	num := fmt.Sprintf("%9.2f", f)
+	return NewStringFieldRight(num, w)
+}
+
+func NewStringFieldRight(s string, w int) *widget.Label {
+	ts := fyne.TextStyle{Bold: true, Italic: false, Monospace: true, Symbol: false, TabWidth: 2}
+	return widget.NewLabelWithStyle(lib.PadLeft(s, w), fyne.TextAlignLeading, ts)
 }
 
 func NewFixedWLayout(w float32) *FixedWLayout {

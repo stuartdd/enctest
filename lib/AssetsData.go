@@ -19,6 +19,7 @@ package lib
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/stuartdd2/JsonParser4go/parser"
@@ -27,8 +28,11 @@ import (
 const (
 	TIME_FORMAT_TXN_IN  = "2006-01-02T15:04:05"
 	TIME_FORMAT_TXN_OUT = "2006-01-02 15:04:05"
-	idTransactions      = "transactions"
+	IdTransactions      = "transactions"
+	IdAssets            = "assets"
 )
+
+var cachedUserAssets *UserAssetCache
 
 type UserAssetCache struct {
 	UserAssets map[string]*UserAsset
@@ -55,54 +59,98 @@ type AccountData struct {
 	Transactions []*TranactionData // Each transaction
 }
 
-func NewUserAssetCache() *UserAssetCache {
-	return &UserAssetCache{UserAssets: make(map[string]*UserAsset)}
+func InitUserAssetsCache(root *parser.JsonObject) {
+	cache := &UserAssetCache{UserAssets: make(map[string]*UserAsset)}
+	SearchNodesWithName(IdAssets, root, func(node, parent parser.NodeI) {
+		if root.IsContainer() {
+			if node.IsContainer() && parent.IsContainer() {
+				cache.addAsset(newUserAsset(parent.(parser.NodeC), node.(parser.NodeC)))
+			}
+		}
+	})
+	cachedUserAssets = cache
 }
 
-func (t *UserAssetCache) Add(asset *UserAsset) {
-	t.UserAssets[asset.Key()] = asset
+func (t *UserAssetCache) addAsset(asset *UserAsset) {
+	t.UserAssets[asset.keyForUserAsset()] = asset
 }
 
-func (t *UserAssetCache) Find(user, assets, account string) *AccountData {
-	key := fmt.Sprintf("%s|%s", user, assets)
-	ua, ok := t.UserAssets[key]
+func FindUserAssets(user string) ([]*AccountData, error) {
+	if cachedUserAssets == nil {
+		return nil, fmt.Errorf("No assets or accounts have been defined")
+	}
+	key := fmt.Sprintf("%s|%s", user, IdAssets)
+	ua, ok := cachedUserAssets.UserAssets[key]
 	if ok {
-		for _, acc := range ua.data {
+		return ua.data, nil
+	}
+	return nil, fmt.Errorf("Assets not found for user '%s'", user)
+}
+
+func FindUserAccount(user, account string) (*AccountData, error) {
+	ua, err := FindUserAssets(user)
+	if err == nil {
+		for _, acc := range ua {
 			if acc.AccountName == account {
-				return acc
+				return acc, nil
 			}
 		}
 	}
-	return nil
+	return nil, fmt.Errorf("Account '%s' not found for user '%s'", account, user)
 }
 
-func NewUserAsset(userNode, assetsNode parser.NodeC) *UserAsset {
+func StringUserAsset() string {
+	if cachedUserAssets == nil {
+		return "UserAssetCache:is nil"
+	}
+	var sb strings.Builder
+	sb.WriteString("AssetCache:\n")
+	for _, v := range cachedUserAssets.UserAssets {
+		sb.WriteString(fmt.Sprintf("    %s,\n", v))
+	}
+	return strings.Trim(sb.String(), "\n")
+}
+
+func newUserAsset(userNode, assetsNode parser.NodeC) *UserAsset {
 	ad := make([]*AccountData, 0)
 	for _, accN := range assetsNode.GetValues() {
 		if accN.IsContainer() {
-			ad = append(ad, NewAccountData(accN.GetName(), accN.(parser.NodeC), 0.0))
+			ad = append(ad, newAccountData(accN.GetName(), accN.(parser.NodeC), 0.0))
 		}
 	}
 	return &UserAsset{user: userNode, asset: assetsNode, data: ad}
 }
 
-func (t *UserAsset) Key() string {
-	return UserAssetKey(t.user, t.asset)
+func (t *UserAsset) keyForUserAsset() string {
+	return userAssetKey(t.user, t.asset)
 }
 
-func UserAssetKey(userNode, assetsNode parser.NodeC) string {
+func (t *UserAsset) Data() []*AccountData {
+	return t.data
+}
+
+func (t *UserAsset) String() string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("Asset: Key:%s \n", t.keyForUserAsset()))
+	for _, v := range t.data {
+		sb.WriteString(fmt.Sprintf("    %s,\n", v))
+	}
+	return strings.Trim(sb.String(), "\n")
+}
+
+func userAssetKey(userNode, assetsNode parser.NodeC) string {
 	return fmt.Sprintf("%s|%s", userNode.GetName(), assetsNode.GetName())
 }
 
 // !tx node. List of all transactions.
 // Sorted by datetime.
-func NewAccountData(accountName string, accountNode parser.NodeC, initialValue float64) *AccountData {
+func newAccountData(accountName string, accountNode parser.NodeC, initialValue float64) *AccountData {
 	d := make([]*TranactionData, 0)
 	v := initialValue
 	for _, n := range accountNode.GetValues() {
-		if n.GetName() == idTransactions && n.IsContainer() {
+		if n.GetName() == IdTransactions && n.IsContainer() {
 			for _, ni := range n.(parser.NodeC).GetValues() {
-				d = append(d, NewTranactionDataFromNode(ni))
+				d = append(d, newTranactionDataFromNode(ni))
 			}
 			sort.Slice(d, func(i, j int) bool {
 				return d[i].dateTime.UnixMilli() < d[j].dateTime.UnixMilli()
@@ -120,11 +168,26 @@ func (t *AccountData) String() string {
 	return fmt.Sprintf("Name: %s Initial value:%9.2f Final value:%9.2f", t.AccountName, t.InitialValue, t.ClosingValue)
 }
 
-func NewTranactionData(dateTime time.Time, value float64, ref string) *TranactionData {
+func (t *AccountData) LatestTransaction() *TranactionData {
+	if len(t.Transactions) == 0 {
+		return nil
+	}
+	var td int64 = 0
+	ind := 0
+	for i, t := range t.Transactions {
+		if td < t.dateTime.UnixMilli() {
+			td = t.dateTime.UnixMilli()
+			ind = i
+		}
+	}
+	return t.Transactions[ind]
+}
+
+func newTranactionData(dateTime time.Time, value float64, ref string) *TranactionData {
 	return &TranactionData{dateTime: dateTime, value: value, ref: ref, lineValue: 0.0}
 }
 
-func NewTranactionDataError(err string, n parser.NodeI) *TranactionData {
+func newTranactionDataError(err string, n parser.NodeI) *TranactionData {
 	return &TranactionData{err: fmt.Errorf("%s '%s'", err, n.JsonValue()), lineValue: 0.0}
 }
 
@@ -138,13 +201,6 @@ func (t *TranactionData) Ref() string {
 
 func (t *TranactionData) Val() string {
 	return fmt.Sprintf("%9.2f", t.value)
-}
-
-func (t *TranactionData) GetDC() string {
-	if t.value < 0 {
-		return "C"
-	}
-	return "D"
 }
 
 func (t *TranactionData) LineVal() string {
@@ -167,38 +223,38 @@ func (t *TranactionData) String() string {
 	if t.HasError() {
 		return t.err.Error()
 	}
-	return fmt.Sprintf("%s %s %s %s %s", t.DateTime(), t.Ref(), t.GetDC(), t.Val(), t.LineVal())
+	return fmt.Sprintf("%s %s %s %s", t.DateTime(), t.Ref(), t.Val(), t.LineVal())
 }
 
 func (t *TranactionData) HasError() bool {
 	return t.err != nil
 }
 
-func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
+func newTranactionDataFromNode(n parser.NodeI) *TranactionData {
 	if n.IsContainer() {
 		tn := n.(parser.NodeC).GetNodeWithName("date")
 		if tn == nil {
-			return NewTranactionDataError("Invalid Transaction node has no 'date' member", n)
+			return newTranactionDataError("Invalid Transaction node has no 'date' member", n)
 		}
 		tim, err := time.Parse(TIME_FORMAT_TXN_IN, tn.String())
 		if err != nil {
-			return NewTranactionDataError("invalid 'date' for transaction %s", n)
+			return newTranactionDataError("invalid 'date' for transaction %s", n)
 		}
 		vn := n.(parser.NodeC).GetNodeWithName("val")
 		if vn == nil {
-			return NewTranactionDataError("invalid Transaction node has no 'val' member '%s'", n)
+			return newTranactionDataError("invalid Transaction node has no 'val' member '%s'", n)
 		}
 		if vn.GetNodeType() != parser.NT_NUMBER {
-			return NewTranactionDataError("invalid Transaction node 'val' member is  not a number'%s'", n)
+			return newTranactionDataError("invalid Transaction node 'val' member is  not a number'%s'", n)
 		}
 		val := vn.(*parser.JsonNumber).GetValue()
 		rn := n.(parser.NodeC).GetNodeWithName("ref")
 		if rn == nil {
-			return NewTranactionDataError("invalid Transaction node has no 'ref' member '%s'", n)
+			return newTranactionDataError("invalid Transaction node has no 'ref' member '%s'", n)
 		}
 		ref := rn.String()
-		return NewTranactionData(tim, val, ref)
+		return newTranactionData(tim, val, ref)
 	} else {
-		return NewTranactionDataError("invalid Transaction node has no members (date, val and ref) '%s'", n)
+		return newTranactionDataError("invalid Transaction node has no members (date, val and ref) '%s'", n)
 	}
 }
