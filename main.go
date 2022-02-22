@@ -52,6 +52,7 @@ const (
 
 	ADD_TYPE_USER = iota
 	ADD_TYPE_HINT
+	ADD_TYPE_ASSET
 	ADD_TYPE_HINT_CLONE
 	ADD_TYPE_HINT_CLONE_FULL
 	ADD_TYPE_HINT_ITEM
@@ -303,6 +304,7 @@ func main() {
 				futureReleaseTheBeast(0, MAIN_THREAD_RE_MENU)
 			case MAIN_THREAD_RESELECT:
 				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentUid))
+				lib.InitUserAssetsCache(jsonData.GetDataRoot())
 				t := gui.GetDetailPage(currentUid, jsonData.GetDataRoot(), *preferences)
 				setPageRHSFunc(*t)
 			case MAIN_THREAD_RE_MENU:
@@ -661,6 +663,8 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 		addNewNoteItem()
 	case gui.ACTION_ADD_HINT:
 		addNewHint()
+	case gui.ACTION_ADD_ASSET:
+		addNewAsset()
 	case gui.ACTION_ADD_HINT_ITEM:
 		addNewHintItem()
 	case gui.ACTION_CLONE_FULL:
@@ -671,6 +675,8 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 		futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
 	case gui.ACTION_COPIED:
 		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 1500), "Copied item text to clipboard", dataPath.String())
+	case gui.ACTION_ERROR_DIALOG:
+		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 2000), fmt.Sprintf("Error for data at: %s", dataPath.String()), extra)
 	case gui.ACTION_LOG:
 		log(gui.LogCleanString(extra, 100))
 	}
@@ -699,6 +705,14 @@ Add a hint via addNewEntity
 func addNewHint() {
 	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	addNewEntity(n+" for ", n, ADD_TYPE_HINT, false)
+}
+
+/**
+Add a asset via addNewEntity
+*/
+func addNewAsset() {
+	n := preferences.GetStringForPathWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+	addNewEntity(n+" for ", n, ADD_TYPE_ASSET, false)
 }
 
 /**
@@ -739,6 +753,8 @@ func addNewEntity(head string, name string, addType int, isNote bool) {
 					err = jsonData.AddNoteItem(cu, entityName)
 				case ADD_TYPE_HINT:
 					err = jsonData.AddHint(cu, entityName)
+				case ADD_TYPE_ASSET:
+					err = jsonData.AddAsset(cu, entityName)
 				case ADD_TYPE_HINT_CLONE:
 					err = jsonData.CloneHint(currentUid, entityName, false)
 				case ADD_TYPE_HINT_CLONE_FULL:

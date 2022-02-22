@@ -1,22 +1,14 @@
 
     {
-        "theme": "dark",
-        "data": {
-            "noteIsCalled": "Note",
-            "presentationmode": true,
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Assets",
-            "transIsCalled": "Transaction"
-        },
         "screen": {
+            "split": 0.223558,
             "width": 1201,
             "height": 695,
-            "fullScreen": false,
-            "split": 0.223558
+            "fullScreen": false
         },
         "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
         },
         "search": {
             "lastGoodList": [
@@ -28,13 +20,21 @@
             "case": false
         },
         "log": {
-            "active": true,
             "prefix": "INFO",
-            "fileName": "enctest.log"
+            "fileName": "enctest.log",
+            "active": true
         },
         "file": {
-            "getDataUrl": "",
             "postDataUrl": "",
-            "datafile": "libtest/TestDataTypes.json"
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
+        },
+        "theme": "dark",
+        "data": {
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Assets",
+            "transIsCalled": "Transaction",
+            "noteIsCalled": "Note",
+            "presentationmode": true
         }
     }

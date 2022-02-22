@@ -1,82 +1,102 @@
 {
-    "timeStamp": "Mon Nov 22 14:39:10 GMT 2021",
     "groups": {
         "UserB": {
             "pwHints": {
-                "Principality.B": {
-                    "post": "456",
-                    "pre": "efg",
-                    "userId": "Buser",
-                    "link": "https://www.principality.co.uk/en/your-account",
-                    "notes": "Principality note"
-                },
                 "GMail.B": {
-                    "post": "123 Fred",
-                    "pre": "abc",
-                    "some More Notes": "hi",
                     "some More!": "hi",
                     "userId": "another@gmail.com",
                     "notes": "a note to User B",
-                    "positional!po": "1234567890ThisIsthe"
+                    "positional!po": "1234567890ThisIsthe",
+                    "post": "123 Fred",
+                    "pre": "abc",
+                    "some More Notes": "hi"
+                },
+                "Principality.B": {
+                    "notes": "Principality note",
+                    "post": "456",
+                    "pre": "efg",
+                    "userId": "Buser",
+                    "link": "https://www.principality.co.uk/en/your-account"
                 }
             },
             "notes": {
-                "link": "https://www.principality.co.uk/en/your-account",
-                "note for B": "An amazing B note 123"
+                "note for B": "An amazing B note 123",
+                "link": "https://www.principality.co.uk/en/your-account"
             }
         },
         "Stuart": {
             "notes": {
-                "MDTest!rt": "# Heading 1\nUnder Heading 1\n> Quote\n\n**Another** line\n## Heading 2\nUnder Heading 2\n\n![s_banner](/home/stuart/git/golang/enctest/fs_banner.jpg)\n\n![s_banner](fs_banner.jpg)\n\n1. First item\n2. Second item\n3. Third item\n### Heading 3\nUnder Heading 3\n- First item\n- Second item\n- Third item\n---\n`Code`",
-                "Image!im": "https://go.dev/images/logos/google.svg"
+                "Image!im": "https://go.dev/images/logos/google.svg",
+                "MDTest!rt": "# Heading 1\nUnder Heading 1\n> Quote\n\n**Another** line\n## Heading 2\nUnder Heading 2\n\n![s_banner](/home/stuart/git/golang/enctest/fs_banner.jpg)\n\n![s_banner](fs_banner.jpg)\n\n1. First item\n2. Second item\n3. Third item\n### Heading 3\nUnder Heading 3\n- First item\n- Second item\n- Third item\n---\n`Code`"
             },
             "pwHints": {
                 "application": {
-                    "notes": "",
                     "post": "",
                     "pre": "",
-                    "userId": ""
+                    "userId": "",
+                    "notes": ""
                 }
             }
         },
         "AUser": {
             "assets": {
-                "Lloyds Current Account": {
-                    "Acc Number":"12345678",
-                    "Sort Code":"30:96:91",
-                    "transactions":[
-                            {"date":"2021-07-08T15:31:10", "val":126.6,"ref":"Add 126.6"},
-                            {"date":"2021-07-10T15:31:10", "val":-126.6, "ref":"Subtract 126.6"},
-                            {"date":"2021-07-09T15:31:10", "val":-126.6, "ref":"Subtract 126.6"}
-                        ]
-                },
                 "Principality": {
-                    "Acc Number":"8654321",
-                    "Sort Code":"30:96:91",
-                    "transactions":[
-                        {"date":"2021-07-08T15:31:10", "val":126.6,"ref":"Add"},
-                        {"date":"2021-07-09T15:31:10", "val":-126.6, "ref":"Subt"}
-                    ]
-            }
+                    "transactions": [
+                        {
+                            "date": "2021-07-08T15:31:10",
+                            "val": 126.6,
+                            "ref": "Add"
+                        },
+                        {
+                            "ref": "Subt",
+                            "date": "2021-07-09T15:31:10",
+                            "val": -126.6
+                        }
+                    ],
+                    "Acc Number": "8654321",
+                    "Sort Code": "30:96:91"
+                },
+                "Lloyds Current Account": {
+                    "Sort Code": "30:96:91",
+                    "transactions": [
+                        {
+                            "ref": "Add 126.6",
+                            "date": "2021-07-08T15:31:10",
+                            "val": 126.6
+                        },
+                        {
+                            "date": "2021-07-10T15:31:10",
+                            "val": -126.6,
+                            "ref": "Subtract 126.6"
+                        },
+                        {
+                            "date": "2021-07-09T15:31:10",
+                            "val": -126.6,
+                            "ref": "Subtract 126.6"
+                        }
+                    ],
+                    "Acc Number": "12345678"
+                }
             },
             "notes": {
                 "posit": "This is a note",
                 "note": "An amazing A note (dont panic) fdf"
             },
             "pwHints": {
-                "MyApp": {
-                    "userId": "fakeuser@gmail.com",
-                    "notes": "a note to User A",
-                    "post": "123",
-                    "pre": "abc"
-                },
                 "PrincipalityA": {
-                    "userId": "Puser",
                     "notes": "https://www.principality.co.uk/en/your-account",
                     "post": "456",
-                    "pre": "efg"
+                    "pre": "efg",
+                    "userId": "Puser"
+                },
+                "MyApp": {
+                    "pre": "abc",
+                    "userId": "fakeuser@gmail.com",
+                    "notes": "a note to User A",
+                    "post": "123"
                 }
             }
         }
-    }
+    },
+    "timeStamp": "Tue Feb 22 00:38:31 GMT 2022"
 }

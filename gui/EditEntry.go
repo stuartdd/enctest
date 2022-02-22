@@ -3,7 +3,6 @@ package gui
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -29,6 +28,7 @@ type EditEntry struct {
 	Remove         *MyButton
 	Rename         *MyButton
 	NodeAnnotation lib.NodeAnnotationEnum
+	NodeType       parser.NodeType
 	OnChangeFunc   func(input string, path *parser.Path)
 	UnDoFunc       func(path *parser.Path)
 	ActionFunc     func(string, *parser.Path, string)
@@ -77,9 +77,10 @@ func (p *EditEntryList) Count() int {
 	return count
 }
 
-func NewEditEntry(path *parser.Path, titleWithAnnotation string, currentTxt string, onChangeFunc func(s string, path *parser.Path), unDoFunc func(path *parser.Path), actionFunc func(string, *parser.Path, string), statusData *StatusDisplay) *EditEntry {
+func NewEditEntry(node parser.NodeI, path *parser.Path, titleWithAnnotation string, currentTxt string, onChangeFunc func(s string, path *parser.Path), unDoFunc func(path *parser.Path), actionFunc func(string, *parser.Path, string), statusData *StatusDisplay) *EditEntry {
 	nodeAnnotation, title := lib.GetNodeAnnotationTypeAndName(titleWithAnnotation)
 	lab := widget.NewLabel(fmt.Sprintf(" %s ", title))
+	nType := node.GetNodeType()
 	undo := NewMyIconButton("", theme.ContentUndoIcon(), func() {
 		unDoFunc(path)
 	}, statusData, fmt.Sprintf("Undo changes to '%s'", title))
@@ -89,8 +90,12 @@ func NewEditEntry(path *parser.Path, titleWithAnnotation string, currentTxt stri
 	rename := NewMyIconButton("", theme2.EditIcon(), func() {
 		actionFunc(ACTION_RENAME, path, "")
 	}, statusData, fmt.Sprintf("Rename '%s'", title))
+	if nodeAnnotation == lib.NODE_REQUIRED {
+		remove = NewMyBlankButton(theme.DeleteIcon(), statusData, fmt.Sprintf("Cannot delete a Required field: '%s'", title))
+		rename = NewMyBlankButton(theme2.EditIcon(), statusData, fmt.Sprintf("Cannot rename a Required field: '%s'", title))
+	}
 	undo.Disable()
-	ee := &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, We: nil, Lab: lab, UnDo: undo, Link: nil, Remove: remove, Rename: rename, OldTxt: currentTxt, NewTxt: currentTxt, OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc, StatusDisplay: statusData}
+	ee := &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, NodeType: nType, We: nil, Lab: lab, UnDo: undo, Link: nil, Remove: remove, Rename: rename, OldTxt: currentTxt, NewTxt: currentTxt, OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc, StatusDisplay: statusData}
 	link := NewMyIconButton("", theme2.LinkToWebIcon(), func() {
 		actionFunc(ACTION_LINK, path, ee.Url)
 	}, statusData, fmt.Sprintf("Follow the link in '%s'. Launches a seperate browser.", title))
@@ -165,35 +170,9 @@ func (p *EditEntry) IsChanged() bool {
 }
 
 func (p *EditEntry) HasLink() (string, bool) {
-	lnk, ok := parseStringForLink(p.GetCurrentText())
-	return lnk, ok
+	return lib.ParseStringForLink(p.GetCurrentText())
 }
 
 func (p *EditEntry) GetCurrentText() string {
 	return p.NewTxt
-}
-
-func parseStringForLink(s string) (string, bool) {
-	var sb strings.Builder
-	lc := strings.ToLower(s)
-	pos := strings.Index(lc, "http://")
-	if pos == -1 {
-		pos = strings.Index(lc, "https://")
-	}
-	if pos == -1 {
-		return "", false
-	}
-	count := 0
-	for i := pos; i < len(lc); i++ {
-		if lc[i] <= ' ' {
-			break
-		} else {
-			sb.WriteByte(lc[i])
-			count++
-		}
-	}
-	if count < 12 {
-		return "", false
-	}
-	return sb.String(), true
 }

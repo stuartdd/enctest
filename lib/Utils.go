@@ -34,3 +34,28 @@ func PadLeft(s string, w int) string {
 	sb.WriteString(s)
 	return sb.String()
 }
+
+func ParseStringForLink(s string) (string, bool) {
+	var sb strings.Builder
+	lc := strings.ToLower(s)
+	pos := strings.Index(lc, "http://")
+	if pos == -1 {
+		pos = strings.Index(lc, "https://")
+	}
+	if pos == -1 {
+		return "", false
+	}
+	count := 0
+	for i := pos; i < len(lc); i++ {
+		if lc[i] <= ' ' {
+			break
+		} else {
+			sb.WriteByte(lc[i])
+			count++
+		}
+	}
+	if count < 12 {
+		return "", false
+	}
+	return sb.String(), true
+}

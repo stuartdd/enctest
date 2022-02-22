@@ -150,6 +150,7 @@ type MyButton struct {
 	widget.Button
 	statusMessage string
 	statusDisplay *StatusDisplay
+	isBlank       bool
 }
 
 func NewMyIconButton(label string, icon fyne.Resource, tapped func(), sd *StatusDisplay, sm string) *MyButton {
@@ -158,6 +159,17 @@ func NewMyIconButton(label string, icon fyne.Resource, tapped func(), sd *Status
 	mybutton.SetIcon(icon)
 	mybutton.OnTapped = tapped
 	mybutton.SetText(label)
+	mybutton.isBlank = false
+	return mybutton
+}
+
+func NewMyBlankButton(icon fyne.Resource, sd *StatusDisplay, sm string) *MyButton {
+	mybutton := &MyButton{statusDisplay: sd, statusMessage: sm}
+	mybutton.ExtendBaseWidget(mybutton)
+	mybutton.SetIcon(icon)
+	mybutton.OnTapped = nil
+	mybutton.isBlank = true
+	mybutton.Disable()
 	return mybutton
 }
 
@@ -169,8 +181,17 @@ func (t *MyButton) SetStatusMessage(message string) {
 func (t *MyButton) MouseIn(me *desktop.MouseEvent) {
 	t.statusDisplay.PushStatus(t.statusMessage)
 }
+
 func (t *MyButton) MouseOut() {
 	t.statusDisplay.PopStatus()
+}
+
+func (t *MyButton) MyEnable() {
+	if t.isBlank {
+		t.Disable()
+	} else {
+		t.Enable()
+	}
 }
 
 type StatusDisplay struct {

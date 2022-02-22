@@ -38,19 +38,21 @@ const (
 	PATH_SEP           = "|"
 	PATH_SEP_CHAR      = '|'
 
-	NOTE_TYPE_SL NodeAnnotationEnum = 0 // Single Line: These are indexes. Found issues when using iota!
-	NOTE_TYPE_ML NodeAnnotationEnum = 1 // Multi Line
-	NOTE_TYPE_RT NodeAnnotationEnum = 2 // Rich Text
-	NOTE_TYPE_PO NodeAnnotationEnum = 3 // POsitinal
-	NOTE_TYPE_IM NodeAnnotationEnum = 4 // IMage
+	NOTE_TYPE_SL  NodeAnnotationEnum = 0 // Single Line: These are indexes. Found issues when using iota!
+	NOTE_TYPE_ML  NodeAnnotationEnum = 1 // Multi Line
+	NOTE_TYPE_RT  NodeAnnotationEnum = 2 // Rich Text
+	NOTE_TYPE_PO  NodeAnnotationEnum = 3 // POsitinal
+	NOTE_TYPE_IM  NodeAnnotationEnum = 4 // IMage
+	NODE_REQUIRED NodeAnnotationEnum = 5 // Node required
 )
 
 var (
-	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po", "!im"}
-	NodeAnnotationPrefixNames = []string{"Single Line", "Multi Line", "Rich Text", "Positional", "Image"}
-	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO, NOTE_TYPE_IM}
+	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po", "!im", "!rq"}
+	NodeAnnotationPrefixNames = []string{"Single Line", "Multi Line", "Rich Text", "Positional", "Image", "Required"}
+	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO, NOTE_TYPE_IM, NODE_REQUIRED}
 	NodeAnnotationsSingleLine = []bool{true, false, false, true, true, true, true}
 	defaultHintNames          = []string{"notes", "post", "pre", "userId"}
+	defaultAssetNames         = []string{"Account Num.", "Sort Code"}
 	timeStampPath             = parser.NewBarPath(timeStampName)
 	dataMapRootPath           = parser.NewBarPath(dataMapRootName)
 )
@@ -205,6 +207,17 @@ func (p *JsonData) AddHintItem(dataPath *parser.Path, hintItemName string) error
 	addStringIfDoesNotExist(hO, hintItemName)
 	p.navIndex = createNavIndex(p.dataMap)
 	p.dataMapUpdated("Add Hint Item", dataPath.StringAppend(hintItemName), nil)
+	return nil
+}
+
+func (p *JsonData) AddAsset(userUid *parser.Path, assetName string) error {
+	u := p.GetUserNode(userUid)
+	if u == nil {
+		return fmt.Errorf("the user '%s' cannot be found", userUid)
+	}
+	addAssetToUser(u, assetName)
+	p.navIndex = createNavIndex(p.dataMap)
+	p.dataMapUpdated("Add Asset Item", userUid.StringAppend(IdAssets).StringAppend(assetName), nil)
 	return nil
 }
 
@@ -402,12 +415,52 @@ func addDefaultHintItemsToHint(hint *parser.JsonObject) {
 	}
 }
 
+func addDefaultAccountItemsToAsset(account *parser.JsonObject) {
+	for _, n := range defaultAssetNames {
+		addStringIfDoesNotExist(account, n)
+	}
+	tx := account.GetNodeWithName(IdTransactions)
+	if tx == nil {
+		txl := parser.NewJsonList(IdTransactions)
+		txo := parser.NewJsonObject("")
+		txo.Add(parser.NewJsonString("ref", "Initial Balance"))
+		txo.Add(parser.NewJsonString("date", time.Now().Local().Format(TIME_FORMAT_TXN_IN)))
+		txo.Add(parser.NewJsonNumber("val", 0.0))
+		txl.Add(txo)
+		account.Add(txl)
+	}
+}
+
 func addStringIfDoesNotExist(obj *parser.JsonObject, name string) {
 	node := obj.GetNodeWithName(name)
 	if node == nil {
 		node = parser.NewJsonString(name, "")
 		obj.Add(node)
 	}
+}
+
+func addNumberIfDoesNotExist(obj *parser.JsonObject, name string, value float64) {
+	node := obj.GetNodeWithName(name)
+	if node == nil {
+		node = parser.NewJsonNumber(name, value)
+		obj.Add(node)
+	}
+}
+
+func addAssetToUser(userO *parser.JsonObject, assetName string) {
+	assets := userO.GetNodeWithName(IdAssets)
+	if assets == nil {
+		assets = parser.NewJsonObject(assetName)
+		userO.Add(assets)
+	}
+	acc0 := assets.(*parser.JsonObject)
+	acc := acc0.GetNodeWithName(assetName)
+	if acc == nil {
+		acc = parser.NewJsonObject(assetName)
+		acc0.Add(acc)
+	}
+	acc0 = acc.(*parser.JsonObject)
+	addDefaultAccountItemsToAsset(acc0)
 }
 
 func addHintToUser(userO *parser.JsonObject, hintName string) {

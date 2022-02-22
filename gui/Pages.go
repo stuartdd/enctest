@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -58,7 +59,9 @@ const (
 	ACTION_UPDATED       = "update"
 	ACTION_ADD_NOTE      = "addnode"
 	ACTION_ADD_HINT      = "addhint"
+	ACTION_ADD_ASSET     = "addasset"
 	ACTION_ADD_HINT_ITEM = "addhintitem"
+	ACTION_ERROR_DIALOG  = "errorDialog"
 )
 
 var (
@@ -221,7 +224,7 @@ func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(str
 	head := fmt.Sprintf("Asset Summary for user %s", details.User)
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
-		actionFunc(ACTION_ADD_HINT, details.Uid, details.Title)
+		actionFunc(ACTION_ADD_ASSET, details.Uid, details.Title)
 	}, statusDisplay, fmt.Sprintf("Add new Asset for user %s", details.User)))
 	cObj = append(cObj, widget.NewLabel(head))
 	return container.NewHBox(cObj...)
@@ -321,10 +324,14 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 		idd := details.Uid.StringAppend(k)
 		editEntry, ok := EditEntryListCache.Get(idd)
 		if !ok {
-			editEntry = NewEditEntry(idd, k, v.String(),
+			editEntry = NewEditEntry(v, idd, k, v.String(),
 				func(newWalue string, path *parser.Path) { //onChangeFunction
-					entryChangedFunction(newWalue, path)
-					actionFunc(ACTION_UPDATED, parser.NewBarPath(""), "")
+					err := entryChangedFunction(newWalue, path)
+					if err == nil {
+						actionFunc(ACTION_UPDATED, parser.NewBarPath(""), "")
+					} else {
+						actionFunc(ACTION_ERROR_DIALOG, parser.NewBarPath(""), err.Error())
+					}
 				},
 				unDoFunction, actionFunc, statusDisplay)
 			EditEntryListCache.Add(editEntry)
@@ -349,7 +356,7 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 			if len(keys) < 2 {
 				editEntry.Remove.Disable()
 			} else {
-				editEntry.Remove.Enable()
+				editEntry.Remove.MyEnable()
 			}
 			flRemove := container.New(&FixedLayout{10, 0}, editEntry.Remove)
 			flRename := container.New(&FixedLayout{10, 0}, editEntry.Rename)
@@ -374,7 +381,7 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 				}
 			} else {
 				var we *widget.Entry
-				editEntry.Rename.Enable()
+				editEntry.Rename.MyEnable()
 				contHeight := editEntry.Lab.MinSize().Height
 				if lib.NodeAnnotationsSingleLine[na] {
 					we = widget.NewEntry()
@@ -385,8 +392,12 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 					}
 				}
 				we.OnChanged = func(newWalue string) {
-					entryChangedFunction(newWalue, editEntry.Path)
-					actionFunc(ACTION_UPDATED, editEntry.Path, "")
+					err := entryChangedFunction(newWalue, editEntry.Path)
+					if err == nil {
+						actionFunc(ACTION_UPDATED, editEntry.Path, "")
+					} else {
+						actionFunc(ACTION_ERROR_DIALOG, editEntry.Path, err.Error())
+					}
 				}
 				we.SetText(editEntry.GetCurrentText())
 				editEntry.We = we
@@ -397,11 +408,23 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 	return container.NewScroll(container.NewVBox(cObj...))
 }
 
-func entryChangedFunction(newWalue string, path *parser.Path) {
+func entryChangedFunction(newWalue string, path *parser.Path) error {
 	ee, ok := EditEntryListCache.Get(path)
 	if ok {
+		if ee.NodeType == parser.NT_NUMBER {
+			nv := strings.TrimSpace(newWalue)
+			if nv == "" {
+				return nil
+			}
+			_, err := strconv.ParseFloat(nv, 64)
+			if err != nil {
+				ee.RefreshData()
+				return fmt.Errorf("invalid number '%s'", nv)
+			}
+		}
 		ee.SetNew(newWalue)
 	}
+	return nil
 }
 
 func unDoFunction(path *parser.Path) {
