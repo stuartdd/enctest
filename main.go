@@ -53,6 +53,7 @@ const (
 	ADD_TYPE_USER = iota
 	ADD_TYPE_HINT
 	ADD_TYPE_ASSET
+	ADD_TYPE_ASSET_ITEM
 	ADD_TYPE_HINT_CLONE
 	ADD_TYPE_HINT_CLONE_FULL
 	ADD_TYPE_HINT_ITEM
@@ -91,7 +92,6 @@ var (
 	logData                  *gui.LogData
 	fileData                 *lib.FileData
 	jsonData                 *lib.JsonData
-	userAssetCache           *lib.UserAssetCache
 	preferences              *pref.PrefData
 	navTreeLHS               *widget.Tree
 	saveShortcutButton       *gui.MyButton
@@ -192,9 +192,6 @@ func main() {
 
 	window.SetCloseIntercept(shouldClose)
 
-	/*
-		Create the menus
-	*/
 	window.SetMaster()
 
 	statusDisplay = gui.NewStatusDisplay("Select an item from the list above", "Hint")
@@ -216,6 +213,9 @@ func main() {
 		}
 		log(fmt.Sprintf("Page User:'%s' Uid:'%s'", currentUid.StringFirst(), currentUid))
 		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentUid.StringFirst()))
+		/*
+			Create the menus
+		*/
 		window.SetMainMenu(makeMenus())
 		navTreeLHS.OpenBranch(currentUid.String())
 		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction, preferences, statusDisplay)}
@@ -454,12 +454,14 @@ func makeButtonBar() *fyne.Container {
 func makeMenus() *fyne.MainMenu {
 	hintName := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	noteName := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
+	assetName := preferences.GetStringForPathWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
 	hint := currentUid.StringAt(UID_POS_PWHINT)
 	user := currentUid.StringAt(UID_POS_USER)
 
 	n1 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem)
 	n3 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", hintName, user), addNewHint)
-	n4 := fyne.NewMenuItem("User", addNewUser)
+	n4 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", assetName, user), addNewAsset)
+	n5 := fyne.NewMenuItem("User", addNewUser)
 	var newItem *fyne.Menu
 	if hint == "" {
 		newItem = fyne.NewMenu("New", n1, n3, n4)
@@ -470,7 +472,7 @@ func makeMenus() *fyne.MainMenu {
 			n3,
 			fyne.NewMenuItem(fmt.Sprintf("Clone '%s'", hint), cloneHint),
 			fyne.NewMenuItem(fmt.Sprintf("Clone Full '%s'", hint), cloneHintFull),
-			n4)
+			n4, n5)
 	}
 
 	var themeMenuItem *fyne.MenuItem
@@ -667,6 +669,8 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 		addNewAsset()
 	case gui.ACTION_ADD_HINT_ITEM:
 		addNewHintItem()
+	case gui.ACTION_ADD_ASSET_ITEM:
+		addNewAssetItem()
 	case gui.ACTION_CLONE_FULL:
 		cloneHintFull()
 	case gui.ACTION_CLONE:
@@ -704,7 +708,12 @@ Add a hint via addNewEntity
 */
 func addNewHint() {
 	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
-	addNewEntity(n+" for ", n, ADD_TYPE_HINT, false)
+	ch := currentUid.StringAt(UID_POS_USER)
+	if ch == "" {
+		logInformationDialog("Add New "+n, "A User needs to be selected")
+	} else {
+		addNewEntity(fmt.Sprintf("%s for %s", n, ch), n, ADD_TYPE_HINT, false)
+	}
 }
 
 /**
@@ -712,7 +721,25 @@ Add a asset via addNewEntity
 */
 func addNewAsset() {
 	n := preferences.GetStringForPathWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
-	addNewEntity(n+" for ", n, ADD_TYPE_ASSET, false)
+	ch := currentUid.StringAt(UID_POS_USER)
+	if ch == "" {
+		logInformationDialog("Add New "+n, "A User needs to be selected")
+	} else {
+		addNewEntity(fmt.Sprintf("%s for %s", n, ch), n, ADD_TYPE_ASSET, false)
+	}
+}
+
+/**
+Selecting the menu to add an item to a hint
+*/
+func addNewAssetItem() {
+	n := preferences.GetStringForPathWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+	ch := currentUid.StringAt(UID_POS_USER)
+	if ch == "" {
+		logInformationDialog("Add New Atem to "+n, "A User needs to be selected")
+	} else {
+		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_ASSET_ITEM, true)
+	}
 }
 
 /**
@@ -720,9 +747,9 @@ Selecting the menu to add an item to a hint
 */
 func addNewHintItem() {
 	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Hint")
-	ch := currentUid.StringAt(UID_POS_PWHINT)
+	ch := currentUid.StringAt(UID_POS_USER)
 	if ch == "" {
-		logInformationDialog("Add New "+n, fmt.Sprintf("A %s needs to be selected", n))
+		logInformationDialog("Add New Item to "+n, "A User needs to be selected")
 	} else {
 		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_HINT_ITEM, true)
 	}
@@ -733,7 +760,12 @@ Selecting the menu to add an item to the notes
 */
 func addNewNoteItem() {
 	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
-	addNewEntity(n+" Item for ", n, ADD_TYPE_NOTE_ITEM, true)
+	ch := currentUid.StringAt(UID_POS_USER)
+	if ch == "" {
+		logInformationDialog("Add New Item to "+n, "A User needs to be selected")
+	} else {
+		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_NOTE_ITEM, true)
+	}
 }
 
 /**
@@ -755,12 +787,14 @@ func addNewEntity(head string, name string, addType int, isNote bool) {
 					err = jsonData.AddHint(cu, entityName)
 				case ADD_TYPE_ASSET:
 					err = jsonData.AddAsset(cu, entityName)
+				case ADD_TYPE_ASSET_ITEM:
+					err = jsonData.AddSubItem(currentUid, entityName, "asset")
 				case ADD_TYPE_HINT_CLONE:
 					err = jsonData.CloneHint(currentUid, entityName, false)
 				case ADD_TYPE_HINT_CLONE_FULL:
 					err = jsonData.CloneHint(currentUid, entityName, true)
 				case ADD_TYPE_HINT_ITEM:
-					err = jsonData.AddHintItem(currentUid, entityName)
+					err = jsonData.AddSubItem(currentUid, entityName, "hint")
 				}
 			}
 			if err != nil {

@@ -49,19 +49,20 @@ const (
 
 	PATH_SEP = "|"
 
-	ACTION_LOG           = "log"
-	ACTION_COPIED        = "copied"
-	ACTION_REMOVE        = "remove"
-	ACTION_RENAME        = "rename"
-	ACTION_CLONE         = "clone"
-	ACTION_CLONE_FULL    = "clonefull"
-	ACTION_LINK          = "link"
-	ACTION_UPDATED       = "update"
-	ACTION_ADD_NOTE      = "addnode"
-	ACTION_ADD_HINT      = "addhint"
-	ACTION_ADD_ASSET     = "addasset"
-	ACTION_ADD_HINT_ITEM = "addhintitem"
-	ACTION_ERROR_DIALOG  = "errorDialog"
+	ACTION_LOG            = "log"
+	ACTION_COPIED         = "copied"
+	ACTION_REMOVE         = "remove"
+	ACTION_RENAME         = "rename"
+	ACTION_CLONE          = "clone"
+	ACTION_CLONE_FULL     = "clonefull"
+	ACTION_LINK           = "link"
+	ACTION_UPDATED        = "update"
+	ACTION_ADD_NOTE       = "addnode"
+	ACTION_ADD_HINT       = "addhint"
+	ACTION_ADD_ASSET      = "addasset"
+	ACTION_ADD_ASSET_ITEM = "addassetitem"
+	ACTION_ADD_HINT_ITEM  = "addhintitem"
+	ACTION_ERROR_DIALOG   = "errorDialog"
 )
 
 var (
@@ -213,8 +214,16 @@ func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
 	head := fmt.Sprintf("%s: Asset - %s", details.User, details.Title)
 	cObj := make([]fyne.CanvasObject, 0)
+	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
+		actionFunc(ACTION_REMOVE, details.Uid, "")
+	}, statusDisplay, fmt.Sprintf("Delete: - '%s'", details.Title)))
+
+	cObj = append(cObj, NewMyIconButton("", theme2.EditIcon(), func() {
+		actionFunc(ACTION_RENAME, details.Uid, "")
+	}, statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
+
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
-		actionFunc(ACTION_ADD_HINT, details.Uid, "")
+		actionFunc(ACTION_ADD_ASSET_ITEM, details.Uid, "")
 	}, statusDisplay, fmt.Sprintf("Add new Item to Asset: %s", details.Title)))
 	cObj = append(cObj, widget.NewLabel(head))
 	return container.NewHBox(cObj...)
@@ -529,7 +538,7 @@ func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNot
 	if isNote {
 		modal = widget.NewModalPopUp(
 			container.NewVBox(
-				container.NewCenter(widget.NewLabel("Select the TYPE of the new note")),
+				container.NewCenter(widget.NewLabel("Select the TYPE of item from below")),
 				styles,
 				container.NewCenter(widget.NewLabel(heading)),
 				entry,

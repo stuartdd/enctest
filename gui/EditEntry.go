@@ -90,10 +90,6 @@ func NewEditEntry(node parser.NodeI, path *parser.Path, titleWithAnnotation stri
 	rename := NewMyIconButton("", theme2.EditIcon(), func() {
 		actionFunc(ACTION_RENAME, path, "")
 	}, statusData, fmt.Sprintf("Rename '%s'", title))
-	if nodeAnnotation == lib.NODE_REQUIRED {
-		remove = NewMyBlankButton(theme.DeleteIcon(), statusData, fmt.Sprintf("Cannot delete a Required field: '%s'", title))
-		rename = NewMyBlankButton(theme2.EditIcon(), statusData, fmt.Sprintf("Cannot rename a Required field: '%s'", title))
-	}
 	undo.Disable()
 	ee := &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, NodeType: nType, We: nil, Lab: lab, UnDo: undo, Link: nil, Remove: remove, Rename: rename, OldTxt: currentTxt, NewTxt: currentTxt, OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc, StatusDisplay: statusData}
 	link := NewMyIconButton("", theme2.LinkToWebIcon(), func() {
