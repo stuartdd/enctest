@@ -655,8 +655,10 @@ This is called when a button is pressed of the RH page
 func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 	log(fmt.Sprintf("Action:%s path:'%s' extra:'%s'", action, dataPath, extra))
 	switch action {
+	case gui.ACTION_REMOVE_CLEAN:
+		removeAction(dataPath, -1)
 	case gui.ACTION_REMOVE:
-		removeAction(dataPath)
+		removeAction(dataPath, 1)
 	case gui.ACTION_RENAME:
 		renameAction(dataPath, extra)
 	case gui.ACTION_LINK:
@@ -808,12 +810,12 @@ func addNewEntity(head string, name string, addType int, isNote bool) {
 Remove a node from the main data (model) and update the tree view
 dataMapUpdated id called if a change is made to the model
 */
-func removeAction(dataPath *parser.Path) {
+func removeAction(dataPath *parser.Path, min int) {
 	log(fmt.Sprintf("removeAction Uid:'%s'", dataPath))
 	_, removeName := lib.GetNodeAnnotationTypeAndName(dataPath.StringLast())
 	dialog.NewConfirm("Remove entry", fmt.Sprintf("'%s'\nAre you sure?", removeName), func(ok bool) {
 		if ok {
-			err := jsonData.Remove(dataPath, 1)
+			err := jsonData.Remove(dataPath, min)
 			if err != nil {
 				logInformationDialog("Remove item error", err.Error())
 			}

@@ -51,6 +51,7 @@ const (
 
 	ACTION_LOG            = "log"
 	ACTION_COPIED         = "copied"
+	ACTION_REMOVE_CLEAN   = "removeclean"
 	ACTION_REMOVE         = "remove"
 	ACTION_RENAME         = "rename"
 	ACTION_CLONE          = "clone"
@@ -215,7 +216,7 @@ func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 	head := fmt.Sprintf("%s: Asset - %s", details.User, details.Title)
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
-		actionFunc(ACTION_REMOVE, details.Uid, "")
+		actionFunc(ACTION_REMOVE_CLEAN, details.Uid, "")
 	}, statusDisplay, fmt.Sprintf("Delete: - '%s'", details.Title)))
 
 	cObj = append(cObj, NewMyIconButton("", theme2.EditIcon(), func() {

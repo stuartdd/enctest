@@ -297,6 +297,9 @@ func (p *JsonData) Remove(dataPath *parser.Path, min int) error {
 		return fmt.Errorf("there must be at least %d element(s) remaining in this item", min)
 	}
 	parser.Remove(p.dataMap, n)
+	if min < 0 && parentObj.Len() == 0 {
+		parser.Remove(p.dataMap, parentObj)
+	}
 	p.navIndex = createNavIndex(p.dataMap)
 	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
 		p.dataMapUpdated(fmt.Sprintf("Removed User '%s'", n.GetName()), parser.NewBarPath(""), nil)
