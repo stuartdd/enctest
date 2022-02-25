@@ -49,21 +49,22 @@ const (
 
 	PATH_SEP = "|"
 
-	ACTION_LOG            = "log"
-	ACTION_COPIED         = "copied"
-	ACTION_REMOVE_CLEAN   = "removeclean"
-	ACTION_REMOVE         = "remove"
-	ACTION_RENAME         = "rename"
-	ACTION_CLONE          = "clone"
-	ACTION_CLONE_FULL     = "clonefull"
-	ACTION_LINK           = "link"
-	ACTION_UPDATED        = "update"
-	ACTION_ADD_NOTE       = "addnode"
-	ACTION_ADD_HINT       = "addhint"
-	ACTION_ADD_ASSET      = "addasset"
-	ACTION_ADD_ASSET_ITEM = "addassetitem"
-	ACTION_ADD_HINT_ITEM  = "addhintitem"
-	ACTION_ERROR_DIALOG   = "errorDialog"
+	ACTION_LOG             = "log"
+	ACTION_COPIED          = "copied"
+	ACTION_REMOVE_CLEAN    = "removeclean"
+	ACTION_REMOVE          = "remove"
+	ACTION_RENAME          = "rename"
+	ACTION_CLONE           = "clone"
+	ACTION_CLONE_FULL      = "clonefull"
+	ACTION_LINK            = "link"
+	ACTION_UPDATED         = "update"
+	ACTION_ADD_NOTE        = "addnode"
+	ACTION_ADD_HINT        = "addhint"
+	ACTION_ADD_ASSET       = "addasset"
+	ACTION_ADD_ASSET_ITEM  = "addassetitem"
+	ACTION_SET_ASSET_VALUE = "setassetbalance"
+	ACTION_ADD_HINT_ITEM   = "addhintitem"
+	ACTION_ERROR_DIALOG    = "errorDialog"
 )
 
 var (
@@ -226,6 +227,10 @@ func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_ASSET_ITEM, details.Uid, "")
 	}, statusDisplay, fmt.Sprintf("Add new Item to Asset: %s", details.Title)))
+
+	cObj = append(cObj, NewMyIconButton("IB", theme.AccountIcon(), func() {
+		actionFunc(ACTION_SET_ASSET_VALUE, details.Uid, "")
+	}, statusDisplay, fmt.Sprintf("Set the initial value: %s", details.Title)))
 	cObj = append(cObj, widget.NewLabel(head))
 	return container.NewHBox(cObj...)
 }

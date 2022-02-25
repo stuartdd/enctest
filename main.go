@@ -59,8 +59,9 @@ const (
 	ADD_TYPE_HINT_ITEM
 	ADD_TYPE_NOTE_ITEM
 
-	UID_POS_USER   = 0
-	UID_POS_PWHINT = 2
+	UID_POS_USER       = 0
+	UID_POS_PWHINT     = 2
+	UID_POS_ASSET_NAME = 2
 
 	defaultScreenWidth  = 640
 	defaultScreenHeight = 480
@@ -673,6 +674,8 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 		addNewHintItem()
 	case gui.ACTION_ADD_ASSET_ITEM:
 		addNewAssetItem()
+	case gui.ACTION_SET_ASSET_VALUE:
+		setAssetValue()
 	case gui.ACTION_CLONE_FULL:
 		cloneHintFull()
 	case gui.ACTION_CLONE:
@@ -716,6 +719,17 @@ func addNewHint() {
 	} else {
 		addNewEntity(fmt.Sprintf("%s for %s", n, ch), n, ADD_TYPE_HINT, false)
 	}
+}
+
+func setAssetValue() {
+	n := preferences.GetStringForPathWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+	ch := currentUid.StringAt(UID_POS_USER)
+	ac := currentUid.StringAt(UID_POS_ASSET_NAME)
+	gui.NewModalEntryDialog(window, fmt.Sprintf("Enter the Initial %s Value for '%s' %s", n, ch, ac), "", false, lib.NOTE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
+		if accept {
+			fmt.Println("Accept")
+		}
+	})
 }
 
 /**

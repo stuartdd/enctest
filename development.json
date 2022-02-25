@@ -1,14 +1,32 @@
 
     {
+        "log": {
+            "prefix": "INFO",
+            "fileName": "enctest.log",
+            "active": true
+        },
+        "file": {
+            "getDataUrl": "",
+            "postDataUrl": "",
+            "datafile": "libtest/TestDataTypes.json"
+        },
+        "theme": "dark",
+        "data": {
+            "presentationmode": false,
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset",
+            "transIsCalled": "Transaction",
+            "noteIsCalled": "Note"
+        },
         "screen": {
-            "split": 0.223558,
-            "width": 1181.666626,
-            "height": 676.25,
-            "fullScreen": false
+            "width": 1182,
+            "height": 676,
+            "fullScreen": false,
+            "split": 0.223558
         },
         "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
         },
         "search": {
             "lastGoodList": [
@@ -18,23 +36,5 @@
                 "Principality note"
             ],
             "case": false
-        },
-        "log": {
-            "prefix": "INFO",
-            "fileName": "enctest.log",
-            "active": true
-        },
-        "file": {
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": "",
-            "postDataUrl": ""
-        },
-        "theme": "dark",
-        "data": {
-            "presentationmode": false,
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction",
-            "noteIsCalled": "Note"
         }
     }
