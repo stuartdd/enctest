@@ -723,13 +723,24 @@ func addNewHint() {
 
 func setAssetValue() {
 	n := preferences.GetStringForPathWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
-	ch := currentUid.StringAt(UID_POS_USER)
-	ac := currentUid.StringAt(UID_POS_ASSET_NAME)
-	gui.NewModalEntryDialog(window, fmt.Sprintf("Enter the Initial %s Value for '%s' %s", n, ch, ac), "", false, lib.NOTE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
-		if accept {
-			fmt.Println("Accept")
+	t := preferences.GetStringForPathWithFallback(gui.DataTransIsCalledPrefName, "Transaction")
+	// ch := currentUid.StringAt(UID_POS_USER)
+	// ac := currentUid.StringAt(UID_POS_ASSET_NAME)
+
+	d := gui.NewInputDataWindow(fmt.Sprintf("Update %s %s", n, t), func() {}, func(m map[string]*gui.InpuFieldData) {})
+	d.Add("key1", "Lab1", func(s string) error {
+		if s == "?" {
+			return fmt.Errorf("Error!")
 		}
-	})
+		return nil
+	}, "ABC")
+	d.Add("key2", "This is the label", func(s string) error {
+		if s == "?" {
+			return fmt.Errorf("Error!")
+		}
+		return nil
+	}, "This is the the field")
+	d.Show(window)
 }
 
 /**

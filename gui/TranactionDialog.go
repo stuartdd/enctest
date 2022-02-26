@@ -7,43 +7,50 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"stuartdd.com/lib"
 )
 
-type inpuFieldData struct {
-	Key       string
-	Label     string
-	Validator func(string, string) string
-	Value     string
+type InpuFieldData struct {
+	Key         string
+	Label       string
+	Validator   func(string) error
+	Value       string
+	labelWidget *widget.Label
+	entryWidget *widget.Entry
 }
 
 type InputDataWindow struct {
-	inputDataWindow fyne.Window
-	entries         map[string]*inpuFieldData
-	cancelFunction  func()
-	selectFunction  func(map[string]*inpuFieldData)
-	longestLabel    int
+	inputDataPopUp *widget.PopUp
+	title          string
+	entries        map[string]*InpuFieldData
+	cancelFunction func()
+	selectFunction func(map[string]*InpuFieldData)
+	longestLabel   int
+	okButton       *widget.Button
+	info           string
 }
 
-func newInpuFieldData(key string, label string, validator func(string, string) string, value string) *inpuFieldData {
-	return &inpuFieldData{Key: key, Label: label, Validator: validator, Value: value}
+func newInpuFieldData(key string, label string, validator func(string) error, value string) *InpuFieldData {
+	return &InpuFieldData{Key: key, Label: label, Validator: validator, Value: value}
 }
 
-func (ifd *inpuFieldData) String() string {
+func (ifd *InpuFieldData) String() string {
 	return fmt.Sprintf("FieldData: Key: %s, Label: %s, Value: %s", ifd.Key, ifd.Label, ifd.Value)
 }
 
-func NewInputDataWindow(cancelFunction func(), selectFunction func(map[string]*inpuFieldData)) *InputDataWindow {
+func NewInputDataWindow(title string, cancelFunction func(), selectFunction func(map[string]*InpuFieldData)) *InputDataWindow {
 	return &InputDataWindow{
-		entries:         make(map[string]*inpuFieldData),
-		cancelFunction:  cancelFunction,
-		selectFunction:  selectFunction,
-		inputDataWindow: nil,
-		longestLabel:    10,
+		entries:        make(map[string]*InpuFieldData),
+		title:          title,
+		cancelFunction: cancelFunction,
+		selectFunction: selectFunction,
+		inputDataPopUp: nil,
+		longestLabel:   10,
+		okButton:       nil,
+		info:           "Update the fields and press OK",
 	}
 }
 
-func (idl *InputDataWindow) Add(key string, label string, validator func(string, string) string, value string) {
+func (idl *InputDataWindow) Add(key string, label string, validator func(string) error, value string) {
 	if idl.longestLabel < len(label) {
 		idl.longestLabel = len(label)
 	}
@@ -54,42 +61,33 @@ func (idl *InputDataWindow) Len() int {
 	return len(idl.entries)
 }
 
-func (idl *InputDataWindow) Width() float32 {
-	if idl.inputDataWindow != nil {
-		return idl.inputDataWindow.Canvas().Size().Width
-	}
-	return 500
-}
-
-func (idl *InputDataWindow) Height() float32 {
-	if idl.inputDataWindow != nil {
-		return idl.inputDataWindow.Canvas().Size().Height
-	}
-	return 500
-}
-func (idl *InputDataWindow) Show(w, h float32) {
-	idl.inputDataWindow = fyne.CurrentApp().NewWindow("Search Results")
+func (idl *InputDataWindow) Show(w fyne.Window) {
 	vc := container.NewVBox()
 	hb := container.NewHBox()
+	idl.okButton = widget.NewButtonWithIcon("OK", theme.ConfirmIcon(), func() {
+		idl.confirmFunc()
+	})
+
 	hb.Add(widget.NewButtonWithIcon("Close", theme.CancelIcon(), func() {
 		idl.cancelFunc()
 	}))
-
-	hb.Add(widget.NewButtonWithIcon("OK", theme.ConfirmIcon(), func() {
-		idl.confirmFunc()
-	}))
-
-	vc.Add(hb)
+	hb.Add(idl.okButton)
+	vc.Add(container.NewCenter(widget.NewLabel(idl.title)))
+	vc.Add(widget.NewSeparator())
 	for _, v := range idl.entries {
 		vc.Add(idl.createRow(v))
 	}
-	vc.Add(hb)
-	c := container.NewScroll(vc)
-	idl.inputDataWindow.SetContent(c)
-	idl.inputDataWindow.SetCloseIntercept(idl.cancelFunc)
-	idl.inputDataWindow.Resize(fyne.NewSize(w, h))
-	idl.inputDataWindow.SetFixedSize(true)
-	idl.inputDataWindow.Show()
+	vc.Add(widget.NewSeparator())
+	vc.Add(container.NewCenter(widget.NewLabel(idl.info)))
+	vc.Add(widget.NewSeparator())
+
+	vc.Add(container.NewCenter(hb))
+	idl.inputDataPopUp = widget.NewModalPopUp(
+		vc,
+		w.Canvas(),
+	)
+	idl.inputDataPopUp.Resize(fyne.NewSize(400, -1))
+	idl.inputDataPopUp.Show()
 }
 
 func (idl *InputDataWindow) cancelFunc() {
@@ -103,15 +101,34 @@ func (idl *InputDataWindow) confirmFunc() {
 }
 
 func (idl *InputDataWindow) close() {
-	if idl.inputDataWindow != nil {
-		idl.inputDataWindow.Close()
-		idl.inputDataWindow = nil
+	if idl.inputDataPopUp != nil {
+		idl.inputDataPopUp.Hide()
+		idl.inputDataPopUp = nil
 	}
 }
 
-func (idl *InputDataWindow) createRow(ifd *inpuFieldData) *fyne.Container {
-	c := container.NewHBox()
-	c.Add(widget.NewLabel(lib.PadLeft(ifd.Label, idl.longestLabel)))
-	c.Add(widget.NewEntry())
+func (idl *InputDataWindow) createRow(ifd *InpuFieldData) *fyne.Container {
+	ifd.entryWidget = widget.NewEntry()
+	ifd.entryWidget.SetText(ifd.Value)
+	ifd.labelWidget = NewStringFieldRight(ifd.Label+":", idl.longestLabel+2)
+	ifd.entryWidget.OnChanged = func(s string) {
+		idl.validateAll()
+	}
+	c := container.NewBorder(nil, nil, ifd.labelWidget, nil, ifd.entryWidget)
 	return c
+}
+
+func (idl *InputDataWindow) validateAll() {
+	hasError := false
+	for _, v := range idl.entries {
+		err := v.Validator(v.entryWidget.Text)
+		if err != nil {
+			hasError = true
+		}
+	}
+	if hasError {
+		idl.okButton.Disable()
+	} else {
+		idl.okButton.Enable()
+	}
 }
