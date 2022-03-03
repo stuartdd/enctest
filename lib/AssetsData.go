@@ -26,10 +26,11 @@ import (
 )
 
 const (
-	TIME_FORMAT_TXN_IN  = "2006-01-02T15:04:05"
-	TIME_FORMAT_TXN_OUT = "2006-01-02 15:04:05"
-	IdTransactions      = "transactions"
-	IdAssets            = "assets"
+	TIME_FORMAT_TXN = "2006-01-02 15:04:05"
+	IdTransactions  = "transactions"
+	IdAssets        = "assets"
+	IdTxDate        = "date"
+	IdTxRef         = "ref"
 )
 
 var cachedUserAssets *UserAssetCache
@@ -45,7 +46,7 @@ type UserAsset struct {
 }
 
 type TranactionData struct {
-	dateTime  time.Time
+	dateTime  string
 	value     float64
 	ref       string
 	err       error
@@ -53,6 +54,7 @@ type TranactionData struct {
 }
 
 type AccountData struct {
+	Path         parser.Path
 	AccountName  string            // Like Lloyds Bank Current Account
 	InitialValue float64           // initial value.
 	ClosingValue float64           // initial value -+ all transactions
@@ -150,10 +152,10 @@ func newAccountData(accountName string, accountNode parser.NodeC, initialValue f
 	for _, n := range accountNode.GetValues() {
 		if n.GetName() == IdTransactions && n.IsContainer() {
 			for _, ni := range n.(parser.NodeC).GetValues() {
-				d = append(d, newTranactionDataFromNode(ni))
+				d = append(d, NewTranactionDataFromNode(ni))
 			}
 			sort.Slice(d, func(i, j int) bool {
-				return d[i].dateTime.UnixMilli() < d[j].dateTime.UnixMilli()
+				return getMillisForDateTime(d[i].dateTime) < getMillisForDateTime(d[j].dateTime)
 			})
 			for _, ni := range d {
 				ni.SetLineValue(v - ni.Value())
@@ -175,15 +177,39 @@ func (t *AccountData) LatestTransaction() *TranactionData {
 	var td int64 = 0
 	ind := 0
 	for i, t := range t.Transactions {
-		if td < t.dateTime.UnixMilli() {
-			td = t.dateTime.UnixMilli()
+		if td < getMillisForDateTime(t.dateTime) {
+			td = getMillisForDateTime(t.dateTime)
 			ind = i
 		}
 	}
 	return t.Transactions[ind]
 }
 
-func newTranactionData(dateTime time.Time, value float64, ref string) *TranactionData {
+func GetTransactionNode(n parser.NodeC, datePlusRef string) (parser.NodeC, error) {
+	if n.GetName() != IdTransactions {
+		return nil, fmt.Errorf("GetTransaction failed. Node is not '%s'", IdTransactions)
+	}
+	for _, t := range n.GetValues() {
+		if t.IsContainer() {
+			tc := t.(parser.NodeC)
+			tdt := tc.GetNodeWithName(IdTxDate)
+			if tdt == nil {
+				return nil, fmt.Errorf("GetTransaction failed. '%s' member not found.", IdTxDate)
+			}
+			tref := tc.GetNodeWithName(IdTxRef)
+			if tref == nil {
+				return nil, fmt.Errorf("GetTransaction failed. '%s' member not found.", tref)
+			}
+			s := fmt.Sprintf("%s %s", tdt, tref)
+			if s == datePlusRef {
+				return tc, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("GetTransaction failed. '%s' transaction not found.", datePlusRef)
+}
+
+func newTranactionData(dateTime string, value float64, ref string) *TranactionData {
 	return &TranactionData{dateTime: dateTime, value: value, ref: ref, lineValue: 0.0}
 }
 
@@ -192,7 +218,11 @@ func newTranactionDataError(err string, n parser.NodeI) *TranactionData {
 }
 
 func (t *TranactionData) DateTime() string {
-	return t.dateTime.Local().Format(TIME_FORMAT_TXN_OUT)
+	return t.dateTime
+}
+
+func (t *TranactionData) Key() string {
+	return fmt.Sprintf("%s %s", t.dateTime, t.ref)
 }
 
 func (t *TranactionData) Ref() string {
@@ -230,15 +260,23 @@ func (t *TranactionData) HasError() bool {
 	return t.err != nil
 }
 
-func newTranactionDataFromNode(n parser.NodeI) *TranactionData {
+func getMillisForDateTime(dt string) int64 {
+	t, err := time.Parse(TIME_FORMAT_TXN, dt)
+	if err != nil {
+		return 0
+	}
+	return t.UnixMilli()
+}
+
+func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
 	if n.IsContainer() {
-		tn := n.(parser.NodeC).GetNodeWithName("date")
+		tn := n.(parser.NodeC).GetNodeWithName(IdTxDate)
 		if tn == nil {
-			return newTranactionDataError("Invalid Transaction node has no 'date' member", n)
+			return newTranactionDataError(fmt.Sprintf("Invalid Transaction node has no '%s' member", IdTxDate), n)
 		}
-		tim, err := time.Parse(TIME_FORMAT_TXN_IN, tn.String())
+		_, err := time.Parse(TIME_FORMAT_TXN, tn.String())
 		if err != nil {
-			return newTranactionDataError("invalid 'date' for transaction %s", n)
+			return newTranactionDataError("invalid 'date time' for transaction %s", n)
 		}
 		vn := n.(parser.NodeC).GetNodeWithName("val")
 		if vn == nil {
@@ -248,12 +286,12 @@ func newTranactionDataFromNode(n parser.NodeI) *TranactionData {
 			return newTranactionDataError("invalid Transaction node 'val' member is  not a number'%s'", n)
 		}
 		val := vn.(*parser.JsonNumber).GetValue()
-		rn := n.(parser.NodeC).GetNodeWithName("ref")
+		rn := n.(parser.NodeC).GetNodeWithName(IdTxRef)
 		if rn == nil {
-			return newTranactionDataError("invalid Transaction node has no 'ref' member '%s'", n)
+			return newTranactionDataError(fmt.Sprintf("Invalid Transaction node has no '%s' member", IdTxRef), n)
 		}
 		ref := rn.String()
-		return newTranactionData(tim, val, ref)
+		return newTranactionData(tn.String(), val, ref)
 	} else {
 		return newTranactionDataError("invalid Transaction node has no members (date, val and ref) '%s'", n)
 	}

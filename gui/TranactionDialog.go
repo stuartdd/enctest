@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -9,44 +10,51 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+const (
+	ERROR_GOOD = "  "
+	ERROR_BAD  = "<"
+)
+
 type InpuFieldData struct {
-	Key         string
-	Label       string
-	Validator   func(string) error
-	Value       string
-	labelWidget *widget.Label
-	entryWidget *widget.Entry
+	Key        string
+	Label      string
+	Validator  func(string) error
+	Value      string
+	errorLabel *widget.Label
 }
 
 type InputDataWindow struct {
 	inputDataPopUp *widget.PopUp
 	title          string
+	info           string
 	entries        map[string]*InpuFieldData
 	cancelFunction func()
 	selectFunction func(map[string]*InpuFieldData)
 	longestLabel   int
 	okButton       *widget.Button
-	info           string
+	infoLabel      *widget.Label
 }
 
 func newInpuFieldData(key string, label string, validator func(string) error, value string) *InpuFieldData {
-	return &InpuFieldData{Key: key, Label: label, Validator: validator, Value: value}
+	return &InpuFieldData{Key: key, Label: label, Validator: validator, Value: value, errorLabel: widget.NewLabel(ERROR_GOOD)}
 }
 
 func (ifd *InpuFieldData) String() string {
 	return fmt.Sprintf("FieldData: Key: %s, Label: %s, Value: %s", ifd.Key, ifd.Label, ifd.Value)
 }
 
-func NewInputDataWindow(title string, cancelFunction func(), selectFunction func(map[string]*InpuFieldData)) *InputDataWindow {
+func NewInputDataWindow(title string, info string, cancelFunction func(), selectFunction func(map[string]*InpuFieldData)) *InputDataWindow {
 	return &InputDataWindow{
 		entries:        make(map[string]*InpuFieldData),
 		title:          title,
+		info:           info,
 		cancelFunction: cancelFunction,
 		selectFunction: selectFunction,
 		inputDataPopUp: nil,
 		longestLabel:   10,
 		okButton:       nil,
-		info:           "Update the fields and press OK",
+
+		infoLabel: widget.NewLabel(info),
 	}
 }
 
@@ -78,7 +86,8 @@ func (idl *InputDataWindow) Show(w fyne.Window) {
 		vc.Add(idl.createRow(v))
 	}
 	vc.Add(widget.NewSeparator())
-	vc.Add(container.NewCenter(widget.NewLabel(idl.info)))
+	idl.infoLabel.SetText(idl.info)
+	vc.Add(container.NewCenter(idl.infoLabel))
 	vc.Add(widget.NewSeparator())
 
 	vc.Add(container.NewCenter(hb))
@@ -108,27 +117,40 @@ func (idl *InputDataWindow) close() {
 }
 
 func (idl *InputDataWindow) createRow(ifd *InpuFieldData) *fyne.Container {
-	ifd.entryWidget = widget.NewEntry()
-	ifd.entryWidget.SetText(ifd.Value)
-	ifd.labelWidget = NewStringFieldRight(ifd.Label+":", idl.longestLabel+2)
-	ifd.entryWidget.OnChanged = func(s string) {
+	e := widget.NewEntry()
+	e.SetText(ifd.Value)
+	l := NewStringFieldRight(ifd.Label+":", idl.longestLabel+2)
+	e.OnChanged = func(s string) {
+		ifd.Value = strings.TrimSpace(s)
 		idl.validateAll()
 	}
-	c := container.NewBorder(nil, nil, ifd.labelWidget, nil, ifd.entryWidget)
+	c := container.NewBorder(nil, nil, l, ifd.errorLabel, e)
 	return c
 }
 
 func (idl *InputDataWindow) validateAll() {
-	hasError := false
+	errStr := ""
+	field := ""
 	for _, v := range idl.entries {
-		err := v.Validator(v.entryWidget.Text)
+		var err error = nil
+		if v.Value == "" {
+			err = fmt.Errorf("cannot be empty")
+		} else {
+			err = v.Validator(v.Value)
+		}
 		if err != nil {
-			hasError = true
+			v.errorLabel.SetText(ERROR_BAD)
+			errStr = err.Error()
+			field = v.Label
+		} else {
+			v.errorLabel.SetText(ERROR_GOOD)
 		}
 	}
-	if hasError {
+	if errStr != "" {
 		idl.okButton.Disable()
+		idl.infoLabel.SetText(fmt.Sprintf("Error in '%s:'. Field %s.", field, errStr))
 	} else {
 		idl.okButton.Enable()
+		idl.infoLabel.SetText(idl.info)
 	}
 }

@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -674,8 +675,8 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 		addNewHintItem()
 	case gui.ACTION_ADD_ASSET_ITEM:
 		addNewAssetItem()
-	case gui.ACTION_SET_ASSET_VALUE:
-		setAssetValue()
+	case gui.ACTION_UPDATE_ASSET_VALUE:
+		updateAssetValue(dataPath, extra)
 	case gui.ACTION_CLONE_FULL:
 		cloneHintFull()
 	case gui.ACTION_CLONE:
@@ -721,25 +722,40 @@ func addNewHint() {
 	}
 }
 
-func setAssetValue() {
-	n := preferences.GetStringForPathWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+func updateAssetValue(dataPath *parser.Path, extra string) {
 	t := preferences.GetStringForPathWithFallback(gui.DataTransIsCalledPrefName, "Transaction")
-	// ch := currentUid.StringAt(UID_POS_USER)
-	// ac := currentUid.StringAt(UID_POS_ASSET_NAME)
+	data, err := parser.Find(jsonData.GetUserRoot(), dataPath)
+	if err != nil {
+		return
+	}
+	tx, err := lib.GetTransactionNode(data.(parser.NodeC), extra)
+	if err != nil {
+		return
+	}
+	txd := lib.NewTranactionDataFromNode(tx.(parser.NodeI))
 
-	d := gui.NewInputDataWindow(fmt.Sprintf("Update %s %s", n, t), func() {}, func(m map[string]*gui.InpuFieldData) {})
-	d.Add("key1", "Lab1", func(s string) error {
-		if s == "?" {
-			return fmt.Errorf("Error!")
+	d := gui.NewInputDataWindow(
+		fmt.Sprintf("Update '%s'", txd.Key()),
+		fmt.Sprintf("Update %s data and press OK", t),
+		func() {}, // On Cancel
+		func(m map[string]*gui.InpuFieldData) { // On OK
+			fmt.Printf("%s", m)
+		})
+
+	if txd.Ref() != lib.IdInitialValue {
+		d.Add("r1", "Reference", func(s string) error {
+			return nil
+		}, txd.Ref())
+	}
+
+	d.Add("v1", "Amount", func(s string) error {
+		_, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return fmt.Errorf("is not a valid amount")
 		}
 		return nil
-	}, "ABC")
-	d.Add("key2", "This is the label", func(s string) error {
-		if s == "?" {
-			return fmt.Errorf("Error!")
-		}
-		return nil
-	}, "This is the the field")
+	}, txd.Val())
+
 	d.Show(window)
 }
 

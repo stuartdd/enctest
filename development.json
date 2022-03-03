@@ -1,12 +1,11 @@
 
     {
-        "theme": "dark",
         "data": {
-            "hintIsCalled": "Hint",
             "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
             "noteIsCalled": "Note",
-            "presentationmode": false
+            "presentationmode": false,
+            "hintIsCalled": "Hint"
         },
         "screen": {
             "height": 676,
@@ -28,13 +27,14 @@
             ]
         },
         "log": {
+            "prefix": "INFO",
             "fileName": "enctest.log",
-            "active": true,
-            "prefix": "INFO"
+            "active": true
         },
         "file": {
-            "datafile": "libtest/TestDataTypes.json",
             "getDataUrl": "",
-            "postDataUrl": ""
-        }
+            "postDataUrl": "",
+            "datafile": "libtest/TestDataTypes.json"
+        },
+        "theme": "dark"
     }

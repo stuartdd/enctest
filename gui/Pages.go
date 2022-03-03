@@ -49,22 +49,23 @@ const (
 
 	PATH_SEP = "|"
 
-	ACTION_LOG             = "log"
-	ACTION_COPIED          = "copied"
-	ACTION_REMOVE_CLEAN    = "removeclean"
-	ACTION_REMOVE          = "remove"
-	ACTION_RENAME          = "rename"
-	ACTION_CLONE           = "clone"
-	ACTION_CLONE_FULL      = "clonefull"
-	ACTION_LINK            = "link"
-	ACTION_UPDATED         = "update"
-	ACTION_ADD_NOTE        = "addnode"
-	ACTION_ADD_HINT        = "addhint"
-	ACTION_ADD_ASSET       = "addasset"
-	ACTION_ADD_ASSET_ITEM  = "addassetitem"
-	ACTION_SET_ASSET_VALUE = "setassetbalance"
-	ACTION_ADD_HINT_ITEM   = "addhintitem"
-	ACTION_ERROR_DIALOG    = "errorDialog"
+	ACTION_LOG                = "log"
+	ACTION_COPIED             = "copied"
+	ACTION_REMOVE_CLEAN       = "removeclean"
+	ACTION_REMOVE             = "remove"
+	ACTION_RENAME             = "rename"
+	ACTION_CLONE              = "clone"
+	ACTION_CLONE_FULL         = "clonefull"
+	ACTION_LINK               = "link"
+	ACTION_UPDATED            = "update"
+	ACTION_ADD_NOTE           = "addnode"
+	ACTION_ADD_HINT           = "addhint"
+	ACTION_ADD_ASSET          = "addasset"
+	ACTION_ADD_ASSET_ITEM     = "addassetitem"
+	ACTION_SET_ASSET_VALUE    = "setassetvalues"
+	ACTION_UPDATE_ASSET_VALUE = "updateassetvalues"
+	ACTION_ADD_HINT_ITEM      = "addhintitem"
+	ACTION_ERROR_DIALOG       = "errorDialog"
 )
 
 var (
@@ -228,9 +229,9 @@ func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 		actionFunc(ACTION_ADD_ASSET_ITEM, details.Uid, "")
 	}, statusDisplay, fmt.Sprintf("Add new Item to Asset: %s", details.Title)))
 
-	cObj = append(cObj, NewMyIconButton("IB", theme.AccountIcon(), func() {
-		actionFunc(ACTION_SET_ASSET_VALUE, details.Uid, "")
-	}, statusDisplay, fmt.Sprintf("Set the initial value: %s", details.Title)))
+	// cObj = append(cObj, NewMyIconButton("IB", theme.AccountIcon(), func() {
+	// 	actionFunc(ACTION_SET_ASSET_VALUE, details.Uid, "")
+	// }, statusDisplay, fmt.Sprintf("Set the initial value: %s", details.Title)))
 	cObj = append(cObj, widget.NewLabel(head))
 	return container.NewHBox(cObj...)
 }
@@ -263,7 +264,7 @@ func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(stri
 	return container.NewHBox(cObj...)
 }
 
-func getTransactionalCanvasObjects(cObj []fyne.CanvasObject, accData *lib.AccountData, editEntry *EditEntry, pref *pref.PrefData) []fyne.CanvasObject {
+func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string), cObj []fyne.CanvasObject, accData *lib.AccountData, pref *pref.PrefData, statusDisplay *StatusDisplay) []fyne.CanvasObject {
 	transAreCalled := pref.GetStringForPathWithFallback(DataTransIsCalledPrefName, "Transaction")
 	txList := accData.Transactions
 	refMax := 10
@@ -281,7 +282,12 @@ func getTransactionalCanvasObjects(cObj []fyne.CanvasObject, accData *lib.Accoun
 	hb.Add(NewStringFieldRight("Balance:", 10))
 	cObj = append(cObj, hb)
 	for _, tx := range txList {
+		s := tx.Key()
 		hb := container.NewHBox()
+		rename := NewMyIconButton("", theme2.EditIcon(), func() {
+			actionFunc(ACTION_UPDATE_ASSET_VALUE, &accData.Path, s)
+		}, statusDisplay, fmt.Sprintf("Upate '%s'", tx.Ref()))
+		hb.Add(rename)
 		hb.Add(NewStringFieldRight(tx.DateTime(), 19))
 		hb.Add(NewStringFieldRight(tx.Ref(), refMax))
 		if tx.Value() >= 0 {
@@ -291,6 +297,7 @@ func getTransactionalCanvasObjects(cObj []fyne.CanvasObject, accData *lib.Accoun
 		}
 		hb.Add(NewFloatFieldRight(tx.Value(), 10))
 		hb.Add(NewFloatFieldRight(tx.LineValue(), 10))
+
 		cObj = append(cObj, hb)
 	}
 	return cObj
@@ -356,8 +363,9 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 		if v.GetName() == lib.IdTransactions && v.IsContainer() {
 			cObj = append(cObj, widget.NewSeparator())
 			accountData, err := lib.FindUserAccount(details.User, details.Title)
+			accountData.Path = *editEntry.Path
 			if err == nil {
-				cObj = getTransactionalCanvasObjects(cObj, accountData, editEntry, pref)
+				cObj = getTransactionalCanvasObjects(actionFunc, cObj, accountData, pref, statusDisplay)
 			}
 		} else {
 			clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {
