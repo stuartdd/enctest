@@ -275,9 +275,9 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 	}
 	cObj = append(cObj, widget.NewLabel(fmt.Sprintf("%s. List of %s(s). Current balance %0.2f", accData.AccountName, transAreCalled, accData.ClosingValue)))
 	hb := container.NewHBox()
-	hb.Add(NewStringFieldRight("Date:", 19))
+	hb.Add(NewStringFieldRight("Date:", 24))
 	hb.Add(NewStringFieldRight("Reference:", refMax))
-	hb.Add(NewStringFieldRight("D/C", 3))
+	hb.Add(NewStringFieldRight("IDC", 3))
 	hb.Add(NewStringFieldRight("Amount:", 10))
 	hb.Add(NewStringFieldRight("Balance:", 10))
 	cObj = append(cObj, hb)
@@ -290,10 +290,14 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 		hb.Add(rename)
 		hb.Add(NewStringFieldRight(tx.DateTime(), 19))
 		hb.Add(NewStringFieldRight(tx.Ref(), refMax))
-		if tx.Value() >= 0 {
-			hb.Add(NewStringFieldRight("D  ", 3))
+		if tx.IsInitialValue() {
+			hb.Add(NewStringFieldRight("I", 3))
 		} else {
-			hb.Add(NewStringFieldRight("  C", 3))
+			if tx.Value() >= 0 {
+				hb.Add(NewStringFieldRight("D", 3))
+			} else {
+				hb.Add(NewStringFieldRight("C", 3))
+			}
 		}
 		hb.Add(NewFloatFieldRight(tx.Value(), 10))
 		hb.Add(NewFloatFieldRight(tx.LineValue(), 10))
@@ -439,7 +443,7 @@ func entryChangedFunction(newWalue string, path *parser.Path) error {
 			if nv == "" {
 				return nil
 			}
-			_, err := strconv.ParseFloat(nv, 64)
+			_, err := strconv.ParseFloat(strings.TrimSpace(nv), 64)
 			if err != nil {
 				ee.RefreshData()
 				return fmt.Errorf("invalid number '%s'", nv)

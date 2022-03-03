@@ -1,15 +1,19 @@
 {
     "groups": {
         "UserB": {
+            "notes": {
+                "note for B": "An amazing B note 123",
+                "link": "https://www.principality.co.uk/en/your-account"
+            },
             "pwHints": {
                 "GMail.B": {
+                    "post": "123 Fred",
+                    "pre": "abc",
+                    "some More Notes": "hi",
                     "some More!": "hi",
                     "userId": "another@gmail.com",
                     "notes": "a note to User B",
-                    "positional!po": "1234567890ThisIsthe",
-                    "post": "123 Fred",
-                    "pre": "abc",
-                    "some More Notes": "hi"
+                    "positional!po": "1234567890ThisIsthe"
                 },
                 "Principality.B": {
                     "notes": "Principality note",
@@ -18,10 +22,6 @@
                     "userId": "Buser",
                     "link": "https://www.principality.co.uk/en/your-account"
                 }
-            },
-            "notes": {
-                "note for B": "An amazing B note 123",
-                "link": "https://www.principality.co.uk/en/your-account"
             }
         },
         "Stuart": {
@@ -43,9 +43,9 @@
                 "Principality": {
                     "transactions": [
                         {
+                            "ref": "Initial Balance",
                             "date": "2021-07-08 15:31:10",
-                            "val": 126.6,
-                            "ref": "Add"
+                            "val": -126.6
                         },
                         {
                             "ref": "Subt",
@@ -57,12 +57,13 @@
                     "Sort Code": "30:96:91"
                 },
                 "Lloyds Current Account": {
+                    "Acc Number": "12345678",
                     "Sort Code": "30:96:91",
                     "transactions": [
                         {
-                            "ref": "Add 126.6",
+                            "ref": "Initial Balance",
                             "date": "2021-07-08 15:31:10",
-                            "val": 126.6
+                            "val": -126.6
                         },
                         {
                             "date": "2021-07-10 15:31:10",
@@ -71,11 +72,10 @@
                         },
                         {
                             "date": "2021-07-09 15:31:10",
-                            "val": -126.6,
+                            "val": 126.6,
                             "ref": "Subtract 126.6"
                         }
-                    ],
-                    "Acc Number": "12345678"
+                    ]
                 }
             },
             "notes": {
@@ -84,10 +84,10 @@
             },
             "pwHints": {
                 "PrincipalityA": {
-                    "notes": "https://www.principality.co.uk/en/your-account",
-                    "post": "456",
                     "pre": "efg",
-                    "userId": "Puser"
+                    "userId": "Puser",
+                    "notes": "https://www.principality.co.uk/en/your-account",
+                    "post": "456"
                 },
                 "MyApp": {
                     "pre": "abc",
@@ -98,5 +98,5 @@
             }
         }
     },
-    "timeStamp": "Tue Feb 22 00:38:31 GMT 2022"
+    "timeStamp": "Thu Mar 3 18:04:49 GMT 2022"
 }

@@ -739,17 +739,24 @@ func updateAssetValue(dataPath *parser.Path, extra string) {
 		fmt.Sprintf("Update %s data and press OK", t),
 		func() {}, // On Cancel
 		func(m map[string]*gui.InpuFieldData) { // On OK
-			fmt.Printf("%s", m)
+			count := 0
+			for k, v := range m {
+				count = count + lib.UpdateNodeFromTranactionData(tx, k, v.Value, txd.IsInitialValue())
+			}
+			if count > 0 {
+				lib.InitUserAssetsCache(jsonData.GetDataRoot())
+				dataMapUpdated("Transaction updated", dataPath.PathParent(), nil)
+			}
 		})
 
-	if txd.Ref() != lib.IdInitialValue {
-		d.Add("r1", "Reference", func(s string) error {
+	if !txd.IsInitialValue() {
+		d.Add(lib.IdTxRef, "Reference", func(s string) error {
 			return nil
 		}, txd.Ref())
 	}
 
-	d.Add("v1", "Amount", func(s string) error {
-		_, err := strconv.ParseFloat(s, 64)
+	d.Add(lib.IdTxVal, "Amount", func(s string) error {
+		_, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 		if err != nil {
 			return fmt.Errorf("is not a valid amount")
 		}

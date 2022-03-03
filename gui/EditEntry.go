@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -134,7 +135,7 @@ func (p *EditEntry) CommitEdit(data parser.NodeI) bool {
 		case parser.NT_BOOL:
 			m.(*parser.JsonBool).SetValue(p.NewTxt == "true")
 		case parser.NT_NUMBER:
-			f, err := strconv.ParseFloat(p.NewTxt, 64)
+			f, err := strconv.ParseFloat(strings.TrimSpace(p.NewTxt), 64)
 			if err != nil {
 				return false
 			}

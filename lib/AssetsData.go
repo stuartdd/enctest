@@ -18,7 +18,9 @@ package lib
 
 import (
 	"fmt"
+	"math"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,11 +28,13 @@ import (
 )
 
 const (
-	TIME_FORMAT_TXN = "2006-01-02 15:04:05"
-	IdTransactions  = "transactions"
-	IdAssets        = "assets"
-	IdTxDate        = "date"
-	IdTxRef         = "ref"
+	TIME_FORMAT_TXN  = "2006-01-02 15:04:05"
+	IdTransactions   = "transactions"
+	IdAssets         = "assets"
+	IdTxDate         = "date"
+	IdTxRef          = "ref"
+	IdTxVal          = "val"
+	IdTxInitialValue = "Initial Balance"
 )
 
 var cachedUserAssets *UserAssetCache
@@ -46,11 +50,12 @@ type UserAsset struct {
 }
 
 type TranactionData struct {
-	dateTime  string
-	value     float64
-	ref       string
-	err       error
-	lineValue float64
+	dateTime       string
+	value          float64
+	ref            string
+	err            error
+	lineValue      float64
+	isInitialValue bool
 }
 
 type AccountData struct {
@@ -210,7 +215,7 @@ func GetTransactionNode(n parser.NodeC, datePlusRef string) (parser.NodeC, error
 }
 
 func newTranactionData(dateTime string, value float64, ref string) *TranactionData {
-	return &TranactionData{dateTime: dateTime, value: value, ref: ref, lineValue: 0.0}
+	return &TranactionData{dateTime: dateTime, value: value, ref: ref, lineValue: 0.0, isInitialValue: ref == IdTxInitialValue}
 }
 
 func newTranactionDataError(err string, n parser.NodeI) *TranactionData {
@@ -219,6 +224,10 @@ func newTranactionDataError(err string, n parser.NodeI) *TranactionData {
 
 func (t *TranactionData) DateTime() string {
 	return t.dateTime
+}
+
+func (t *TranactionData) IsInitialValue() bool {
+	return t.isInitialValue
 }
 
 func (t *TranactionData) Key() string {
@@ -266,6 +275,33 @@ func getMillisForDateTime(dt string) int64 {
 		return 0
 	}
 	return t.UnixMilli()
+}
+
+func UpdateNodeFromTranactionData(txNode parser.NodeC, key, value string, initial bool) int {
+	count := 0
+	vn := txNode.GetNodeWithName(key)
+	if vn == nil {
+		return 0
+	}
+	switch vn.GetNodeType() {
+	case parser.NT_NUMBER:
+		v, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
+		if err == nil {
+			if v != vn.(*parser.JsonNumber).GetValue() {
+				if initial {
+					v = -math.Abs(v)
+				}
+				vn.(*parser.JsonNumber).SetValue(v)
+				count++
+			}
+		}
+	case parser.NT_STRING:
+		if value != vn.(*parser.JsonString).GetValue() {
+			vn.(*parser.JsonString).SetValue(value)
+			count++
+		}
+	}
+	return count
 }
 
 func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {

@@ -72,13 +72,13 @@ func (idl *InputDataWindow) Len() int {
 func (idl *InputDataWindow) Show(w fyne.Window) {
 	vc := container.NewVBox()
 	hb := container.NewHBox()
-	idl.okButton = widget.NewButtonWithIcon("OK", theme.ConfirmIcon(), func() {
-		idl.confirmFunc()
-	})
 
-	hb.Add(widget.NewButtonWithIcon("Close", theme.CancelIcon(), func() {
-		idl.cancelFunc()
-	}))
+	idl.okButton = &widget.Button{Text: "OK", Icon: theme.ConfirmIcon(), Importance: widget.HighImportance,
+		OnTapped: idl.confirmFunc,
+	}
+	hb.Add(&widget.Button{Text: "Close", Icon: theme.ConfirmIcon(),
+		OnTapped: idl.cancelFunc,
+	})
 	hb.Add(idl.okButton)
 	vc.Add(container.NewCenter(widget.NewLabel(idl.title)))
 	vc.Add(widget.NewSeparator())
@@ -118,7 +118,7 @@ func (idl *InputDataWindow) close() {
 
 func (idl *InputDataWindow) createRow(ifd *InpuFieldData) *fyne.Container {
 	e := widget.NewEntry()
-	e.SetText(ifd.Value)
+	e.SetText(strings.TrimSpace(ifd.Value))
 	l := NewStringFieldRight(ifd.Label+":", idl.longestLabel+2)
 	e.OnChanged = func(s string) {
 		ifd.Value = strings.TrimSpace(s)
