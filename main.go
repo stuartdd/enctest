@@ -741,7 +741,7 @@ func updateAssetValue(dataPath *parser.Path, extra string) {
 		func(m map[string]*gui.InpuFieldData) { // On OK
 			count := 0
 			for k, v := range m {
-				count = count + lib.UpdateNodeFromTranactionData(tx, k, v.Value, txd.IsInitialValue())
+				count = count + lib.UpdateNodeFromTranactionData(tx, k, v.Value[v.Selection], txd.TxType())
 			}
 			if count > 0 {
 				lib.InitUserAssetsCache(jsonData.GetDataRoot())
@@ -749,19 +749,22 @@ func updateAssetValue(dataPath *parser.Path, extra string) {
 			}
 		})
 
-	if !txd.IsInitialValue() {
-		d.Add(lib.IdTxRef, "Reference", func(s string) error {
+	if txd.TxType() != lib.TX_TYPE_IV {
+		d.Add(lib.IdTxRef, "Reference", txd.Ref(), func(s string) error {
 			return nil
-		}, txd.Ref())
+		})
 	}
 
-	d.Add(lib.IdTxVal, "Amount", func(s string) error {
-		_, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	d.Add(lib.IdTxVal, "Amount", txd.Val(), func(s string) error {
+		v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+		if v < 0.1 {
+			return fmt.Errorf("cannot be less than 0.1")
+		}
 		if err != nil {
 			return fmt.Errorf("is not a valid amount")
 		}
 		return nil
-	}, txd.Val())
+	})
 
 	d.Show(window)
 }

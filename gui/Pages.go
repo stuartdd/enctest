@@ -64,6 +64,7 @@ const (
 	ACTION_ADD_ASSET_ITEM     = "addassetitem"
 	ACTION_SET_ASSET_VALUE    = "setassetvalues"
 	ACTION_UPDATE_ASSET_VALUE = "updateassetvalues"
+	ACTION_ADD_ASSET_VALUE    = "addassetvalues"
 	ACTION_ADD_HINT_ITEM      = "addhintitem"
 	ACTION_ERROR_DIALOG       = "errorDialog"
 )
@@ -275,10 +276,14 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 	}
 	cObj = append(cObj, widget.NewLabel(fmt.Sprintf("%s. List of %s(s). Current balance %0.2f", accData.AccountName, transAreCalled, accData.ClosingValue)))
 	hb := container.NewHBox()
-	hb.Add(NewStringFieldRight("Date:", 24))
+	add := NewMyIconButton("", theme.ContentAddIcon(), func() {
+		actionFunc(ACTION_UPDATE_ASSET_VALUE, &accData.Path, "")
+	}, statusDisplay, fmt.Sprintf("Add a transaction '%s'", accData.AccountName))
+	hb.Add(add)
+	hb.Add(NewStringFieldRight("Date Time:", 19))
 	hb.Add(NewStringFieldRight("Reference:", refMax))
-	hb.Add(NewStringFieldRight("IDC", 3))
-	hb.Add(NewStringFieldRight("Amount:", 10))
+	hb.Add(NewStringFieldRight("In:", 10))
+	hb.Add(NewStringFieldRight("Out:", 10))
 	hb.Add(NewStringFieldRight("Balance:", 10))
 	cObj = append(cObj, hb)
 	for _, tx := range txList {
@@ -290,18 +295,22 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 		hb.Add(rename)
 		hb.Add(NewStringFieldRight(tx.DateTime(), 19))
 		hb.Add(NewStringFieldRight(tx.Ref(), refMax))
-		if tx.IsInitialValue() {
-			hb.Add(NewStringFieldRight("I", 3))
-		} else {
-			if tx.Value() >= 0 {
-				hb.Add(NewStringFieldRight("D", 3))
-			} else {
-				hb.Add(NewStringFieldRight("C", 3))
-			}
+		switch tx.TxType() {
+		case lib.TX_TYPE_IV:
+			hb.Add(NewStringFieldRight("", 10))
+			hb.Add(NewStringFieldRight("", 10))
+			hb.Add(NewFloatFieldRight(tx.LineValue(), 10))
+		case lib.TX_TYPE_CRE:
+			hb.Add(NewFloatFieldRight(tx.Value(), 10))
+			hb.Add(NewStringFieldRight("", 10))
+			hb.Add(NewFloatFieldRight(tx.LineValue(), 10))
+		case lib.TX_TYPE_DEB:
+			hb.Add(NewStringFieldRight("", 10))
+			hb.Add(NewFloatFieldRight(tx.Value(), 10))
+			hb.Add(NewFloatFieldRight(tx.LineValue(), 10))
+		default:
+			hb.Add(NewStringFieldRight("ERR", 3))
 		}
-		hb.Add(NewFloatFieldRight(tx.Value(), 10))
-		hb.Add(NewFloatFieldRight(tx.LineValue(), 10))
-
 		cObj = append(cObj, hb)
 	}
 	return cObj

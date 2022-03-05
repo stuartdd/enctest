@@ -45,12 +45,14 @@
                         {
                             "ref": "Initial Balance",
                             "date": "2021-07-08 15:31:10",
-                            "val": -126.6
+                            "val": 126.6,
+                            "type": "iv"
                         },
                         {
-                            "ref": "Subt",
+                            "ref": "Out",
                             "date": "2021-07-09 15:31:10",
-                            "val": -126.6
+                            "val": 126.6,
+                            "type": "db"
                         }
                     ],
                     "Acc Number": "8654321",
@@ -61,19 +63,23 @@
                     "Sort Code": "30:96:91",
                     "transactions": [
                         {
-                            "ref": "Initial Balance",
+                            "ref": "Opening Balance",
                             "date": "2021-07-08 15:31:10",
-                            "val": -126.6
+                            "val": 126.6,
+                            "type": "iv"
                         },
                         {
                             "date": "2021-07-10 15:31:10",
-                            "val": -126.6,
-                            "ref": "Subtract 126.6"
+                            "val": 126.6,
+                            "ref": "OUT 126.6",
+                            "type": "db"
                         },
                         {
                             "date": "2021-07-09 15:31:10",
                             "val": 126.6,
-                            "ref": "Subtract 126.6"
+                            "ref": "IN 126.6",
+                            "type": "cr"
+
                         }
                     ]
                 }

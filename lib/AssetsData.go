@@ -27,14 +27,21 @@ import (
 	"github.com/stuartdd2/JsonParser4go/parser"
 )
 
+type TransactionTypeEnum string
+
 const (
-	TIME_FORMAT_TXN  = "2006-01-02 15:04:05"
-	IdTransactions   = "transactions"
-	IdAssets         = "assets"
-	IdTxDate         = "date"
-	IdTxRef          = "ref"
-	IdTxVal          = "val"
-	IdTxInitialValue = "Initial Balance"
+	TIME_FORMAT_TXN = "2006-01-02 15:04:05"
+	IdTransactions  = "transactions"
+	IdAssets        = "assets"
+	IdTxDate        = "date"
+	IdTxRef         = "ref"
+	IdTxVal         = "val"
+	IdTxType        = "type"
+
+	TX_TYPE_ERR TransactionTypeEnum = "err"
+	TX_TYPE_IV  TransactionTypeEnum = "iv"
+	TX_TYPE_DEB TransactionTypeEnum = "db"
+	TX_TYPE_CRE TransactionTypeEnum = "cr"
 )
 
 var cachedUserAssets *UserAssetCache
@@ -50,12 +57,12 @@ type UserAsset struct {
 }
 
 type TranactionData struct {
-	dateTime       string
-	value          float64
-	ref            string
-	err            error
-	lineValue      float64
-	isInitialValue bool
+	dateTime  string
+	value     float64
+	ref       string
+	txType    TransactionTypeEnum
+	err       error
+	lineValue float64
 }
 
 type AccountData struct {
@@ -163,7 +170,11 @@ func newAccountData(accountName string, accountNode parser.NodeC, initialValue f
 				return getMillisForDateTime(d[i].dateTime) < getMillisForDateTime(d[j].dateTime)
 			})
 			for _, ni := range d {
-				ni.SetLineValue(v - ni.Value())
+				if ni.txType == TX_TYPE_DEB {
+					ni.SetLineValue(v - ni.AbsValue())
+				} else {
+					ni.SetLineValue(v + ni.AbsValue())
+				}
 				v = ni.LineValue()
 			}
 		}
@@ -214,20 +225,16 @@ func GetTransactionNode(n parser.NodeC, datePlusRef string) (parser.NodeC, error
 	return nil, fmt.Errorf("GetTransaction failed. '%s' transaction not found.", datePlusRef)
 }
 
-func newTranactionData(dateTime string, value float64, ref string) *TranactionData {
-	return &TranactionData{dateTime: dateTime, value: value, ref: ref, lineValue: 0.0, isInitialValue: ref == IdTxInitialValue}
+func newTranactionData(dateTime string, value float64, ref string, typ TransactionTypeEnum) *TranactionData {
+	return &TranactionData{dateTime: dateTime, value: value, ref: ref, lineValue: 0.0, txType: typ}
 }
 
 func newTranactionDataError(err string, n parser.NodeI) *TranactionData {
-	return &TranactionData{err: fmt.Errorf("%s '%s'", err, n.JsonValue()), lineValue: 0.0}
+	return &TranactionData{err: fmt.Errorf("%s '%s'", err, n.JsonValue()), lineValue: 0.0, txType: TX_TYPE_ERR}
 }
 
 func (t *TranactionData) DateTime() string {
 	return t.dateTime
-}
-
-func (t *TranactionData) IsInitialValue() bool {
-	return t.isInitialValue
 }
 
 func (t *TranactionData) Key() string {
@@ -242,12 +249,19 @@ func (t *TranactionData) Val() string {
 	return fmt.Sprintf("%9.2f", t.value)
 }
 
+func (t *TranactionData) TxType() TransactionTypeEnum {
+	return t.txType
+}
+
 func (t *TranactionData) LineVal() string {
 	return fmt.Sprintf("%9.2f", t.lineValue)
 }
 
 func (t *TranactionData) Value() float64 {
 	return t.value
+}
+func (t *TranactionData) AbsValue() float64 {
+	return math.Abs(t.value)
 }
 
 func (t *TranactionData) LineValue() float64 {
@@ -277,7 +291,7 @@ func getMillisForDateTime(dt string) int64 {
 	return t.UnixMilli()
 }
 
-func UpdateNodeFromTranactionData(txNode parser.NodeC, key, value string, initial bool) int {
+func UpdateNodeFromTranactionData(txNode parser.NodeC, key, value string, txType TransactionTypeEnum) int {
 	count := 0
 	vn := txNode.GetNodeWithName(key)
 	if vn == nil {
@@ -288,7 +302,7 @@ func UpdateNodeFromTranactionData(txNode parser.NodeC, key, value string, initia
 		v, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
 		if err == nil {
 			if v != vn.(*parser.JsonNumber).GetValue() {
-				if initial {
+				if txType == TX_TYPE_IV {
 					v = -math.Abs(v)
 				}
 				vn.(*parser.JsonNumber).SetValue(v)
@@ -314,6 +328,12 @@ func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
 		if err != nil {
 			return newTranactionDataError("invalid 'date time' for transaction %s", n)
 		}
+		ty := n.(parser.NodeC).GetNodeWithName(IdTxType)
+		tys := TX_TYPE_ERR
+		if ty != nil && ty.GetNodeType() == parser.NT_STRING {
+			tys = TransactionTypeEnum(ty.String())
+		}
+
 		vn := n.(parser.NodeC).GetNodeWithName("val")
 		if vn == nil {
 			return newTranactionDataError("invalid Transaction node has no 'val' member '%s'", n)
@@ -327,7 +347,7 @@ func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
 			return newTranactionDataError(fmt.Sprintf("Invalid Transaction node has no '%s' member", IdTxRef), n)
 		}
 		ref := rn.String()
-		return newTranactionData(tn.String(), val, ref)
+		return newTranactionData(tn.String(), val, ref, tys)
 	} else {
 		return newTranactionDataError("invalid Transaction node has no members (date, val and ref) '%s'", n)
 	}

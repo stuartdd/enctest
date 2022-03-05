@@ -425,9 +425,10 @@ func addDefaultAccountItemsToAsset(account *parser.JsonObject) {
 	if tx == nil {
 		txl := parser.NewJsonList(IdTransactions)
 		txo := parser.NewJsonObject("")
-		txo.Add(parser.NewJsonString("ref", IdTxInitialValue))
-		txo.Add(parser.NewJsonString("date", time.Now().Local().Format(TIME_FORMAT_TXN)))
-		txo.Add(parser.NewJsonNumber("val", 0.0))
+		txo.Add(parser.NewJsonString(IdTxRef, "Initial Value"))
+		txo.Add(parser.NewJsonString(IdTxDate, time.Now().Local().Format(TIME_FORMAT_TXN)))
+		txo.Add(parser.NewJsonNumber(IdTxVal, 0.0))
+		txo.Add(parser.NewJsonString(IdTxType, string(TX_TYPE_IV)))
 		txl.Add(txo)
 		account.Add(txl)
 	}
