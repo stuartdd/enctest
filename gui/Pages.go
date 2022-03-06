@@ -319,16 +319,16 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 func assetScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewSeparator())
-	assetData, err := lib.FindUserAssets(details.User)
+	accountData, err := lib.FindAllUserAccounts(details.User)
 	tot := 0.0
 	if err == nil {
 		refMax := 10
-		for _, asset := range assetData {
+		for _, asset := range accountData {
 			if refMax < len(asset.AccountName) {
 				refMax = len(asset.AccountName)
 			}
 		}
-		for _, asset := range assetData {
+		for _, asset := range accountData {
 			hb := container.NewHBox()
 			lt := asset.LatestTransaction()
 			if lt != nil {

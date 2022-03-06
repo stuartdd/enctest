@@ -735,13 +735,13 @@ func updateAssetValue(dataPath *parser.Path, extra string) {
 	txd := lib.NewTranactionDataFromNode(tx.(parser.NodeI))
 
 	d := gui.NewInputDataWindow(
-		fmt.Sprintf("Update '%s'", txd.Key()),
+		fmt.Sprintf("Update '%s' Reference '%s'", txd.DateTime(), txd.Ref()),
 		fmt.Sprintf("Update %s data and press OK", t),
 		func() {}, // On Cancel
-		func(m map[string]*gui.InpuFieldData) { // On OK
+		func(m []*gui.InpuFieldData) { // On OK
 			count := 0
-			for k, v := range m {
-				count = count + lib.UpdateNodeFromTranactionData(tx, k, v.Value[v.Selection], txd.TxType())
+			for _, v := range m {
+				count = count + lib.UpdateNodeFromTranactionData(tx, v.Id, v.Value, txd.TxType())
 			}
 			if count > 0 {
 				lib.InitUserAssetsCache(jsonData.GetDataRoot())
@@ -749,11 +749,13 @@ func updateAssetValue(dataPath *parser.Path, extra string) {
 			}
 		})
 
-	if txd.TxType() != lib.TX_TYPE_IV {
-		d.Add(lib.IdTxRef, "Reference", txd.Ref(), func(s string) error {
+	d.Add(lib.IdTxRef, "Reference", txd.Ref(), func(s string) error {
+		if s == "" {
+			return fmt.Errorf("cannot be empty")
+		} else {
 			return nil
-		})
-	}
+		}
+	})
 
 	d.Add(lib.IdTxVal, "Amount", txd.Val(), func(s string) error {
 		v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
@@ -765,6 +767,12 @@ func updateAssetValue(dataPath *parser.Path, extra string) {
 		}
 		return nil
 	})
+
+	if txd.TxType() != lib.TX_TYPE_IV {
+		d.AddOptions(lib.IdTxType, lib.TX_TYPE_LIST_LABLES, string(txd.TxType()), lib.TX_TYPE_LIST_OPTIONS, func(s string) error {
+			return nil
+		})
+	}
 
 	d.Show(window)
 }

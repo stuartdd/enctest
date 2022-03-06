@@ -17,9 +17,9 @@ const (
 
 type InpuFieldData struct {
 	Id         string
-	Label      []string
-	Value      []string
-	Selection  int
+	Labels     []string
+	Options    []string
+	Value      string
 	Validator  func(string) error
 	errorLabel *widget.Label
 }
@@ -28,25 +28,31 @@ type InputDataWindow struct {
 	inputDataPopUp *widget.PopUp
 	title          string
 	info           string
-	entries        map[string]*InpuFieldData
+	entries        []*InpuFieldData
 	cancelFunction func()
-	selectFunction func(map[string]*InpuFieldData)
+	selectFunction func([]*InpuFieldData)
 	longestLabel   int
 	okButton       *widget.Button
 	infoLabel      *widget.Label
 }
 
-func newInpuFieldData(id string, label []string, value []string, validator func(string) error) *InpuFieldData {
-	return &InpuFieldData{Id: id, Label: label, Value: value, Selection: 0, Validator: validator, errorLabel: widget.NewLabel(ERROR_GOOD)}
+func newInpuFieldData(id string, labels []string, value string, options []string, validator func(string) error) *InpuFieldData {
+	return &InpuFieldData{
+		Id:         id,
+		Labels:     labels,
+		Options:    options,
+		Value:      strings.TrimSpace(value),
+		Validator:  validator,
+		errorLabel: widget.NewLabel(ERROR_GOOD)}
 }
 
 func (ifd *InpuFieldData) String() string {
-	return fmt.Sprintf("FieldData: ID: %s, Label: %s, Value: %s", ifd.Id, ifd.Label, ifd.Value)
+	return fmt.Sprintf("FieldData: ID: %s, Label: %s, Value: %s", ifd.Id, ifd.Labels[0], ifd.Value)
 }
 
-func NewInputDataWindow(title string, info string, cancelFunction func(), selectFunction func(map[string]*InpuFieldData)) *InputDataWindow {
+func NewInputDataWindow(title string, info string, cancelFunction func(), selectFunction func([]*InpuFieldData)) *InputDataWindow {
 	return &InputDataWindow{
-		entries:        make(map[string]*InpuFieldData),
+		entries:        make([]*InpuFieldData, 0),
 		title:          title,
 		info:           info,
 		cancelFunction: cancelFunction,
@@ -54,23 +60,19 @@ func NewInputDataWindow(title string, info string, cancelFunction func(), select
 		inputDataPopUp: nil,
 		longestLabel:   10,
 		okButton:       nil,
-
-		infoLabel: widget.NewLabel(info),
+		infoLabel:      widget.NewLabel(info),
 	}
 }
 
-func (idl *InputDataWindow) AddOptions(id string, label []string, value []string, validator func(string) error) {
-	if idl.longestLabel < len(label) {
-		idl.longestLabel = len(label)
-	}
-	idl.entries[id] = newInpuFieldData(id, label, value, validator)
+func (idl *InputDataWindow) AddOptions(id string, labels []string, value string, options []string, validator func(string) error) {
+	idl.entries = append(idl.entries, newInpuFieldData(id, labels, value, options, validator))
 }
 
 func (idl *InputDataWindow) Add(id string, label string, value string, validator func(string) error) {
 	if idl.longestLabel < len(label) {
 		idl.longestLabel = len(label)
 	}
-	idl.entries[id] = newInpuFieldData(id, append(make([]string, 0), label), append(make([]string, 0), value), validator)
+	idl.entries = append(idl.entries, newInpuFieldData(id, append(make([]string, 0), label), value, make([]string, 0), validator))
 }
 
 func (idl *InputDataWindow) Len() int {
@@ -91,7 +93,11 @@ func (idl *InputDataWindow) Show(w fyne.Window) {
 	vc.Add(container.NewCenter(widget.NewLabel(idl.title)))
 	vc.Add(widget.NewSeparator())
 	for _, v := range idl.entries {
-		vc.Add(idl.createRow(v))
+		if len(v.Labels) == 1 {
+			vc.Add(idl.createRow(v))
+		} else {
+			vc.Add(idl.createOption(v))
+		}
 	}
 	vc.Add(widget.NewSeparator())
 	idl.infoLabel.SetText(idl.info)
@@ -124,12 +130,26 @@ func (idl *InputDataWindow) close() {
 	}
 }
 
+func (ifd *InpuFieldData) isNotOption() bool {
+	return len(ifd.Options) == 0
+}
+
+func (idl *InputDataWindow) createOption(ifd *InpuFieldData) *fyne.Container {
+	e := widget.NewRadioGroup(ifd.Labels, func(s string) {
+		ifd.Value = ifd.Options[findIndexOf(ifd.Labels, s)]
+		idl.validateAll()
+	})
+	e.SetSelected(ifd.Labels[findIndexOf(ifd.Options, ifd.Value)])
+	c := container.NewBorder(nil, nil, NewStringFieldRight("", idl.longestLabel+2), nil, e)
+	return c
+}
+
 func (idl *InputDataWindow) createRow(ifd *InpuFieldData) *fyne.Container {
 	e := widget.NewEntry()
-	e.SetText(strings.TrimSpace(ifd.Value[ifd.Selection]))
-	l := NewStringFieldRight(ifd.Label[ifd.Selection]+":", idl.longestLabel+2)
+	e.SetText(strings.TrimSpace(ifd.Value))
+	l := NewStringFieldRight(ifd.Labels[0]+":", idl.longestLabel+2)
 	e.OnChanged = func(s string) {
-		ifd.Value[ifd.Selection] = strings.TrimSpace(s)
+		ifd.Value = strings.TrimSpace(s)
 		idl.validateAll()
 	}
 	c := container.NewBorder(nil, nil, l, ifd.errorLabel, e)
@@ -141,15 +161,11 @@ func (idl *InputDataWindow) validateAll() {
 	field := ""
 	for _, v := range idl.entries {
 		var err error = nil
-		if v.Value[v.Selection] == "" {
-			err = fmt.Errorf("cannot be empty")
-		} else {
-			err = v.Validator(v.Value[v.Selection])
-		}
+		err = v.Validator(v.Value)
 		if err != nil {
 			v.errorLabel.SetText(ERROR_BAD)
 			errStr = err.Error()
-			field = v.Label[v.Selection]
+			field = v.Labels[0]
 		} else {
 			v.errorLabel.SetText(ERROR_GOOD)
 		}
@@ -161,4 +177,13 @@ func (idl *InputDataWindow) validateAll() {
 		idl.okButton.Enable()
 		idl.infoLabel.SetText(idl.info)
 	}
+}
+
+func findIndexOf(haystack []string, needle string) int {
+	for i, v := range haystack {
+		if v == needle {
+			return i
+		}
+	}
+	return 0
 }

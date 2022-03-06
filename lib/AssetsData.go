@@ -44,7 +44,35 @@ const (
 	TX_TYPE_CRE TransactionTypeEnum = "cr"
 )
 
+var (
+	TX_TYPE_LIST_LABLES  = []string{"In (Credit)", "Out (Debit)"}
+	TX_TYPE_LIST_OPTIONS = []string{string(TX_TYPE_CRE), string(TX_TYPE_DEB)}
+)
+
 var cachedUserAssets *UserAssetCache
+
+//
+// UserAssetCache map[string]*UserAsset
+//		[username+assetname] *UserAsset
+//			user --> json user node
+//			asset --> json asset node
+//          	'groups'.username.'assets'.assetname
+//			data --> []*AccountData
+//					LatestTransaction() *TranactionData
+//				AccountName --> assetname
+//				Path --> 'groups'.username.'assets'.assetname
+//				Transactions --> []*TranactionData
+//					dateTime 	DateTime()
+//					value		Value() float64
+//								AbsValue() float64
+//								Val() string - formatted value
+//					ref			Ref() string
+//					txType		TxType() TransactionTypeEnum
+//								Key() string - date + ref
+//								LineValue() float64
+//								LineVal() string - formatted value
+//								HasError() bool
+//
 
 type UserAssetCache struct {
 	UserAssets map[string]*UserAsset
@@ -73,6 +101,10 @@ type AccountData struct {
 	Transactions []*TranactionData // Each transaction
 }
 
+//
+// Create/Update the cachedUserAssets (singleton) from the root Json node.
+//  All assets for All users
+//
 func InitUserAssetsCache(root *parser.JsonObject) {
 	cache := &UserAssetCache{UserAssets: make(map[string]*UserAsset)}
 	SearchNodesWithName(IdAssets, root, func(node, parent parser.NodeI) {
@@ -85,24 +117,33 @@ func InitUserAssetsCache(root *parser.JsonObject) {
 	cachedUserAssets = cache
 }
 
+//
+// Add a UserAsset to the cachedUserAssets (singleton) using key of username + assetname
+//
 func (t *UserAssetCache) addAsset(asset *UserAsset) {
 	t.UserAssets[asset.keyForUserAsset()] = asset
 }
 
-func FindUserAssets(user string) ([]*AccountData, error) {
+//
+// Return all accounts (AccountData) for a given user from the cachedUserAssets
+//
+func FindAllUserAccounts(user string) ([]*AccountData, error) {
 	if cachedUserAssets == nil {
-		return nil, fmt.Errorf("No assets or accounts have been defined")
+		return nil, fmt.Errorf("no assets or accounts have been defined")
 	}
 	key := fmt.Sprintf("%s|%s", user, IdAssets)
 	ua, ok := cachedUserAssets.UserAssets[key]
 	if ok {
 		return ua.data, nil
 	}
-	return nil, fmt.Errorf("Assets not found for user '%s'", user)
+	return nil, fmt.Errorf("assets not found for user '%s'", user)
 }
 
+//
+// Return an account (AccountData) for a given user name and account name from the cachedUserAssets
+//
 func FindUserAccount(user, account string) (*AccountData, error) {
-	ua, err := FindUserAssets(user)
+	ua, err := FindAllUserAccounts(user)
 	if err == nil {
 		for _, acc := range ua {
 			if acc.AccountName == account {
@@ -110,7 +151,7 @@ func FindUserAccount(user, account string) (*AccountData, error) {
 			}
 		}
 	}
-	return nil, fmt.Errorf("Account '%s' not found for user '%s'", account, user)
+	return nil, fmt.Errorf("account '%s' not found for user '%s'", account, user)
 }
 
 func StringUserAsset() string {
@@ -129,7 +170,7 @@ func newUserAsset(userNode, assetsNode parser.NodeC) *UserAsset {
 	ad := make([]*AccountData, 0)
 	for _, accN := range assetsNode.GetValues() {
 		if accN.IsContainer() {
-			ad = append(ad, newAccountData(accN.GetName(), accN.(parser.NodeC), 0.0))
+			ad = append(ad, newAccountData(accN.(parser.NodeC), 0.0))
 		}
 	}
 	return &UserAsset{user: userNode, asset: assetsNode, data: ad}
@@ -139,26 +180,13 @@ func (t *UserAsset) keyForUserAsset() string {
 	return userAssetKey(t.user, t.asset)
 }
 
-func (t *UserAsset) Data() []*AccountData {
-	return t.data
-}
-
-func (t *UserAsset) String() string {
-	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Asset: Key:%s \n", t.keyForUserAsset()))
-	for _, v := range t.data {
-		sb.WriteString(fmt.Sprintf("    %s,\n", v))
-	}
-	return strings.Trim(sb.String(), "\n")
-}
-
 func userAssetKey(userNode, assetsNode parser.NodeC) string {
 	return fmt.Sprintf("%s|%s", userNode.GetName(), assetsNode.GetName())
 }
 
 // !tx node. List of all transactions.
 // Sorted by datetime.
-func newAccountData(accountName string, accountNode parser.NodeC, initialValue float64) *AccountData {
+func newAccountData(accountNode parser.NodeC, initialValue float64) *AccountData {
 	d := make([]*TranactionData, 0)
 	v := initialValue
 	for _, n := range accountNode.GetValues() {
@@ -179,7 +207,7 @@ func newAccountData(accountName string, accountNode parser.NodeC, initialValue f
 			}
 		}
 	}
-	return &AccountData{AccountName: accountName, InitialValue: initialValue, ClosingValue: v, Transactions: d}
+	return &AccountData{AccountName: accountNode.GetName(), InitialValue: initialValue, ClosingValue: v, Transactions: d}
 }
 
 func (t *AccountData) String() string {
@@ -201,6 +229,10 @@ func (t *AccountData) LatestTransaction() *TranactionData {
 	return t.Transactions[ind]
 }
 
+//
+// Give node (n) must be a 'transactions' container node
+//	return a sub node that has a date and ref the san=me as datePlusRef
+//
 func GetTransactionNode(n parser.NodeC, datePlusRef string) (parser.NodeC, error) {
 	if n.GetName() != IdTransactions {
 		return nil, fmt.Errorf("GetTransaction failed. Node is not '%s'", IdTransactions)
@@ -210,11 +242,11 @@ func GetTransactionNode(n parser.NodeC, datePlusRef string) (parser.NodeC, error
 			tc := t.(parser.NodeC)
 			tdt := tc.GetNodeWithName(IdTxDate)
 			if tdt == nil {
-				return nil, fmt.Errorf("GetTransaction failed. '%s' member not found.", IdTxDate)
+				return nil, fmt.Errorf("failed GetTransaction. '%s' member not found", IdTxDate)
 			}
 			tref := tc.GetNodeWithName(IdTxRef)
 			if tref == nil {
-				return nil, fmt.Errorf("GetTransaction failed. '%s' member not found.", tref)
+				return nil, fmt.Errorf("failed GetTransaction. '%s' member not found", tref)
 			}
 			s := fmt.Sprintf("%s %s", tdt, tref)
 			if s == datePlusRef {
@@ -222,7 +254,7 @@ func GetTransactionNode(n parser.NodeC, datePlusRef string) (parser.NodeC, error
 			}
 		}
 	}
-	return nil, fmt.Errorf("GetTransaction failed. '%s' transaction not found.", datePlusRef)
+	return nil, fmt.Errorf("failed GetTransaction. '%s' transaction not found", datePlusRef)
 }
 
 func newTranactionData(dateTime string, value float64, ref string, typ TransactionTypeEnum) *TranactionData {
@@ -291,8 +323,14 @@ func getMillisForDateTime(dt string) int64 {
 	return t.UnixMilli()
 }
 
+//
+// Update a json transaction node from a key and value
+// 		keys 'date', 'ref', 'val', 'type'
+// If node is a number then value is a float as a string
+// else node is a non empty string
+//
+//
 func UpdateNodeFromTranactionData(txNode parser.NodeC, key, value string, txType TransactionTypeEnum) int {
-	count := 0
 	vn := txNode.GetNodeWithName(key)
 	if vn == nil {
 		return 0
@@ -302,22 +340,22 @@ func UpdateNodeFromTranactionData(txNode parser.NodeC, key, value string, txType
 		v, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
 		if err == nil {
 			if v != vn.(*parser.JsonNumber).GetValue() {
-				if txType == TX_TYPE_IV {
-					v = -math.Abs(v)
-				}
 				vn.(*parser.JsonNumber).SetValue(v)
-				count++
+				return 1
 			}
 		}
 	case parser.NT_STRING:
 		if value != vn.(*parser.JsonString).GetValue() {
 			vn.(*parser.JsonString).SetValue(value)
-			count++
+			return 1
 		}
 	}
-	return count
+	return 0
 }
 
+//
+// Create a transaction (TranactionData) from a json Node
+//
 func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
 	if n.IsContainer() {
 		tn := n.(parser.NodeC).GetNodeWithName(IdTxDate)
@@ -333,7 +371,6 @@ func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
 		if ty != nil && ty.GetNodeType() == parser.NT_STRING {
 			tys = TransactionTypeEnum(ty.String())
 		}
-
 		vn := n.(parser.NodeC).GetNodeWithName("val")
 		if vn == nil {
 			return newTranactionDataError("invalid Transaction node has no 'val' member '%s'", n)

@@ -1,23 +1,17 @@
 
     {
-        "screen": {
-            "width": 1165,
-            "height": 660,
-            "fullScreen": false,
-            "split": 0.223558
-        },
         "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
         },
         "search": {
-            "case": false,
             "lastGoodList": [
                 "notes",
                 "note",
                 "app",
                 "Principality note"
-            ]
+            ],
+            "case": false
         },
         "log": {
             "fileName": "enctest.log",
@@ -25,16 +19,22 @@
             "prefix": "INFO"
         },
         "file": {
-            "postDataUrl": "",
             "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
+            "getDataUrl": "",
+            "postDataUrl": ""
         },
         "theme": "dark",
         "data": {
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
             "noteIsCalled": "Note",
-            "presentationmode": true
+            "presentationmode": true,
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset"
+        },
+        "screen": {
+            "split": 0.223558,
+            "width": 943,
+            "height": 495,
+            "fullScreen": false
         }
     }
