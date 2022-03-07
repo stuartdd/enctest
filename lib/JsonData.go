@@ -220,6 +220,17 @@ func (p *JsonData) AddAsset(userUid *parser.Path, assetName string) error {
 	return nil
 }
 
+func (p *JsonData) AddTransaction(dataPath *parser.Path, date, ref string, amount float64, txType TransactionTypeEnum) error {
+	data, err := parser.Find(p.GetUserRoot(), dataPath)
+	if err != nil {
+		return fmt.Errorf("the transaction node for '%s' cannot be found", dataPath)
+	}
+	addTransactionToAsset(data.(*parser.JsonList), date, ref, amount, txType)
+	p.navIndex = createNavIndex(p.dataMap)
+	p.dataMapUpdated("Add Transaction", dataPath.PathParent(), nil)
+	return nil
+}
+
 func (p *JsonData) AddHint(userUid *parser.Path, hintName string) error {
 	u := p.GetUserNode(userUid)
 	if u == nil {
@@ -424,14 +435,18 @@ func addDefaultAccountItemsToAsset(account *parser.JsonObject) {
 	tx := account.GetNodeWithName(IdTransactions)
 	if tx == nil {
 		txl := parser.NewJsonList(IdTransactions)
-		txo := parser.NewJsonObject("")
-		txo.Add(parser.NewJsonString(IdTxRef, "Initial Value"))
-		txo.Add(parser.NewJsonString(IdTxDate, time.Now().Local().Format(TIME_FORMAT_TXN)))
-		txo.Add(parser.NewJsonNumber(IdTxVal, 0.0))
-		txo.Add(parser.NewJsonString(IdTxType, string(TX_TYPE_IV)))
-		txl.Add(txo)
+		addTransactionToAsset(txl, time.Now().Local().Format(TIME_FORMAT_TXN), "Opening Balance", 0.0, TX_TYPE_IV)
 		account.Add(txl)
 	}
+}
+
+func addTransactionToAsset(transactions *parser.JsonList, date, ref string, value float64, txType TransactionTypeEnum) {
+	txo := parser.NewJsonObject("")
+	txo.Add(parser.NewJsonString(IdTxDate, date))
+	txo.Add(parser.NewJsonString(IdTxRef, ref))
+	txo.Add(parser.NewJsonNumber(IdTxVal, value))
+	txo.Add(parser.NewJsonString(IdTxType, string(txType)))
+	transactions.Add(txo)
 }
 
 func addStringIfDoesNotExist(obj *parser.JsonObject, name string) {

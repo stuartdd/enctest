@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -24,16 +25,61 @@ type InpuFieldData struct {
 	errorLabel *widget.Label
 }
 
+type InputData struct {
+	entries []*InpuFieldData
+}
+
 type InputDataWindow struct {
 	inputDataPopUp *widget.PopUp
 	title          string
 	info           string
-	entries        []*InpuFieldData
+	entries        *InputData
 	cancelFunction func()
-	selectFunction func([]*InpuFieldData)
+	selectFunction func(*InputData)
 	longestLabel   int
 	okButton       *widget.Button
 	infoLabel      *widget.Label
+}
+
+func newInpuData() *InputData {
+	return &InputData{entries: make([]*InpuFieldData, 0)}
+}
+
+func (inD *InputData) add(id string, labels []string, value string, options []string, validator func(string) error) {
+	inD.entries = append(inD.entries, newInpuFieldData(id, labels, value, options, validator))
+}
+
+func (inD *InputData) Data() []*InpuFieldData {
+	return inD.entries
+}
+
+func (inD *InputData) Get(name string) *InpuFieldData {
+	for _, idf := range inD.entries {
+		if idf.Id == name {
+			return idf
+		}
+	}
+	return nil
+}
+
+func (inD *InputData) GetString(name string, def string) string {
+	d := inD.Get(name)
+	if d == nil {
+		return def
+	}
+	return d.Value
+}
+
+func (inD *InputData) GetFloat(name string, def float64) float64 {
+	d := inD.Get(name)
+	if d == nil {
+		return def
+	}
+	v, err := strconv.ParseFloat(d.Value, 64)
+	if err != nil {
+		return 0.0
+	}
+	return v
 }
 
 func newInpuFieldData(id string, labels []string, value string, options []string, validator func(string) error) *InpuFieldData {
@@ -50,9 +96,9 @@ func (ifd *InpuFieldData) String() string {
 	return fmt.Sprintf("FieldData: ID: %s, Label: %s, Value: %s", ifd.Id, ifd.Labels[0], ifd.Value)
 }
 
-func NewInputDataWindow(title string, info string, cancelFunction func(), selectFunction func([]*InpuFieldData)) *InputDataWindow {
+func NewInputDataWindow(title string, info string, cancelFunction func(), selectFunction func(*InputData)) *InputDataWindow {
 	return &InputDataWindow{
-		entries:        make([]*InpuFieldData, 0),
+		entries:        newInpuData(),
 		title:          title,
 		info:           info,
 		cancelFunction: cancelFunction,
@@ -65,18 +111,18 @@ func NewInputDataWindow(title string, info string, cancelFunction func(), select
 }
 
 func (idl *InputDataWindow) AddOptions(id string, labels []string, value string, options []string, validator func(string) error) {
-	idl.entries = append(idl.entries, newInpuFieldData(id, labels, value, options, validator))
+	idl.entries.add(id, labels, value, options, validator)
 }
 
 func (idl *InputDataWindow) Add(id string, label string, value string, validator func(string) error) {
 	if idl.longestLabel < len(label) {
 		idl.longestLabel = len(label)
 	}
-	idl.entries = append(idl.entries, newInpuFieldData(id, append(make([]string, 0), label), value, make([]string, 0), validator))
+	idl.entries.add(id, append(make([]string, 0), label), value, make([]string, 0), validator)
 }
 
-func (idl *InputDataWindow) Len() int {
-	return len(idl.entries)
+func (idl *InputDataWindow) Validate() {
+	idl.validateAll()
 }
 
 func (idl *InputDataWindow) Show(w fyne.Window) {
@@ -92,8 +138,8 @@ func (idl *InputDataWindow) Show(w fyne.Window) {
 	hb.Add(idl.okButton)
 	vc.Add(container.NewCenter(widget.NewLabel(idl.title)))
 	vc.Add(widget.NewSeparator())
-	for _, v := range idl.entries {
-		if len(v.Labels) == 1 {
+	for _, v := range idl.entries.Data() {
+		if len(v.Options) == 0 {
 			vc.Add(idl.createRow(v))
 		} else {
 			vc.Add(idl.createOption(v))
@@ -130,10 +176,6 @@ func (idl *InputDataWindow) close() {
 	}
 }
 
-func (ifd *InpuFieldData) isNotOption() bool {
-	return len(ifd.Options) == 0
-}
-
 func (idl *InputDataWindow) createOption(ifd *InpuFieldData) *fyne.Container {
 	e := widget.NewRadioGroup(ifd.Labels, func(s string) {
 		ifd.Value = ifd.Options[findIndexOf(ifd.Labels, s)]
@@ -159,7 +201,7 @@ func (idl *InputDataWindow) createRow(ifd *InpuFieldData) *fyne.Container {
 func (idl *InputDataWindow) validateAll() {
 	errStr := ""
 	field := ""
-	for _, v := range idl.entries {
+	for _, v := range idl.entries.Data() {
 		var err error = nil
 		err = v.Validator(v.Value)
 		if err != nil {

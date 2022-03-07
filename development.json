@@ -1,5 +1,11 @@
 
     {
+        "screen": {
+            "width": 943,
+            "height": 646,
+            "fullScreen": false,
+            "split": 0.223558
+        },
         "dialog": {
             "saveTimeOutMS": 3000,
             "copyTimeOutMS": 2500
@@ -25,16 +31,10 @@
         },
         "theme": "dark",
         "data": {
+            "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
             "noteIsCalled": "Note",
-            "presentationmode": true,
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset"
-        },
-        "screen": {
-            "split": 0.223558,
-            "width": 943,
-            "height": 495,
-            "fullScreen": false
+            "presentationmode": false,
+            "hintIsCalled": "Hint"
         }
     }

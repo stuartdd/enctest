@@ -323,6 +323,18 @@ func getMillisForDateTime(dt string) int64 {
 	return t.UnixMilli()
 }
 
+func CurrentDateString() string {
+	return time.Now().Format(TIME_FORMAT_TXN)
+}
+
+func ParseDateString(dts string) (time.Time, error) {
+	dt, err := time.Parse(TIME_FORMAT_TXN, dts)
+	if err != nil {
+		return time.Now(), err
+	}
+	return dt, nil
+}
+
 //
 // Update a json transaction node from a key and value
 // 		keys 'date', 'ref', 'val', 'type'

@@ -675,8 +675,10 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 		addNewHintItem()
 	case gui.ACTION_ADD_ASSET_ITEM:
 		addNewAssetItem()
-	case gui.ACTION_UPDATE_ASSET_VALUE:
-		updateAssetValue(dataPath, extra)
+	case gui.ACTION_UPDATE_TRANSACTION:
+		updateTransactionValue(dataPath, extra)
+	case gui.ACTION_ADD_TRANSACTION:
+		addTransactionValue(dataPath, extra)
 	case gui.ACTION_CLONE_FULL:
 		cloneHintFull()
 	case gui.ACTION_CLONE:
@@ -722,7 +724,58 @@ func addNewHint() {
 	}
 }
 
-func updateAssetValue(dataPath *parser.Path, extra string) {
+func addTransactionValue(dataPath *parser.Path, extra string) {
+	d := gui.NewInputDataWindow(
+		fmt.Sprintf("Add Transaction to account '%s'", extra),
+		"Update the data and press OK",
+		func() {}, // On Cancel
+		func(m *gui.InputData) { // On OK
+			jsonData.AddTransaction(
+				dataPath,
+				m.GetString(lib.IdTxDate, time.Now().Local().Format(lib.TIME_FORMAT_TXN)),
+				m.GetString(lib.IdTxRef, "ref"),
+				m.GetFloat(lib.IdTxVal, 0.1),
+				lib.TransactionTypeEnum(m.GetString(lib.IdTxType, string(lib.TX_TYPE_DEB))))
+		})
+
+	d.Add(lib.IdTxDate, "Date", lib.CurrentDateString(), func(s string) error {
+		_, e := lib.ParseDateString(s)
+		if e != nil {
+			return fmt.Errorf("Format:%s", lib.TIME_FORMAT_TXN)
+		} else {
+			return nil
+		}
+	})
+
+	d.Add(lib.IdTxRef, "Reference", "ref", func(s string) error {
+		if s == "" {
+			return fmt.Errorf("cannot be empty")
+		} else {
+			return nil
+		}
+	})
+
+	d.Add(lib.IdTxVal, "Amount", "0.1", func(s string) error {
+		v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+		if v <= 0.0 {
+			return fmt.Errorf("cannot be 0.0 or less")
+		}
+		if err != nil {
+			return fmt.Errorf("is not a valid amount")
+		}
+		return nil
+	})
+
+	d.AddOptions(lib.IdTxType, lib.TX_TYPE_LIST_LABLES, string(lib.TX_TYPE_DEB), lib.TX_TYPE_LIST_OPTIONS, func(s string) error {
+		return nil
+	})
+
+	d.Show(window)
+	go d.Validate()
+
+}
+
+func updateTransactionValue(dataPath *parser.Path, extra string) {
 	t := preferences.GetStringForPathWithFallback(gui.DataTransIsCalledPrefName, "Transaction")
 	data, err := parser.Find(jsonData.GetUserRoot(), dataPath)
 	if err != nil {
@@ -738,9 +791,9 @@ func updateAssetValue(dataPath *parser.Path, extra string) {
 		fmt.Sprintf("Update '%s' Reference '%s'", txd.DateTime(), txd.Ref()),
 		fmt.Sprintf("Update %s data and press OK", t),
 		func() {}, // On Cancel
-		func(m []*gui.InpuFieldData) { // On OK
+		func(m *gui.InputData) { // On OK
 			count := 0
-			for _, v := range m {
+			for _, v := range m.Data() {
 				count = count + lib.UpdateNodeFromTranactionData(tx, v.Id, v.Value, txd.TxType())
 			}
 			if count > 0 {

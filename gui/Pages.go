@@ -62,9 +62,8 @@ const (
 	ACTION_ADD_HINT           = "addhint"
 	ACTION_ADD_ASSET          = "addasset"
 	ACTION_ADD_ASSET_ITEM     = "addassetitem"
-	ACTION_SET_ASSET_VALUE    = "setassetvalues"
-	ACTION_UPDATE_ASSET_VALUE = "updateassetvalues"
-	ACTION_ADD_ASSET_VALUE    = "addassetvalues"
+	ACTION_ADD_TRANSACTION    = "addtransaction"
+	ACTION_UPDATE_TRANSACTION = "updatetransaction"
 	ACTION_ADD_HINT_ITEM      = "addhintitem"
 	ACTION_ERROR_DIALOG       = "errorDialog"
 )
@@ -230,9 +229,6 @@ func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 		actionFunc(ACTION_ADD_ASSET_ITEM, details.Uid, "")
 	}, statusDisplay, fmt.Sprintf("Add new Item to Asset: %s", details.Title)))
 
-	// cObj = append(cObj, NewMyIconButton("IB", theme.AccountIcon(), func() {
-	// 	actionFunc(ACTION_SET_ASSET_VALUE, details.Uid, "")
-	// }, statusDisplay, fmt.Sprintf("Set the initial value: %s", details.Title)))
 	cObj = append(cObj, widget.NewLabel(head))
 	return container.NewHBox(cObj...)
 }
@@ -277,7 +273,7 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 	cObj = append(cObj, widget.NewLabel(fmt.Sprintf("%s. List of %s(s). Current balance %0.2f", accData.AccountName, transAreCalled, accData.ClosingValue)))
 	hb := container.NewHBox()
 	add := NewMyIconButton("", theme.ContentAddIcon(), func() {
-		actionFunc(ACTION_UPDATE_ASSET_VALUE, &accData.Path, "")
+		actionFunc(ACTION_ADD_TRANSACTION, &accData.Path, accData.AccountName)
 	}, statusDisplay, fmt.Sprintf("Add a transaction '%s'", accData.AccountName))
 	hb.Add(add)
 	hb.Add(NewStringFieldRight("Date Time:", 19))
@@ -290,7 +286,7 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 		s := tx.Key()
 		hb := container.NewHBox()
 		rename := NewMyIconButton("", theme2.EditIcon(), func() {
-			actionFunc(ACTION_UPDATE_ASSET_VALUE, &accData.Path, s)
+			actionFunc(ACTION_UPDATE_TRANSACTION, &accData.Path, s)
 		}, statusDisplay, fmt.Sprintf("Upate '%s'", tx.Ref()))
 		hb.Add(rename)
 		hb.Add(NewStringFieldRight(tx.DateTime(), 19))
