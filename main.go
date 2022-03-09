@@ -19,6 +19,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -32,6 +33,7 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/stuartdd2/JsonParser4go/parser"
@@ -76,6 +78,7 @@ const (
 	saveDialogTimePrefName = "dialog.saveTimeOutMS"
 	getUrlPrefName         = "file.getDataUrl"
 	postUrlPrefName        = "file.postDataUrl"
+	importPathPrefName     = "import.path"
 	themeVarPrefName       = "theme"
 	logFileNamePrefName    = "log.fileName"
 	logActivePrefName      = "log.active"
@@ -111,6 +114,8 @@ var (
 	hasDataChanges     = false
 	releaseTheBeast    = make(chan int, 1)
 	dataIsNotLoadedYet = true
+
+	importFileFilter = []string{".csv", ".txt", ".go", ".mod"}
 )
 
 func abortWithUsage(message string) {
@@ -677,6 +682,8 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 		addNewAssetItem()
 	case gui.ACTION_UPDATE_TRANSACTION:
 		updateTransactionValue(dataPath, extra)
+	case gui.ACTION_IMPORT_TRANSACTION:
+		importTransactions(dataPath, extra)
 	case gui.ACTION_ADD_TRANSACTION:
 		addTransactionValue(dataPath, extra)
 	case gui.ACTION_CLONE_FULL:
@@ -772,7 +779,34 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 
 	d.Show(window)
 	go d.Validate()
+}
 
+func importTransactions(dataPath *parser.Path, extra string) {
+	// t := preferences.GetStringForPathWithFallback(gui.DataTransIsCalledPrefName, "Transaction")
+	_, err := parser.Find(jsonData.GetUserRoot(), dataPath)
+	if err != nil {
+		return
+	}
+	fod := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
+		if err == nil {
+			p := uc.URI().Path()
+			p = p[0 : len(p)-len(uc.URI().Name())]
+			if len(p) >= 2 {
+				preferences.PutString(importPathPrefName, p)
+			}
+			b, err := io.ReadAll(uc)
+			if err == nil {
+				fmt.Printf("Selected p '%s', '%s'", uc.URI().Path(), b)
+			}
+		}
+	}, window)
+	uri, err := storage.ListerForURI(storage.NewFileURI(preferences.GetStringForPathWithFallback(importPathPrefName, "/")))
+	if err != nil {
+		uri, _ = storage.ListerForURI(storage.NewFileURI("/"))
+	}
+	fod.SetLocation(uri)
+	fod.SetFilter(storage.NewExtensionFileFilter(importFileFilter))
+	fod.Show()
 }
 
 func updateTransactionValue(dataPath *parser.Path, extra string) {
@@ -828,6 +862,7 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 	}
 
 	d.Show(window)
+	go d.Validate()
 }
 
 /**

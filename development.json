@@ -1,10 +1,10 @@
 
     {
         "screen": {
-            "width": 943,
+            "split": 0.223558,
+            "width": 1261,
             "height": 646,
-            "fullScreen": false,
-            "split": 0.223558
+            "fullScreen": false
         },
         "dialog": {
             "saveTimeOutMS": 3000,
@@ -20,21 +20,24 @@
             "case": false
         },
         "log": {
+            "prefix": "INFO",
             "fileName": "enctest.log",
-            "active": true,
-            "prefix": "INFO"
+            "active": true
         },
         "file": {
             "datafile": "libtest/TestDataTypes.json",
             "getDataUrl": "",
             "postDataUrl": ""
         },
+        "import": {
+            "path": "/home/stuart/"
+        },
         "theme": "dark",
         "data": {
+            "presentationmode": false,
+            "hintIsCalled": "Hint",
             "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
-            "noteIsCalled": "Note",
-            "presentationmode": false,
-            "hintIsCalled": "Hint"
+            "noteIsCalled": "Note"
         }
     }

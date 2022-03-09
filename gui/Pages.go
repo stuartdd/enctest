@@ -64,6 +64,7 @@ const (
 	ACTION_ADD_ASSET_ITEM     = "addassetitem"
 	ACTION_ADD_TRANSACTION    = "addtransaction"
 	ACTION_UPDATE_TRANSACTION = "updatetransaction"
+	ACTION_IMPORT_TRANSACTION = "importtransaction"
 	ACTION_ADD_HINT_ITEM      = "addhintitem"
 	ACTION_ERROR_DIALOG       = "errorDialog"
 )
@@ -270,7 +271,13 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 			refMax = len(tx.Ref())
 		}
 	}
-	cObj = append(cObj, widget.NewLabel(fmt.Sprintf("%s. List of %s(s). Current balance %0.2f", accData.AccountName, transAreCalled, accData.ClosingValue)))
+	hbTop := container.NewHBox()
+	imp := NewMyIconButton("", theme.StorageIcon(), func() {
+		actionFunc(ACTION_IMPORT_TRANSACTION, accData.Path.PathParent(), accData.AccountName)
+	}, statusDisplay, "Import from CSV file")
+	hbTop.Add(imp)
+	hbTop.Add(widget.NewLabel(fmt.Sprintf("%s. List of %s(s). Current balance %0.2f", accData.AccountName, transAreCalled, accData.ClosingValue)))
+	cObj = append(cObj, hbTop)
 	hb := container.NewHBox()
 	add := NewMyIconButton("", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_TRANSACTION, &accData.Path, accData.AccountName)
