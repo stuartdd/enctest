@@ -11,7 +11,7 @@ import (
 )
 
 func TestJsonDataRename(t *testing.T) {
-	jd := dataLoad(t, "TestDataTypes.json")
+	jd := dataLoad(t, "TestDataTypesGold.json")
 	testNavIndex(t, jd, "", "[Stuart UserA UserB]")
 	testNavIndex(t, jd, "UserA", "[UserA|notes UserA|pwHints]")
 	testNavIndex(t, jd, "UserA|pwHints", "[UserA|pwHints|MyApp UserA|pwHints|PrincipalityA]")
@@ -35,10 +35,10 @@ func TestJsonDataRename(t *testing.T) {
 	testNavIndexNot(t, jd, "UserA")
 	testNavIndexNot(t, jd, "UserA|pwHints")
 	testNavIndex(t, jd, "UserB", "[UserB|notes UserB|pwHints]")
-	testNavIndex(t, jd, "UserB|pwHints", "[UserB|pwHints|GMail.B UserB|pwHints|Principality.B]")
+	testNavIndex(t, jd, "UserB|pwHints", "[UserB|pwHints|GMail B UserB|pwHints|Principality B]")
 }
 func TestJsonDataRemove(t *testing.T) {
-	jd := dataLoad(t, "TestDataTypes.json")
+	jd := dataLoad(t, "TestDataTypesGold.json")
 	testNavIndex(t, jd, "UserA", "[UserA|notes UserA|pwHints]")
 	testNavIndex(t, jd, "UserA|pwHints", "[UserA|pwHints|MyApp UserA|pwHints|PrincipalityA]")
 	jd.Remove(parser.NewBarPath("UserA"), 1)
@@ -48,7 +48,7 @@ func TestJsonDataRemove(t *testing.T) {
 	testNavIndexNot(t, jd, "UserA")
 	testNavIndexNot(t, jd, "UserA|pwHints")
 	testNavIndex(t, jd, "UserB", "[UserB|notes UserB|pwHints]")
-	testNavIndex(t, jd, "UserB|pwHints", "[UserB|pwHints|GMail.B UserB|pwHints|Principality.B]")
+	testNavIndex(t, jd, "UserB|pwHints", "[UserB|pwHints|GMail B UserB|pwHints|Principality B]")
 	jd.Remove(parser.NewBarPath("UserB"), 1)
 	testNavIndex(t, jd, "", "[Stuart]")
 	testNavIndex(t, jd, "Stuart", "[Stuart|notes Stuart|pwHints]")
@@ -63,20 +63,20 @@ func TestJsonDataRemove(t *testing.T) {
 	}
 }
 func TestJsonDataLoad(t *testing.T) {
-	jd := dataLoad(t, "TestDataTypes.json")
+	jd := dataLoad(t, "TestDataTypesGold.json")
 	testNavIndex(t, jd, "", "[Stuart UserA UserB]")
 	testNavIndex(t, jd, "Stuart", "[Stuart|notes Stuart|pwHints]")
 	testNavIndex(t, jd, "Stuart|pwHints", "[Stuart|pwHints|application]")
 	testNavIndex(t, jd, "UserA", "[UserA|notes UserA|pwHints]")
 	testNavIndex(t, jd, "UserA|pwHints", "[UserA|pwHints|MyApp UserA|pwHints|PrincipalityA]")
 	testNavIndex(t, jd, "UserB", "[UserB|notes UserB|pwHints]")
-	testNavIndex(t, jd, "UserB|pwHints", "[UserB|pwHints|GMail.B UserB|pwHints|Principality.B]")
+	testNavIndex(t, jd, "UserB|pwHints", "[UserB|pwHints|GMail B UserB|pwHints|Principality B]")
 }
 
 func dataLoad(t *testing.T, filename string) *lib.JsonData {
-	dat, err := os.ReadFile("TestDataTypes.json")
+	dat, err := os.ReadFile(filename)
 	if err != nil {
-		t.Errorf("Failed to read file TestDataTypes.json. Error %s\n", err.Error())
+		t.Errorf("Failed to read file %s. Error %s\n", filename, err.Error())
 	}
 	jd, err := lib.NewJsonData(dat, updateMap)
 	if err != nil {

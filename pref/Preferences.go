@@ -27,7 +27,7 @@ type PrefData struct {
 	fileName        string
 	data            *parser.JsonObject
 	cache           map[string]*parser.NodeI
-	changeListeners map[string]func(string, string, string)
+	changeListeners map[string]func(*parser.Path, string, string)
 }
 
 func NewPrefData(fileName string) (*PrefData, error) {
@@ -43,11 +43,11 @@ func NewPrefData(fileName string) (*PrefData, error) {
 		return nil, fmt.Errorf("error reading '%s'. Config data root node MUST be a JsonObject type", fileName)
 	}
 	c := make(map[string]*parser.NodeI)
-	cl := make(map[string]func(string, string, string))
+	cl := make(map[string]func(*parser.Path, string, string))
 	return &PrefData{fileName: fileName, data: data.(*parser.JsonObject), cache: c, changeListeners: cl}, nil
 }
 
-func (p *PrefData) AddChangeListener(cl func(string, string, string), prefix string) {
+func (p *PrefData) AddChangeListener(cl func(*parser.Path, string, string), prefix string) {
 	p.changeListeners[prefix] = cl
 }
 
@@ -55,7 +55,7 @@ func (p *PrefData) RemoveChangeListener(key string) {
 	delete(p.changeListeners, key)
 }
 
-func (p *PrefData) callChangeListeners(path, value string) {
+func (p *PrefData) callChangeListeners(path *parser.Path, value string) {
 	for prefix, fn := range p.changeListeners {
 		if fn != nil {
 			fn(path, value, prefix)
@@ -79,8 +79,8 @@ func (p *PrefData) String() string {
 	return string(p.data.JsonValueIndented(4))
 }
 
-func (p *PrefData) AppendStringList(path, value string, maxLen int) error {
-	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewDotPath(path), parser.NT_LIST)
+func (p *PrefData) AppendStringList(path *parser.Path, value string, maxLen int) error {
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_LIST)
 	if err != nil {
 		return err
 	}
@@ -98,72 +98,72 @@ func (p *PrefData) AppendStringList(path, value string, maxLen int) error {
 	if nL.Len() > maxLen {
 		nL.Remove(nL.GetNodeAt(0))
 	}
-	p.cache[path] = &n
+	p.cache[path.String()] = &n
 	p.callChangeListeners(path, value)
 	return nil
 }
 
-func (p *PrefData) PutString(path, value string) error {
-	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewDotPath(path), parser.NT_STRING)
+func (p *PrefData) PutString(path *parser.Path, value string) error {
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_STRING)
 	if err != nil {
 		return err
 	}
 	nS := n.(*parser.JsonString)
 	if nS.GetValue() != value {
 		nS.SetValue(value)
-		p.cache[path] = &n
+		p.cache[path.String()] = &n
 		p.callChangeListeners(path, value)
 	}
 	return nil
 }
 
-func (p *PrefData) PutBool(path string, value bool) error {
-	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewDotPath(path), parser.NT_BOOL)
+func (p *PrefData) PutBool(path *parser.Path, value bool) error {
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_BOOL)
 	if err != nil {
 		return err
 	}
 	nB := n.(*parser.JsonBool)
 	if nB.GetValue() != value {
 		nB.SetValue(value)
-		p.cache[path] = &n
+		p.cache[path.String()] = &n
 		p.callChangeListeners(path, fmt.Sprintf("%t", value))
 	}
 	return nil
 }
 
-func (p *PrefData) PutFloat32(path string, value float32) error {
+func (p *PrefData) PutFloat32(path *parser.Path, value float32) error {
 	return p.PutFloat64(path, float64(value))
 }
 
-func (p *PrefData) PutFloat64(path string, value float64) error {
-	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewDotPath(path), parser.NT_NUMBER)
+func (p *PrefData) PutFloat64(path *parser.Path, value float64) error {
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_NUMBER)
 	if err != nil {
 		return err
 	}
 	nF := n.(*parser.JsonNumber)
 	if nF.GetValue() != value {
 		nF.SetValue(value)
-		p.cache[path] = &n
+		p.cache[path.String()] = &n
 		p.callChangeListeners(path, fmt.Sprintf("%f", value))
 	}
 	return nil
 }
 
-func (p *PrefData) PutInt64(path string, value int64) error {
-	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewDotPath(path), parser.NT_NUMBER)
+func (p *PrefData) PutInt64(path *parser.Path, value int64) error {
+	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_NUMBER)
 	if err != nil {
 		return err
 	}
 	nI := n.(*parser.JsonNumber)
 	if nI.GetIntValue() != value {
 		(n.(*parser.JsonNumber)).SetValue(float64(value))
-		p.cache[path] = &n
+		p.cache[path.String()] = &n
 		p.callChangeListeners(path, fmt.Sprintf("%d", value))
 	}
 	return nil
 }
 
-func (p *PrefData) GetBoolWithFallback(path string, fb bool) bool {
+func (p *PrefData) GetBoolWithFallback(path *parser.Path, fb bool) bool {
 	n, ok := p.getNodeForPath(path, true)
 	if ok {
 		if n.GetNodeType() == parser.NT_BOOL {
@@ -174,7 +174,7 @@ func (p *PrefData) GetBoolWithFallback(path string, fb bool) bool {
 	return fb
 }
 
-func (p *PrefData) GetFloat64WithFallback(path string, fb float64) float64 {
+func (p *PrefData) GetFloat64WithFallback(path *parser.Path, fb float64) float64 {
 	n, ok := p.getNodeForPath(path, true)
 	if ok {
 		if n.GetNodeType() == parser.NT_NUMBER {
@@ -185,7 +185,7 @@ func (p *PrefData) GetFloat64WithFallback(path string, fb float64) float64 {
 	return fb
 }
 
-func (p *PrefData) GetInt64WithFallback(path string, fb int64) int64 {
+func (p *PrefData) GetInt64WithFallback(path *parser.Path, fb int64) int64 {
 	n, ok := p.getNodeForPath(path, true)
 	if ok {
 		if n.GetNodeType() == parser.NT_NUMBER {
@@ -196,11 +196,11 @@ func (p *PrefData) GetInt64WithFallback(path string, fb int64) int64 {
 	return fb
 }
 
-func (p *PrefData) GetFloat32WithFallback(path string, fb float32) float32 {
+func (p *PrefData) GetFloat32WithFallback(path *parser.Path, fb float32) float32 {
 	return float32(p.GetFloat64WithFallback(path, float64(fb)))
 }
 
-func (p *PrefData) GetFloat32WithFallbackAndMin(path string, fb, min float32) float32 {
+func (p *PrefData) GetFloat32WithFallbackAndMin(path *parser.Path, fb, min float32) float32 {
 	v := float32(p.GetFloat64WithFallback(path, float64(fb)))
 	if v < min {
 		return min
@@ -208,7 +208,7 @@ func (p *PrefData) GetFloat32WithFallbackAndMin(path string, fb, min float32) fl
 	return v
 }
 
-func (p *PrefData) GetFloat64WithFallbackAndMin(path string, fb, min float64) float64 {
+func (p *PrefData) GetFloat64WithFallbackAndMin(path *parser.Path, fb, min float64) float64 {
 	v := p.GetFloat64WithFallback(path, fb)
 	if v < min {
 		return min
@@ -216,7 +216,7 @@ func (p *PrefData) GetFloat64WithFallbackAndMin(path string, fb, min float64) fl
 	return v
 }
 
-func (p *PrefData) GetStringForPathWithFallback(path, fb string) string {
+func (p *PrefData) GetStringForPathWithFallback(path *parser.Path, fb string) string {
 	n, ok := p.getNodeForPath(path, true)
 	if ok {
 		if n.GetNodeType() == parser.NT_STRING {
@@ -227,11 +227,11 @@ func (p *PrefData) GetStringForPathWithFallback(path, fb string) string {
 	return fb
 }
 
-func (p *PrefData) GetDataForPath(path string) (parser.NodeI, bool) {
+func (p *PrefData) GetDataForPath(path *parser.Path) (parser.NodeI, bool) {
 	return p.getNodeForPath(path, true)
 }
 
-func (p *PrefData) GetStringListWithFallback(path string, fb []string) []string {
+func (p *PrefData) GetStringListWithFallback(path *parser.Path, fb []string) []string {
 	list := p.GetStringList(path)
 	if len(list) == 0 || (len(list) == 1 && list[0] == "") {
 		for _, s := range fb {
@@ -242,7 +242,7 @@ func (p *PrefData) GetStringListWithFallback(path string, fb []string) []string 
 	return list
 }
 
-func (p *PrefData) GetStringList(path string) []string {
+func (p *PrefData) GetStringList(path *parser.Path) []string {
 	n, found := p.getNodeForPath(path, false)
 	if !found {
 		list := make([]string, 1)
@@ -272,17 +272,17 @@ func (p *PrefData) GetStringList(path string) []string {
 	return list
 }
 
-func (p *PrefData) getNodeForPath(path string, cache bool) (parser.NodeI, bool) {
+func (p *PrefData) getNodeForPath(path *parser.Path, cache bool) (parser.NodeI, bool) {
 	if cache {
-		cached, ok := p.cache[path]
+		cached, ok := p.cache[path.String()]
 		if ok {
 			return *cached, true
 		}
 	}
-	n, err := parser.Find(p.data, parser.NewDotPath(path))
+	n, err := parser.Find(p.data, path)
 	if err != nil || n == nil {
 		return nil, false
 	}
-	p.cache[path] = &n
+	p.cache[path.String()] = &n
 	return n, true
 }

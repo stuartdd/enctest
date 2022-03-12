@@ -15,7 +15,7 @@ replace stuartdd.com/pref => ./pref
 require (
 	fyne.io/fyne/v2 v2.1.2-rc2.0.20220205054620-919d8dd6749e
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
-	github.com/stuartdd2/JsonParser4go/parser v0.0.0-20220216184436-59195ed65cbd
+	github.com/stuartdd2/JsonParser4go/parser v0.0.0-20220312220320-eee370f73dce
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	stuartdd.com/gui v0.0.0-00010101000000-000000000000
 	stuartdd.com/lib v0.0.0-00010101000000-000000000000

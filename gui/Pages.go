@@ -37,15 +37,10 @@ import (
 )
 
 const (
-	welcomeTitle              = "Welcome"
-	appDesc                   = "Welcome to Valt"
-	idNotes                   = "notes"
-	idPwDetails               = "pwHints"
-	DataPresModePrefName      = "data.presentationmode"
-	DataHintIsCalledPrefName  = "data.hintIsCalled"
-	DataNoteIsCalledPrefName  = "data.noteIsCalled"
-	DataTransIsCalledPrefName = "data.transIsCalled"
-	DataAssetIsCalledPrefName = "data.assetIsCalled"
+	welcomeTitle = "Welcome"
+	appDesc      = "Welcome to Valt"
+	idNotes      = "notes"
+	idPwDetails  = "pwHints"
 
 	PATH_SEP = "|"
 
@@ -71,8 +66,13 @@ const (
 )
 
 var (
-	preferedOrderReversed = []string{"notes", "positional", "post", "pre", "link", "userId"}
-	EditEntryListCache    = NewEditEntryList()
+	preferedOrderReversed     = []string{"notes", "positional", "post", "pre", "link", "userId"}
+	EditEntryListCache        = NewEditEntryList()
+	DataPresModePrefName      = parser.NewDotPath("data.presentationmode")
+	DataHintIsCalledPrefName  = parser.NewDotPath("data.hintIsCalled")
+	DataNoteIsCalledPrefName  = parser.NewDotPath("data.noteIsCalled")
+	DataTransIsCalledPrefName = parser.NewDotPath("data.transIsCalled")
+	DataAssetIsCalledPrefName = parser.NewDotPath("data.assetIsCalled")
 )
 
 func NewModalEntryDialog(w fyne.Window, heading, txt string, isNote bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {

@@ -71,27 +71,6 @@ const (
 
 	fallbackPreferencesFile = "config.json"
 	fallbackDataFile        = "data.json"
-
-	dataFilePrefName          = "file.datafile"
-	copyDialogTimePrefName    = "dialog.copyTimeOutMS"
-	linkDialogTimePrefName    = "dialog.linkTimeOutMS"
-	saveDialogTimePrefName    = "dialog.saveTimeOutMS"
-	errorDialogTimePrefName   = "dialog.errorTimeOutMS"
-	warningDialogTimePrefName = "dialog.warningTimeOutMS"
-	getUrlPrefName            = "file.getDataUrl"
-	postUrlPrefName           = "file.postDataUrl"
-	importPathPrefName        = "import.path"
-	importFilterPrefName      = "import.filter"
-	themeVarPrefName          = "theme"
-	logFileNamePrefName       = "log.fileName"
-	logActivePrefName         = "log.active"
-	logPrefixPrefName         = "log.prefix"
-	screenWidthPrefName       = "screen.width"
-	screenHeightPrefName      = "screen.height"
-	screenFullPrefName        = "screen.fullScreen"
-	screenSplitPrefName       = "screen.split"
-	searchLastGoodPrefName    = "search.lastGoodList"
-	searchCasePrefName        = "search.case"
 )
 
 var (
@@ -119,6 +98,27 @@ var (
 	dataIsNotLoadedYet = true
 
 	importFileFilter = []string{".csv", ".txt", ".go", ".mod"}
+
+	dataFilePrefName          = parser.NewDotPath("file.datafile")
+	copyDialogTimePrefName    = parser.NewDotPath("dialog.copyTimeOutMS")
+	linkDialogTimePrefName    = parser.NewDotPath("dialog.linkTimeOutMS")
+	saveDialogTimePrefName    = parser.NewDotPath("dialog.saveTimeOutMS")
+	errorDialogTimePrefName   = parser.NewDotPath("dialog.errorTimeOutMS")
+	warningDialogTimePrefName = parser.NewDotPath("dialog.warningTimeOutMS")
+	getUrlPrefName            = parser.NewDotPath("file.getDataUrl")
+	postUrlPrefName           = parser.NewDotPath("file.postDataUrl")
+	importPathPrefName        = parser.NewDotPath("import.path")
+	importFilterPrefName      = parser.NewDotPath("import.filter")
+	themeVarPrefName          = parser.NewDotPath("theme")
+	logFileNamePrefName       = parser.NewDotPath("log.fileName")
+	logActivePrefName         = parser.NewDotPath("log.active")
+	logPrefixPrefName         = parser.NewDotPath("log.prefix")
+	screenWidthPrefName       = parser.NewDotPath("screen.width")
+	screenHeightPrefName      = parser.NewDotPath("screen.height")
+	screenFullPrefName        = parser.NewDotPath("screen.fullScreen")
+	screenSplitPrefName       = parser.NewDotPath("screen.split")
+	searchLastGoodPrefName    = parser.NewDotPath("search.lastGoodList")
+	searchCasePrefName        = parser.NewDotPath("search.case")
 )
 
 func abortWithUsage(message string) {
@@ -618,7 +618,7 @@ func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	return container.NewVBox(widget.NewSeparator(), c)
 }
 
-func dataPreferencesChanged(path, value, filter string) {
+func dataPreferencesChanged(path *parser.Path, value, filter string) {
 	futureReleaseTheBeast(100, MAIN_THREAD_RESELECT)
 }
 

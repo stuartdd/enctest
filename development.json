@@ -1,5 +1,15 @@
 
     {
+        "screen": {
+            "width": 1243.333374,
+            "height": 635.714294,
+            "fullScreen": false,
+            "split": 0.223558
+        },
+        "dialog": {
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
+        },
         "search": {
             "lastGoodList": [
                 "notes",
@@ -35,15 +45,5 @@
             "noteIsCalled": "Note",
             "presentationmode": false,
             "hintIsCalled": "Hint"
-        },
-        "screen": {
-            "width": 1245.833252,
-            "height": 547.916626,
-            "fullScreen": false,
-            "split": 0.223558
-        },
-        "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
         }
     }

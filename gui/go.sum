@@ -254,9 +254,8 @@ github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/stuartdd2/JsonParser4go/parser v0.0.0-20211126161907-dbcc82483018/go.mod h1:iZz2uQpL/RYspzC475fh2quOw9RuM6snxRuqH3s95Rw=
-github.com/stuartdd2/JsonParser4go/parser v0.0.0-20220216184436-59195ed65cbd h1:W3msVe5BlH6fT0dgEofqjdUx2RROXC8jgEecSNwkEn4=
-github.com/stuartdd2/JsonParser4go/parser v0.0.0-20220216184436-59195ed65cbd/go.mod h1:iZz2uQpL/RYspzC475fh2quOw9RuM6snxRuqH3s95Rw=
+github.com/stuartdd2/JsonParser4go/parser v0.0.0-20220312220320-eee370f73dce h1:iztdJ27CbRoBtnWX1zM1RwU9kIx6vrVFvLfmSbeqQ5Y=
+github.com/stuartdd2/JsonParser4go/parser v0.0.0-20220312220320-eee370f73dce/go.mod h1:iZz2uQpL/RYspzC475fh2quOw9RuM6snxRuqH3s95Rw=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
