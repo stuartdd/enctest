@@ -67,6 +67,7 @@ const (
 	ACTION_IMPORT_TRANSACTION = "importtransaction"
 	ACTION_ADD_HINT_ITEM      = "addhintitem"
 	ACTION_ERROR_DIALOG       = "errorDialog"
+	ACTION_WARN_DIALOG        = "warningDialog"
 )
 
 var (

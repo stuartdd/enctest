@@ -72,23 +72,26 @@ const (
 	fallbackPreferencesFile = "config.json"
 	fallbackDataFile        = "data.json"
 
-	dataFilePrefName       = "file.datafile"
-	copyDialogTimePrefName = "dialog.copyTimeOutMS"
-	linkDialogTimePrefName = "dialog.linkTimeOutMS"
-	saveDialogTimePrefName = "dialog.saveTimeOutMS"
-	getUrlPrefName         = "file.getDataUrl"
-	postUrlPrefName        = "file.postDataUrl"
-	importPathPrefName     = "import.path"
-	themeVarPrefName       = "theme"
-	logFileNamePrefName    = "log.fileName"
-	logActivePrefName      = "log.active"
-	logPrefixPrefName      = "log.prefix"
-	screenWidthPrefName    = "screen.width"
-	screenHeightPrefName   = "screen.height"
-	screenFullPrefName     = "screen.fullScreen"
-	screenSplitPrefName    = "screen.split"
-	searchLastGoodPrefName = "search.lastGoodList"
-	searchCasePrefName     = "search.case"
+	dataFilePrefName          = "file.datafile"
+	copyDialogTimePrefName    = "dialog.copyTimeOutMS"
+	linkDialogTimePrefName    = "dialog.linkTimeOutMS"
+	saveDialogTimePrefName    = "dialog.saveTimeOutMS"
+	errorDialogTimePrefName   = "dialog.errorTimeOutMS"
+	warningDialogTimePrefName = "dialog.warningTimeOutMS"
+	getUrlPrefName            = "file.getDataUrl"
+	postUrlPrefName           = "file.postDataUrl"
+	importPathPrefName        = "import.path"
+	importFilterPrefName      = "import.filter"
+	themeVarPrefName          = "theme"
+	logFileNamePrefName       = "log.fileName"
+	logActivePrefName         = "log.active"
+	logPrefixPrefName         = "log.prefix"
+	screenWidthPrefName       = "screen.width"
+	screenHeightPrefName      = "screen.height"
+	screenFullPrefName        = "screen.fullScreen"
+	screenSplitPrefName       = "screen.split"
+	searchLastGoodPrefName    = "search.lastGoodList"
+	searchCasePrefName        = "search.case"
 )
 
 var (
@@ -416,6 +419,10 @@ func timedNotification(msDelay int64, title, message string) {
 	}()
 }
 
+func timedError(message string) {
+	timedNotification(5000, "Error", message)
+}
+
 func logInformationDialogWithPrefix(prefix, title, message string) dialog.Dialog {
 	if logData.IsLogging() {
 		logData.Log(fmt.Sprintf("%s: Title:'%s' Message:'%s'", prefix, title, message))
@@ -695,7 +702,9 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 	case gui.ACTION_COPIED:
 		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 1500), "Copied item text to clipboard", dataPath.String())
 	case gui.ACTION_ERROR_DIALOG:
-		timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 2000), fmt.Sprintf("Error for data at: %s", dataPath.String()), extra)
+		timedNotification(preferences.GetInt64WithFallback(errorDialogTimePrefName, 2000), fmt.Sprintf("Error for data at: %s", dataPath.String()), extra)
+	case gui.ACTION_WARN_DIALOG:
+		timedNotification(preferences.GetInt64WithFallback(errorDialogTimePrefName, 2000), "Warning", extra)
 	case gui.ACTION_LOG:
 		log(gui.LogCleanString(extra, 100))
 	}
@@ -781,22 +790,37 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 	go d.Validate()
 }
 
+func importCSVTransactions(dataPath *parser.Path, fileName string, content []byte) error {
+	fmt.Printf("Selected p '%s', '%s'", fileName, content)
+	return fmt.Errorf("error !")
+}
+
 func importTransactions(dataPath *parser.Path, extra string) {
 	// t := preferences.GetStringForPathWithFallback(gui.DataTransIsCalledPrefName, "Transaction")
 	_, err := parser.Find(jsonData.GetUserRoot(), dataPath)
 	if err != nil {
+		timedError(fmt.Sprintf("canot find %s", dataPath))
 		return
 	}
 	fod := dialog.NewFileOpen(func(uc fyne.URIReadCloser, err error) {
 		if err == nil {
-			p := uc.URI().Path()
-			p = p[0 : len(p)-len(uc.URI().Name())]
-			if len(p) >= 2 {
-				preferences.PutString(importPathPrefName, p)
-			}
-			b, err := io.ReadAll(uc)
-			if err == nil {
-				fmt.Printf("Selected p '%s', '%s'", uc.URI().Path(), b)
+			if uc == nil {
+				timedNotification(2000, "Warning", "No file selected")
+			} else {
+				p := uc.URI().Path()
+				p = p[0 : len(p)-len(uc.URI().Name())]
+				if len(p) >= 2 {
+					preferences.PutString(importPathPrefName, p)
+				}
+				b, err := io.ReadAll(uc)
+				if err == nil {
+					err := importCSVTransactions(dataPath, uc.URI().Path(), b)
+					if err != nil {
+						timedError(fmt.Sprintf("Failed to import CSV file %s\nError: %s", uc.URI().Path(), err))
+					}
+				} else {
+					timedError(fmt.Sprintf("Failed to read file %s\nError: %s", uc.URI().Path(), err))
+				}
 			}
 		}
 	}, window)
@@ -805,7 +829,8 @@ func importTransactions(dataPath *parser.Path, extra string) {
 		uri, _ = storage.ListerForURI(storage.NewFileURI("/"))
 	}
 	fod.SetLocation(uri)
-	fod.SetFilter(storage.NewExtensionFileFilter(importFileFilter))
+	fod.SetFilter(storage.NewExtensionFileFilter(preferences.GetStringListWithFallback(importFilterPrefName, importFileFilter)))
+	fod.Resize(fyne.NewSize(window.Canvas().Size().Width*0.8, window.Canvas().Size().Height*0.8))
 	fod.Show()
 }
 
@@ -1083,7 +1108,7 @@ func search(s string) {
 
 	// Use the sorted keys to populate the result window
 	if searchWindow.Len() > 0 {
-		preferences.PutStringList(searchLastGoodPrefName, s, 10)
+		preferences.AppendStringList(searchLastGoodPrefName, s, 10)
 		defer futureReleaseTheBeast(200, MAIN_THREAD_RELOAD_TREE)
 		searchWindow.Show(500, 350, s)
 	} else {

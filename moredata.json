@@ -1,20 +1,25 @@
 
     {
+        "dialog": {
+            "saveTimeOutMS": 1000,
+            "copyTimeOutMS": 2500
+        },
         "data": {
+            "assetIsCalled": "Asset",
             "hintIsCalled": "DVD",
             "noteIsCalled": "Note",
-            "presentationmode": false
+            "presentationmode": true
         },
         "log": {
-            "prefix": "INFO",
             "active": false,
-            "fileName": "enctest.log"
+            "fileName": "enctest.log",
+            "prefix": "INFO"
         },
         "screen": {
-            "width": 1378.333252,
-            "height": 551.25,
             "split": 0.2,
-            "fullScreen": false
+            "fullScreen": false,
+            "width": 1377.083252,
+            "height": 549.583313
         },
         "theme": "dark",
         "file": {
@@ -24,9 +29,5 @@
         },
         "search": {
             "case": true
-        },
-        "dialog": {
-            "saveTimeOutMS": 1000,
-            "copyTimeOutMS": 2500
         }
     }

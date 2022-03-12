@@ -1,15 +1,5 @@
 
     {
-        "screen": {
-            "split": 0.223558,
-            "width": 1261,
-            "height": 646,
-            "fullScreen": false
-        },
-        "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
-        },
         "search": {
             "lastGoodList": [
                 "notes",
@@ -25,19 +15,35 @@
             "active": true
         },
         "file": {
+            "postDataUrl": "",
             "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": "",
-            "postDataUrl": ""
+            "getDataUrl": ""
         },
         "import": {
-            "path": "/home/stuart/"
+            "filter": [
+                ".csv",
+                ".txt",
+                ".go",
+                ".mod"
+            ],
+            "path": "/home/stuart/git/golang/enctest/gui/"
         },
         "theme": "dark",
         "data": {
-            "presentationmode": false,
-            "hintIsCalled": "Hint",
             "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
-            "noteIsCalled": "Note"
+            "noteIsCalled": "Note",
+            "presentationmode": false,
+            "hintIsCalled": "Hint"
+        },
+        "screen": {
+            "width": 1245.833252,
+            "height": 547.916626,
+            "fullScreen": false,
+            "split": 0.223558
+        },
+        "dialog": {
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
         }
     }

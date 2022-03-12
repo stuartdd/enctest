@@ -79,7 +79,7 @@ func (p *PrefData) String() string {
 	return string(p.data.JsonValueIndented(4))
 }
 
-func (p *PrefData) PutStringList(path, value string, maxLen int) error {
+func (p *PrefData) AppendStringList(path, value string, maxLen int) error {
 	n, err := parser.CreateAndReturnNodeAtPath(p.data, parser.NewDotPath(path), parser.NT_LIST)
 	if err != nil {
 		return err
@@ -229,6 +229,17 @@ func (p *PrefData) GetStringForPathWithFallback(path, fb string) string {
 
 func (p *PrefData) GetDataForPath(path string) (parser.NodeI, bool) {
 	return p.getNodeForPath(path, true)
+}
+
+func (p *PrefData) GetStringListWithFallback(path string, fb []string) []string {
+	list := p.GetStringList(path)
+	if len(list) == 0 || (len(list) == 1 && list[0] == "") {
+		for _, s := range fb {
+			p.AppendStringList(path, s, len(fb))
+		}
+		return fb
+	}
+	return list
 }
 
 func (p *PrefData) GetStringList(path string) []string {
