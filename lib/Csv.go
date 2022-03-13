@@ -2,14 +2,34 @@ package lib
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strings"
 )
 
-func ParseCsv(fileName string, skipFirstLine bool, dtFormat string, mapList []string) ([]map[string]string, error) {
-	d := make([]map[string]string, 0)
-
-	return d, nil
+func ParseFileToMap(fileName string, skipRowZero bool, names []string) ([]map[string]string, error) {
+	m := make([]map[string]string, 0)
+	err := ParseFile(fileName, func(row, col int, s string) error {
+		if skipRowZero {
+			if row == 0 {
+				return nil
+			} else {
+				row--
+			}
+		}
+		if col >= len(names) {
+			return fmt.Errorf("names list. Index out of bounds index[%d]. Range is (0..%d) ", col, len(names)-1)
+		}
+		cName := strings.TrimSpace(names[col])
+		if cName != "" {
+			if len(m) < (row + 1) {
+				m = append(m, make(map[string]string))
+			}
+			m[row][cName] = s
+		}
+		return nil
+	})
+	return m, err
 }
 
 func ParseFile(fileName string, call func(int, int, string) error) error {
@@ -25,7 +45,7 @@ func ParseFile(fileName string, call func(int, int, string) error) error {
 		s := scanner.Text()
 		s = strings.TrimSpace(s)
 		if len(s) > 1 {
-			err := ParseLine(fileName, row, s, call)
+			err := parseLine(fileName, row, s, call)
 			if err != nil {
 				return err
 			}
@@ -39,7 +59,7 @@ func ParseFile(fileName string, call func(int, int, string) error) error {
 	return nil
 }
 
-func ParseLine(fileName string, row int, line string, call func(int, int, string) error) error {
+func parseLine(fileName string, row int, line string, call func(int, int, string) error) error {
 	col := 0
 	var sb strings.Builder
 	for _, c := range line {
@@ -53,6 +73,10 @@ func ParseLine(fileName string, row int, line string, call func(int, int, string
 		} else {
 			sb.WriteRune(c)
 		}
+	}
+	err := call(row, col, strings.TrimSpace(sb.String()))
+	if err != nil {
+		return err
 	}
 	return nil
 }
