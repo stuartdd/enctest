@@ -19,7 +19,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -109,6 +108,9 @@ var (
 	postUrlPrefName           = parser.NewDotPath("file.postDataUrl")
 	importPathPrefName        = parser.NewDotPath("import.path")
 	importFilterPrefName      = parser.NewDotPath("import.filter")
+	importCsvSkipHPrefName    = parser.NewDotPath("import.csvSkipHeader")
+	importCsvDateFmtPrefName  = parser.NewDotPath("import.csvDateFormat")
+	importCsvListPrefName     = parser.NewDotPath("import.csv")
 	themeVarPrefName          = parser.NewDotPath("theme")
 	logFileNamePrefName       = parser.NewDotPath("log.fileName")
 	logActivePrefName         = parser.NewDotPath("log.active")
@@ -790,8 +792,12 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 	go d.Validate()
 }
 
-func importCSVTransactions(dataPath *parser.Path, fileName string, content []byte) error {
-	fmt.Printf("Selected p '%s', '%s'", fileName, content)
+func importCSVTransactions(dataPath *parser.Path, fileName string) error {
+	skipHeader := preferences.GetBoolWithFallback(importCsvSkipHPrefName, true)
+	dateFmt := preferences.GetStringForPathWithFallback(importCsvDateFmtPrefName, lib.TIME_FORMAT_CSV)
+	dataMapList := preferences.GetStringListWithFallback(importCsvListPrefName, lib.IMPORT_CSV_MAP_LIST_DEF)
+	tNode := jsonData.GetUserNode(dataPath)
+	lib.ImportCsvData(tNode, fileName, skipHeader, dateFmt, dataMapList)
 	return fmt.Errorf("error !")
 }
 
@@ -812,9 +818,8 @@ func importTransactions(dataPath *parser.Path, extra string) {
 				if len(p) >= 2 {
 					preferences.PutString(importPathPrefName, p)
 				}
-				b, err := io.ReadAll(uc)
 				if err == nil {
-					err := importCSVTransactions(dataPath, uc.URI().Path(), b)
+					err := importCSVTransactions(dataPath, uc.URI().Path())
 					if err != nil {
 						timedError(fmt.Sprintf("Failed to import CSV file %s\nError: %s", uc.URI().Path(), err))
 					}

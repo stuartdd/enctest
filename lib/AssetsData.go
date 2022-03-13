@@ -31,6 +31,7 @@ type TransactionTypeEnum string
 
 const (
 	TIME_FORMAT_TXN = "2006-01-02 15:04:05"
+	TIME_FORMAT_CSV = "02/01/2006"
 	IdTransactions  = "transactions"
 	IdAssets        = "assets"
 	IdTxDate        = "date"
@@ -45,8 +46,9 @@ const (
 )
 
 var (
-	TX_TYPE_LIST_LABLES  = []string{"In (Credit)", "Out (Debit)"}
-	TX_TYPE_LIST_OPTIONS = []string{string(TX_TYPE_CRE), string(TX_TYPE_DEB)}
+	TX_TYPE_LIST_LABLES     = []string{"In (Credit)", "Out (Debit)"}
+	TX_TYPE_LIST_OPTIONS    = []string{string(TX_TYPE_CRE), string(TX_TYPE_DEB)}
+	IMPORT_CSV_MAP_LIST_DEF = []string{"date", "type", "", "", "ref", "val", "val", ""}
 )
 
 var cachedUserAssets *UserAssetCache
@@ -115,6 +117,13 @@ func InitUserAssetsCache(root *parser.JsonObject) {
 		}
 	})
 	cachedUserAssets = cache
+}
+
+func ImportCsvData(txNode parser.NodeC, fileName string, skipFirstLine bool, dtFormat string, mapList []string) error {
+	if cachedUserAssets == nil {
+		return fmt.Errorf("cannot import no assets have been defined")
+	}
+	return fmt.Errorf("cannot import no assets have been defined")
 }
 
 //

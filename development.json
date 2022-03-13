@@ -1,10 +1,17 @@
 
     {
+        "data": {
+            "assetIsCalled": "Asset",
+            "transIsCalled": "Transaction",
+            "noteIsCalled": "Note",
+            "presentationmode": false,
+            "hintIsCalled": "Hint"
+        },
         "screen": {
+            "split": 0.223558,
             "width": 1243.333374,
-            "height": 635.714294,
-            "fullScreen": false,
-            "split": 0.223558
+            "height": 633.333374,
+            "fullScreen": false
         },
         "dialog": {
             "saveTimeOutMS": 3000,
@@ -20,30 +27,35 @@
             "case": false
         },
         "log": {
+            "active": true,
             "prefix": "INFO",
-            "fileName": "enctest.log",
-            "active": true
+            "fileName": "enctest.log"
         },
         "file": {
+            "getDataUrl": "",
             "postDataUrl": "",
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
+            "datafile": "libtest/TestDataTypes.json"
         },
         "import": {
+            "path": "/home/stuart/git/golang/enctest/gui/",
             "filter": [
                 ".csv",
                 ".txt",
                 ".go",
                 ".mod"
             ],
-            "path": "/home/stuart/git/golang/enctest/gui/"
+            "csvSkipHeader": true,
+            "csvDateFormat": "02/01/2006",
+            "csv": [
+                "date",
+                "type",
+                "",
+                "",
+                "ref",
+                "val",
+                "val",
+                ""
+            ]
         },
-        "theme": "dark",
-        "data": {
-            "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction",
-            "noteIsCalled": "Note",
-            "presentationmode": false,
-            "hintIsCalled": "Hint"
-        }
+        "theme": "dark"
     }

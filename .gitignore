@@ -3,6 +3,8 @@
 *.txt
 *.exe
 *.out
+*.csv
+*bin
 tmp.*
 fyne-cross/**
 data.json
