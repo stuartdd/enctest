@@ -92,13 +92,13 @@ func GetDetailTypeGroupTitle(uid *parser.Path, preferences pref.PrefData) (lib.N
 	case 2:
 		type1, group1 := lib.GetNodeAnnotationTypeAndName(uid.StringAt(1))
 		if group1 == idPwDetails {
-			return type1, group1, preferences.GetStringForPathWithFallback(DataHintIsCalledPrefName, "Hint")
+			return type1, group1, preferences.GetStringWithFallback(DataHintIsCalledPrefName, "Hint")
 		}
 		if group1 == idNotes {
-			return type1, group1, preferences.GetStringForPathWithFallback(DataNoteIsCalledPrefName, "Note")
+			return type1, group1, preferences.GetStringWithFallback(DataNoteIsCalledPrefName, "Note")
 		}
 		if group1 == lib.IdAssets {
-			return type1, group1, preferences.GetStringForPathWithFallback(DataAssetIsCalledPrefName, "Asset")
+			return type1, group1, preferences.GetStringWithFallback(DataAssetIsCalledPrefName, "Asset")
 		}
 		return type1, group1, group1
 	case 3:
@@ -264,7 +264,7 @@ func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(stri
 }
 
 func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string), cObj []fyne.CanvasObject, accData *lib.AccountData, pref *pref.PrefData, statusDisplay *StatusDisplay) []fyne.CanvasObject {
-	transAreCalled := pref.GetStringForPathWithFallback(DataTransIsCalledPrefName, "Transaction")
+	transAreCalled := pref.GetStringWithFallback(DataTransIsCalledPrefName, "Transaction")
 	txList := accData.Transactions
 	refMax := 10
 	for _, tx := range txList {

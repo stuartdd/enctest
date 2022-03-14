@@ -46,9 +46,9 @@ const (
 )
 
 var (
-	TX_TYPE_LIST_LABLES     = []string{"In (Credit)", "Out (Debit)"}
-	TX_TYPE_LIST_OPTIONS    = []string{string(TX_TYPE_CRE), string(TX_TYPE_DEB)}
-	IMPORT_CSV_MAP_LIST_DEF = []string{"date", "type", "", "", "ref", "val", "val", ""}
+	TX_TYPE_LIST_LABLES    = []string{"In (Credit)", "Out (Debit)"}
+	TX_TYPE_LIST_OPTIONS   = []string{string(TX_TYPE_CRE), string(TX_TYPE_DEB)}
+	IMPORT_CSV_COLUM_NAMES = []string{"date", "type", "", "", "ref", "db", "cr", ""}
 )
 
 var cachedUserAssets *UserAssetCache
@@ -120,10 +120,38 @@ func InitUserAssetsCache(root *parser.JsonObject) {
 }
 
 func ImportCsvData(txNode parser.NodeC, fileName string, skipFirstLine bool, dtFormat string, mapList []string) error {
-	if cachedUserAssets == nil {
-		return fmt.Errorf("cannot import no assets have been defined")
+	data, err := ParseFileToMap(fileName, skipFirstLine, mapList)
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("cannot import no assets have been defined")
+	for i, m := range data {
+		dt, err := time.Parse(TIME_FORMAT_CSV, m["date"])
+		if err != nil {
+			return err
+		}
+		tx := TX_TYPE_ERR
+		var va float64
+		if m["cr"] != "" {
+			tx = TX_TYPE_CRE
+			va, err = strconv.ParseFloat(m["cr"], 64)
+			if err != nil {
+				return err
+			}
+		} else {
+			if m["db"] != "" {
+				tx = TX_TYPE_DEB
+				va, err = strconv.ParseFloat(m["db"], 64)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		re := fmt.Sprintf("[%s]%s", m["type"], m["ref"])
+
+		fmt.Printf("%d:%s:%s:%s:%f\n", i, dt.Format(TIME_FORMAT_TXN), tx, re, va)
+
+	}
+	return nil
 }
 
 //

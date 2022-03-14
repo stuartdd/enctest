@@ -1,5 +1,27 @@
 
     {
+        "import": {
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/enctest/libtest/",
+            "filter": [
+                ".csvt",
+                ".txt",
+                ".go",
+                ".mod"
+            ],
+            "csvSkipHeader": true,
+            "csvColumns": [
+                "date",
+                "type",
+                "",
+                "",
+                "ref",
+                "db",
+                "cr",
+                ""
+            ]
+        },
+        "theme": "dark",
         "data": {
             "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
@@ -8,23 +30,23 @@
             "hintIsCalled": "Hint"
         },
         "screen": {
+            "height": 633,
+            "fullScreen": false,
             "split": 0.223558,
-            "width": 1243.333374,
-            "height": 633.333374,
-            "fullScreen": false
+            "width": 1243
         },
         "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
         },
         "search": {
+            "case": false,
             "lastGoodList": [
                 "notes",
                 "note",
                 "app",
                 "Principality note"
-            ],
-            "case": false
+            ]
         },
         "log": {
             "active": true,
@@ -32,30 +54,8 @@
             "fileName": "enctest.log"
         },
         "file": {
-            "getDataUrl": "",
             "postDataUrl": "",
-            "datafile": "libtest/TestDataTypes.json"
-        },
-        "import": {
-            "path": "/home/stuart/git/golang/enctest/gui/",
-            "filter": [
-                ".csv",
-                ".txt",
-                ".go",
-                ".mod"
-            ],
-            "csvSkipHeader": true,
-            "csvDateFormat": "02/01/2006",
-            "csv": [
-                "date",
-                "type",
-                "",
-                "",
-                "ref",
-                "val",
-                "val",
-                ""
-            ]
-        },
-        "theme": "dark"
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
+        }
     }

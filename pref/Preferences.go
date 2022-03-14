@@ -216,7 +216,7 @@ func (p *PrefData) GetFloat64WithFallbackAndMin(path *parser.Path, fb, min float
 	return v
 }
 
-func (p *PrefData) GetStringForPathWithFallback(path *parser.Path, fb string) string {
+func (p *PrefData) GetStringWithFallback(path *parser.Path, fb string) string {
 	n, ok := p.getNodeForPath(path, true)
 	if ok {
 		if n.GetNodeType() == parser.NT_STRING {

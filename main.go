@@ -110,7 +110,7 @@ var (
 	importFilterPrefName      = parser.NewDotPath("import.filter")
 	importCsvSkipHPrefName    = parser.NewDotPath("import.csvSkipHeader")
 	importCsvDateFmtPrefName  = parser.NewDotPath("import.csvDateFormat")
-	importCsvListPrefName     = parser.NewDotPath("import.csv")
+	importCsvColNamesPrefName = parser.NewDotPath("import.csvColumns")
 	themeVarPrefName          = parser.NewDotPath("theme")
 	logFileNamePrefName       = parser.NewDotPath("log.fileName")
 	logActivePrefName         = parser.NewDotPath("log.active")
@@ -144,9 +144,9 @@ func main() {
 	}
 	preferences = p
 
-	loadThreadFileName := p.GetStringForPathWithFallback(dataFilePrefName, fallbackDataFile)
-	getDataUrl := p.GetStringForPathWithFallback(getUrlPrefName, "")
-	postDataUrl := p.GetStringForPathWithFallback(postUrlPrefName, "")
+	loadThreadFileName := p.GetStringWithFallback(dataFilePrefName, fallbackDataFile)
+	getDataUrl := p.GetStringWithFallback(getUrlPrefName, "")
+	postDataUrl := p.GetStringWithFallback(postUrlPrefName, "")
 	//
 	// For extended command line options. Dont use logData use std out!
 	//
@@ -181,12 +181,12 @@ func main() {
 	}
 
 	logData = gui.NewLogData(
-		preferences.GetStringForPathWithFallback(logFileNamePrefName, "enctest.log"),
-		preferences.GetStringForPathWithFallback(logPrefixPrefName, "INFO")+": ",
+		preferences.GetStringWithFallback(logFileNamePrefName, "enctest.log"),
+		preferences.GetStringWithFallback(logPrefixPrefName, "INFO")+": ",
 		preferences.GetBoolWithFallback(logActivePrefName, false))
 
 	a := app.NewWithID("stuartdd.enctest")
-	a.Settings().SetTheme(theme2.NewAppTheme(preferences.GetStringForPathWithFallback(themeVarPrefName, "dark")))
+	a.Settings().SetTheme(theme2.NewAppTheme(preferences.GetStringWithFallback(themeVarPrefName, "dark")))
 	a.SetIcon(theme2.AppLogo())
 
 	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", loadThreadFileName))
@@ -468,9 +468,9 @@ func makeButtonBar() *fyne.Container {
 }
 
 func makeMenus() *fyne.MainMenu {
-	hintName := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
-	noteName := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
-	assetName := preferences.GetStringForPathWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+	hintName := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	noteName := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Note")
+	assetName := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
 	hint := currentUid.StringAt(UID_POS_PWHINT)
 	user := currentUid.StringAt(UID_POS_USER)
 
@@ -492,7 +492,7 @@ func makeMenus() *fyne.MainMenu {
 	}
 
 	var themeMenuItem *fyne.MenuItem
-	if preferences.GetStringForPathWithFallback(themeVarPrefName, "dark") == "dark" {
+	if preferences.GetStringWithFallback(themeVarPrefName, "dark") == "dark" {
 		themeMenuItem = fyne.NewMenuItem("Light Theme", func() {
 			setThemeById("light")
 			futureReleaseTheBeast(300, MAIN_THREAD_RESELECT)
@@ -713,12 +713,12 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 }
 
 func cloneHint() {
-	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE, false)
 }
 
 func cloneHintFull() {
-	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE_FULL, false)
 }
 
@@ -733,7 +733,7 @@ func addNewUser() {
 Add a hint via addNewEntity
 */
 func addNewHint() {
-	n := preferences.GetStringForPathWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	ch := currentUid.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New "+n, "A User needs to be selected")
@@ -794,11 +794,10 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 
 func importCSVTransactions(dataPath *parser.Path, fileName string) error {
 	skipHeader := preferences.GetBoolWithFallback(importCsvSkipHPrefName, true)
-	dateFmt := preferences.GetStringForPathWithFallback(importCsvDateFmtPrefName, lib.TIME_FORMAT_CSV)
-	dataMapList := preferences.GetStringListWithFallback(importCsvListPrefName, lib.IMPORT_CSV_MAP_LIST_DEF)
+	dateFmt := preferences.GetStringWithFallback(importCsvDateFmtPrefName, lib.TIME_FORMAT_CSV)
+	dataMapList := preferences.GetStringListWithFallback(importCsvColNamesPrefName, lib.IMPORT_CSV_COLUM_NAMES)
 	tNode := jsonData.GetUserNode(dataPath)
-	lib.ImportCsvData(tNode, fileName, skipHeader, dateFmt, dataMapList)
-	return fmt.Errorf("error !")
+	return lib.ImportCsvData(tNode, fileName, skipHeader, dateFmt, dataMapList)
 }
 
 func importTransactions(dataPath *parser.Path, extra string) {
@@ -829,7 +828,7 @@ func importTransactions(dataPath *parser.Path, extra string) {
 			}
 		}
 	}, window)
-	uri, err := storage.ListerForURI(storage.NewFileURI(preferences.GetStringForPathWithFallback(importPathPrefName, "/")))
+	uri, err := storage.ListerForURI(storage.NewFileURI(preferences.GetStringWithFallback(importPathPrefName, "/")))
 	if err != nil {
 		uri, _ = storage.ListerForURI(storage.NewFileURI("/"))
 	}
@@ -840,7 +839,7 @@ func importTransactions(dataPath *parser.Path, extra string) {
 }
 
 func updateTransactionValue(dataPath *parser.Path, extra string) {
-	t := preferences.GetStringForPathWithFallback(gui.DataTransIsCalledPrefName, "Transaction")
+	t := preferences.GetStringWithFallback(gui.DataTransIsCalledPrefName, "Transaction")
 	data, err := parser.Find(jsonData.GetUserRoot(), dataPath)
 	if err != nil {
 		return
@@ -899,7 +898,7 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 Add a asset via addNewEntity
 */
 func addNewAsset() {
-	n := preferences.GetStringForPathWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+	n := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
 	ch := currentUid.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New "+n, "A User needs to be selected")
@@ -912,7 +911,7 @@ func addNewAsset() {
 Selecting the menu to add an item to a hint
 */
 func addNewAssetItem() {
-	n := preferences.GetStringForPathWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+	n := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
 	ch := currentUid.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New Atem to "+n, "A User needs to be selected")
@@ -925,7 +924,7 @@ func addNewAssetItem() {
 Selecting the menu to add an item to a hint
 */
 func addNewHintItem() {
-	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Hint")
+	n := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Hint")
 	ch := currentUid.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New Item to "+n, "A User needs to be selected")
@@ -938,7 +937,7 @@ func addNewHintItem() {
 Selecting the menu to add an item to the notes
 */
 func addNewNoteItem() {
-	n := preferences.GetStringForPathWithFallback(gui.DataNoteIsCalledPrefName, "Note")
+	n := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Note")
 	ch := currentUid.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New Item to "+n, "A User needs to be selected")

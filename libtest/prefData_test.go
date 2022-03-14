@@ -108,27 +108,27 @@ func TestFloats(t *testing.T) {
 func TestSave(t *testing.T) {
 	defer removeFile(t, "TestSaveData.txt")
 	q, _ := pref.NewPrefData("TestDataTypesGold.json")
-	v5 := q.GetStringForPathWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
+	v5 := q.GetStringWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
 	if v5 == "bla" {
 		t.Error("should have found value")
 	}
 	q.SaveAs("TestSaveData.txt")
 
 	p, _ := pref.NewPrefData("TestSaveData.txt")
-	v6 := p.GetStringForPathWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
+	v6 := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
 	if v6 != v5 {
 		t.Error("Should be the same value")
 	}
 
 	p.PutString(parser.NewBarPath("root"), "haveatit")
-	v7 := p.GetStringForPathWithFallback(parser.NewBarPath("root"), "bla")
+	v7 := p.GetStringWithFallback(parser.NewBarPath("root"), "bla")
 	if v7 != "haveatit" {
 		t.Error("Should have returned haveatit")
 	}
 
 	p.Save()
 	r, _ := pref.NewPrefData("TestSaveData.txt")
-	v8 := r.GetStringForPathWithFallback(parser.NewBarPath("root"), "bla")
+	v8 := r.GetStringWithFallback(parser.NewBarPath("root"), "bla")
 	if v8 != "haveatit" {
 		t.Error("Should have returned haveatit")
 	}
@@ -198,7 +198,7 @@ func TestPutString(t *testing.T) {
 	if err == nil {
 		t.Error("should return error 'not a container node'")
 	}
-	v := p.GetStringForPathWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
+	v := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
 	if v == "" || v == "bla" {
 		t.Error("should have found v")
 	}
@@ -208,7 +208,7 @@ func TestPutString(t *testing.T) {
 		t.Error("should work")
 	}
 
-	v2 := p.GetStringForPathWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
+	v2 := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
 	if v2 != "val" {
 		t.Error("should have found new value")
 	}
@@ -217,7 +217,7 @@ func TestPutString(t *testing.T) {
 	if err != nil {
 		t.Error("should not return an error")
 	}
-	v3 := p.GetStringForPathWithFallback(parser.NewBarPath("groups|UserA|noes|hi"), "bla")
+	v3 := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|noes|hi"), "bla")
 	if v3 != "value3" {
 		t.Error("should have found new value (value3)")
 	}
@@ -227,7 +227,7 @@ func TestPutString(t *testing.T) {
 		t.Error("should not return an error")
 	}
 
-	v4 := p.GetStringForPathWithFallback(parser.NewBarPath("groups|newUser|notes|note"), "bla")
+	v4 := p.GetStringWithFallback(parser.NewBarPath("groups|newUser|notes|note"), "bla")
 	if v4 != "newNote" {
 		t.Error("should have found new value (newNote)")
 	}
@@ -237,7 +237,7 @@ func TestPutString(t *testing.T) {
 		t.Error("should not return an error")
 	}
 
-	v5 := p.GetStringForPathWithFallback(parser.NewBarPath("groups|newUser|notes|note"), "bla")
+	v5 := p.GetStringWithFallback(parser.NewBarPath("groups|newUser|notes|note"), "bla")
 	if v5 != "overwriteNote" {
 		t.Error("should have found new value (overwriteNote)")
 	}
@@ -247,7 +247,7 @@ func TestPutString(t *testing.T) {
 		t.Error("should not return an error")
 	}
 
-	v6 := p.GetStringForPathWithFallback(parser.NewBarPath("newRoot"), "bla")
+	v6 := p.GetStringWithFallback(parser.NewBarPath("newRoot"), "bla")
 	if v6 != "newRootValue" {
 		t.Error("should have found new value (newRootValue)")
 	}
@@ -257,7 +257,7 @@ func TestPutString(t *testing.T) {
 		t.Error("should not return an error")
 	}
 
-	v7 := p.GetStringForPathWithFallback(parser.NewBarPath(".xRoot"), "bla")
+	v7 := p.GetStringWithFallback(parser.NewBarPath(".xRoot"), "bla")
 	if v7 != "dotRootValue" {
 		t.Error("should have found new value (dotRootValue)")
 	}
@@ -274,11 +274,11 @@ func TestLoadFallback(t *testing.T) {
 	if m.String() == "" {
 		t.Error("groups|UserA|notes|note should return a value")
 	}
-	s2 := p.GetStringForPathWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "x")
+	s2 := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "x")
 	if m.String() != s2 {
-		t.Error("GetStringForPathWithFallback should return same as GetDataForPath")
+		t.Error("GetStringWithFallback should return same as GetDataForPath")
 	}
-	s3 := p.GetStringForPathWithFallback(parser.NewBarPath("groups|UserA|notes|not"), "fallback")
+	s3 := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|notes|not"), "fallback")
 	if s3 != "fallback" {
 		t.Error("groups|UserA|notes|not should return \"fallback\" ")
 	}
@@ -293,12 +293,12 @@ func TestLoadCacheAfterPut(t *testing.T) {
 		t.Error("file name was not stored correctly")
 	}
 	p.PutString(parser.NewBarPath("a|b|c"), "abc")
-	s := p.GetStringForPathWithFallback(parser.NewBarPath("a|b|c"), "xyz")
+	s := p.GetStringWithFallback(parser.NewBarPath("a|b|c"), "xyz")
 	if s != "abc" {
 		t.Error("Incorrect value returned. Not abc")
 	}
 	p.PutString(parser.NewBarPath("a|b|c"), "123")
-	s = p.GetStringForPathWithFallback(parser.NewBarPath("a|b|c"), "xyz")
+	s = p.GetStringWithFallback(parser.NewBarPath("a|b|c"), "xyz")
 	if s != "123" {
 		t.Error("Incorrect value returned. Not 123")
 	}
