@@ -64,7 +64,7 @@ func TestPutStringList(t *testing.T) {
 	if pp.(*parser.JsonList).Len() != 3 {
 		t.Error("Should be len 3")
 	}
-	l := p.GetStringList(parser.NewBarPath("new|list|a"))
+	l := p.GetDropDownList(parser.NewBarPath("new|list|a"))
 	if fmt.Sprintf("%s", l) != "[xyz2 xyz1 abc]" {
 		t.Errorf("List should be %s", l)
 	}

@@ -1,14 +1,42 @@
 
     {
-        "import": {
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/enctest/libtest/",
-            "filter": [
-                ".csvt",
-                ".txt",
-                ".go",
-                ".mod"
+        "data": {
+            "assetIsCalled": "Asset",
+            "transIsCalled": "Transaction",
+            "noteIsCalled": "Note",
+            "presentationmode": false,
+            "hintIsCalled": "Hint"
+        },
+        "screen": {
+            "width": 1243,
+            "height": 633,
+            "fullScreen": false,
+            "split": 0.223558
+        },
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
+        },
+        "search": {
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note"
             ],
+            "case": false
+        },
+        "log": {
+            "prefix": "INFO",
+            "fileName": "enctest.log",
+            "active": true
+        },
+        "file": {
+            "getDataUrl": "",
+            "postDataUrl": "",
+            "datafile": "libtest/TestDataTypes.json"
+        },
+        "import": {
             "csvSkipHeader": true,
             "csvColumns": [
                 "date",
@@ -19,43 +47,15 @@
                 "db",
                 "cr",
                 ""
+            ],
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/enctest/libtest/",
+            "filter": [
+                ".csvt",
+                ".txt",
+                ".go",
+                ".mod"
             ]
         },
-        "theme": "dark",
-        "data": {
-            "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction",
-            "noteIsCalled": "Note",
-            "presentationmode": false,
-            "hintIsCalled": "Hint"
-        },
-        "screen": {
-            "height": 633,
-            "fullScreen": false,
-            "split": 0.223558,
-            "width": 1243
-        },
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
-        "search": {
-            "case": false,
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note"
-            ]
-        },
-        "log": {
-            "active": true,
-            "prefix": "INFO",
-            "fileName": "enctest.log"
-        },
-        "file": {
-            "postDataUrl": "",
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
-        }
+        "theme": "dark"
     }

@@ -232,17 +232,24 @@ func (p *PrefData) GetDataForPath(path *parser.Path) (parser.NodeI, bool) {
 }
 
 func (p *PrefData) GetStringListWithFallback(path *parser.Path, fb []string) []string {
-	list := p.GetStringList(path)
-	if len(list) == 0 || (len(list) == 1 && list[0] == "") {
-		for _, s := range fb {
-			p.AppendStringList(path, s, len(fb))
-		}
+	n, found := p.getNodeForPath(path, false)
+	if !found {
 		return fb
 	}
-	return list
+	if n.GetNodeType() == parser.NT_LIST {
+		list := make([]string, 0)
+		for _, v := range n.(*parser.JsonList).GetValues() {
+			if v.GetNodeType() == parser.NT_STRING {
+				list = append(list, v.(*parser.JsonString).GetValue())
+			}
+		}
+		return list
+	} else {
+		return fb
+	}
 }
 
-func (p *PrefData) GetStringList(path *parser.Path) []string {
+func (p *PrefData) GetDropDownList(path *parser.Path) []string {
 	n, found := p.getNodeForPath(path, false)
 	if !found {
 		list := make([]string, 1)

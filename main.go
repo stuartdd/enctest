@@ -604,7 +604,7 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 Section below the tree with Search details and Light and Dark theme buttons
 */
 func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
-	x := preferences.GetStringList(searchLastGoodPrefName)
+	x := preferences.GetDropDownList(searchLastGoodPrefName)
 	searchEntry := widget.NewSelectEntry(x)
 	searchEntry.SetText(x[0])
 	c2 := container.New(
