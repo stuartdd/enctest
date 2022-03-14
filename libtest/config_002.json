@@ -1,0 +1,12 @@
+{
+    "float": 479.52,
+    "boolean": true,
+    "split": 0.2,
+    "list1": [
+        "a",
+        "b",
+        "c"
+    ],
+    "list2": [],
+    "integer": 830
+}

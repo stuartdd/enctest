@@ -18,6 +18,8 @@ var (
 	val1  string       = ""
 	path2 *parser.Path = parser.NewDotPath("")
 	val2  string       = ""
+
+	list1_fb = []string{"FB", "2", "3"}
 )
 
 func removeFile(t *testing.T, fileName string) {
@@ -26,9 +28,26 @@ func removeFile(t *testing.T, fileName string) {
 		t.Errorf("should have removed file %s. Error: %s", fileName, err.Error())
 	}
 }
-func TestPutStringList(t *testing.T) {
+func TestGetStringList(t *testing.T) {
+	p, _ := pref.NewPrefData("config_002.json")
+	lx := p.GetStringListWithFallback(parser.NewDotPath("listX"), list1_fb)
+	testList(t, lx, "[FB 2 3]")
+	l1 := p.GetStringListWithFallback(parser.NewDotPath("list1"), list1_fb)
+	testList(t, l1, "[a b c]")
+	l2 := p.GetStringListWithFallback(parser.NewDotPath("list2"), list1_fb)
+	testList(t, l2, "[]")
+}
+
+func testList(t *testing.T, l []string, req string) {
+	ls := fmt.Sprintf("%s", l)
+	if ls != req {
+		t.Errorf("list '%s' should equal '%s'", l, req)
+	}
+}
+
+func TestPutDropDownList(t *testing.T) {
 	p, _ := pref.NewPrefData("config_001.json")
-	p.AppendStringList(parser.NewBarPath("new|list|a"), "abc", 3)
+	p.AddToDropDownList(parser.NewBarPath("new|list|a"), "abc", 3)
 	pp, ok := p.GetDataForPath(parser.NewBarPath("new|list|a"))
 	if !ok {
 		t.Error("Should find path")
@@ -36,31 +55,31 @@ func TestPutStringList(t *testing.T) {
 	if pp.(*parser.JsonList).Len() != 1 {
 		t.Error("Should be len 1")
 	}
-	p.AppendStringList(parser.NewBarPath("new|list|a"), "abc", 3)
+	p.AddToDropDownList(parser.NewBarPath("new|list|a"), "abc", 3)
 	if pp.(*parser.JsonList).Len() != 1 {
 		t.Error("Should still be len 1")
 	}
-	p.AppendStringList(parser.NewBarPath("new|list|a"), "123", 3)
+	p.AddToDropDownList(parser.NewBarPath("new|list|a"), "123", 3)
 	if pp.(*parser.JsonList).Len() != 2 {
 		t.Error("Should be len 2")
 	}
-	p.AppendStringList(parser.NewBarPath("new|list|a"), "123", 3)
+	p.AddToDropDownList(parser.NewBarPath("new|list|a"), "123", 3)
 	if pp.(*parser.JsonList).Len() != 2 {
 		t.Error("Should still be len 2")
 	}
-	p.AppendStringList(parser.NewBarPath("new|list|a"), "123", 3)
+	p.AddToDropDownList(parser.NewBarPath("new|list|a"), "123", 3)
 	if pp.(*parser.JsonList).Len() != 2 {
 		t.Error("Should still be len 2")
 	}
-	p.AppendStringList(parser.NewBarPath("new|list|a"), "abc", 3)
+	p.AddToDropDownList(parser.NewBarPath("new|list|a"), "abc", 3)
 	if pp.(*parser.JsonList).Len() != 2 {
 		t.Error("Should still be len 2")
 	}
-	p.AppendStringList(parser.NewBarPath("new|list|a"), "xyz1", 3)
+	p.AddToDropDownList(parser.NewBarPath("new|list|a"), "xyz1", 3)
 	if pp.(*parser.JsonList).Len() != 3 {
 		t.Error("Should be len 3")
 	}
-	p.AppendStringList(parser.NewBarPath("new|list|a"), "xyz2", 3)
+	p.AddToDropDownList(parser.NewBarPath("new|list|a"), "xyz2", 3)
 	if pp.(*parser.JsonList).Len() != 3 {
 		t.Error("Should be len 3")
 	}

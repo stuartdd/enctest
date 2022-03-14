@@ -79,7 +79,7 @@ func (p *PrefData) String() string {
 	return string(p.data.JsonValueIndented(4))
 }
 
-func (p *PrefData) AppendStringList(path *parser.Path, value string, maxLen int) error {
+func (p *PrefData) AddToDropDownList(path *parser.Path, value string, maxLen int) error {
 	n, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_LIST)
 	if err != nil {
 		return err
