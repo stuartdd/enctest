@@ -249,6 +249,21 @@ func (p *PrefData) GetStringListWithFallback(path *parser.Path, fb []string) []s
 	}
 }
 
+func (p *PrefData) PutStringList(path *parser.Path, list []string, append bool) error {
+	l, err := parser.CreateAndReturnNodeAtPath(p.data, path, parser.NT_LIST)
+	if err != nil {
+		return err
+	}
+	ll := l.(*parser.JsonList)
+	if !append {
+		ll.Clear()
+	}
+	for _, v := range list {
+		ll.Add(parser.NewJsonString("", v))
+	}
+	return nil
+}
+
 func (p *PrefData) GetDropDownList(path *parser.Path) []string {
 	n, found := p.getNodeForPath(path, false)
 	if !found {

@@ -28,6 +28,15 @@ func removeFile(t *testing.T, fileName string) {
 		t.Errorf("should have removed file %s. Error: %s", fileName, err.Error())
 	}
 }
+
+func TestPutStringList(t *testing.T) {
+	p, _ := pref.NewPrefData("config_002.json")
+	err := p.PutStringList(parser.NewDotPath("list.put1"), list1_fb, true)
+	testErrorNil(t, err, "PutStringList list.put1")
+	t.Errorf("%s", p.String())
+	p.Save()
+}
+
 func TestGetStringList(t *testing.T) {
 	p, _ := pref.NewPrefData("config_002.json")
 	lx := p.GetStringListWithFallback(parser.NewDotPath("listX"), list1_fb)
