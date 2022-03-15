@@ -19,7 +19,8 @@ var (
 	path2 *parser.Path = parser.NewDotPath("")
 	val2  string       = ""
 
-	list1_fb = []string{"FB", "2", "3"}
+	list1_fb = []string{"FB1", "21", "31"}
+	list2_fb = []string{"FB2", "22", "32"}
 )
 
 func removeFile(t *testing.T, fileName string) {
@@ -31,10 +32,21 @@ func removeFile(t *testing.T, fileName string) {
 
 func TestPutStringList(t *testing.T) {
 	p, _ := pref.NewPrefData("config_002.json")
-	err := p.PutStringList(parser.NewDotPath("list.put1"), list1_fb, true)
-	testErrorNil(t, err, "PutStringList list.put1")
-	t.Errorf("%s", p.String())
-	p.Save()
+	err := p.PutStringList(parser.NewDotPath("list.put1"), list1_fb, false)
+	testErrorNil(t, err, "First PutStringList list.put1")
+	p.SaveAs("tmp1.json")
+	defer removeFile(t, "tmp1.json")
+	x, _ := pref.NewPrefData("tmp1.json")
+	xx := x.GetStringListWithFallback(parser.NewDotPath("list.put1"), list1_fb)
+	testList(t, xx, "[FB1 21 31]")
+	err = x.PutStringList(parser.NewDotPath("list.put1"), list2_fb, false)
+	testErrorNil(t, err, "Second PutStringList list.put1")
+	yy := x.GetStringListWithFallback(parser.NewDotPath("list.put1"), list1_fb)
+	testList(t, yy, "[FB2 22 32]")
+	err = x.PutStringList(parser.NewDotPath("list.put1"), list1_fb, true)
+	testErrorNil(t, err, "Append PutStringList list.put1")
+	zz := x.GetStringListWithFallback(parser.NewDotPath("list.put1"), list1_fb)
+	testList(t, zz, "[FB2 22 32 FB1 21 31]")
 }
 
 func TestGetStringList(t *testing.T) {
