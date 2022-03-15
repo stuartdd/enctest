@@ -52,7 +52,7 @@ func TestPutStringList(t *testing.T) {
 func TestGetStringList(t *testing.T) {
 	p, _ := pref.NewPrefData("config_002.json")
 	lx := p.GetStringListWithFallback(parser.NewDotPath("listX"), list1_fb)
-	testList(t, lx, "[FB 2 3]")
+	testList(t, lx, "[FB1 21 31]")
 	l1 := p.GetStringListWithFallback(parser.NewDotPath("list1"), list1_fb)
 	testList(t, l1, "[a b c]")
 	l2 := p.GetStringListWithFallback(parser.NewDotPath("list2"), list1_fb)
