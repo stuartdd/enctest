@@ -1,36 +1,5 @@
 
     {
-        "data": {
-            "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction",
-            "noteIsCalled": "Note",
-            "presentationmode": false,
-            "hintIsCalled": "Hint"
-        },
-        "screen": {
-            "width": 1243,
-            "height": 633,
-            "fullScreen": false,
-            "split": 0.223558
-        },
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
-        "search": {
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note"
-            ],
-            "case": false
-        },
-        "log": {
-            "prefix": "INFO",
-            "fileName": "enctest.log",
-            "active": true
-        },
         "file": {
             "getDataUrl": "",
             "postDataUrl": "",
@@ -57,5 +26,36 @@
                 ".mod"
             ]
         },
-        "theme": "dark"
+        "theme": "dark",
+        "data": {
+            "assetIsCalled": "Asset",
+            "transIsCalled": "Transaction",
+            "noteIsCalled": "Note",
+            "presentationmode": false,
+            "hintIsCalled": "Hint"
+        },
+        "screen": {
+            "width": 1242.380981,
+            "height": 632.380981,
+            "fullScreen": false,
+            "split": 0.223558
+        },
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
+        },
+        "search": {
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note"
+            ],
+            "case": false
+        },
+        "log": {
+            "prefix": "INFO",
+            "fileName": "enctest.log",
+            "active": true
+        }
     }

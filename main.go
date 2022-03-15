@@ -1112,7 +1112,7 @@ func search(s string) {
 
 	// Use the sorted keys to populate the result window
 	if searchWindow.Len() > 0 {
-		preferences.AppendStringList(searchLastGoodPrefName, s, 10)
+		preferences.AddToDropDownList(searchLastGoodPrefName, s, 10)
 		defer futureReleaseTheBeast(200, MAIN_THREAD_RELOAD_TREE)
 		searchWindow.Show(500, 350, s)
 	} else {
