@@ -126,7 +126,7 @@ func (p *EditEntry) RefreshData() {
 }
 
 func (p *EditEntry) CommitEdit(data parser.NodeI) bool {
-	m, _ := lib.GetUserDataForUid(data, p.Path)
+	m, _ := lib.GetNodeForUserPath(data, p.Path)
 	if m != nil {
 		oldV := m.String()
 		switch m.GetNodeType() {

@@ -76,28 +76,28 @@ func TestGetLastId(t *testing.T) {
 
 func TestGetDataForSelectedId(t *testing.T) {
 	loadDataMap(dataFileName)
-	m, err := lib.GetUserDataForUid(mapData.GetDataRoot(), parser.NewBarPath("UserA"))
+	m, err := lib.GetNodeForUserPath(mapData.GetDataMap(), parser.NewBarPath("UserA"))
 	if err != nil {
 		log.Fatalf("1. GetMapForUid fail. should not return error: '%s'", err.Error())
 	}
 	if m.GetName() != "UserA" {
 		log.Fatalf("1. GetMapForUid fail. should return UserA. actual: '%s'", toJson(m))
 	}
-	m, err = lib.GetUserDataForUid(mapData.GetDataRoot(), parser.NewBarPath("UserA|pwHints"))
+	m, err = lib.GetNodeForUserPath(mapData.GetDataMap(), parser.NewBarPath("UserA|pwHints"))
 	if err != nil {
 		log.Fatalf("1. GetMapForUid fail. should not return error: '%s'", err.Error())
 	}
 	if m.GetName() != "pwHints" {
 		log.Fatalf("1. GetMapForUid fail. should return pwHints. actual: '%s'", toJson(m))
 	}
-	m, err = lib.GetUserDataForUid(mapData.GetDataRoot(), parser.NewBarPath("UserA|pwHints|MyApp"))
+	m, err = lib.GetNodeForUserPath(mapData.GetDataMap(), parser.NewBarPath("UserA|pwHints|MyApp"))
 	if err != nil {
 		log.Fatalf("1. GetMapForUid fail. should not return error: '%s'", err.Error())
 	}
 	if m.GetName() != "MyApp" {
 		log.Fatalf("1. GetMapForUid fail. should return MyApp. actual: '%s'", toJson(m))
 	}
-	m, err = lib.GetUserDataForUid(mapData.GetDataRoot(), parser.NewBarPath("UserB|pwHints|GMail B"))
+	m, err = lib.GetNodeForUserPath(mapData.GetDataMap(), parser.NewBarPath("UserB|pwHints|GMail B"))
 	if err != nil {
 		log.Fatalf("1. GetMapForUid fail. should not return error: '%s'", err.Error())
 	}
@@ -240,7 +240,7 @@ func loadDataMap(fileName string) {
 			log.Fatalf("error creating new DataRoot file:%s %v\n", fileName, err)
 		}
 		mapData = md
-		structData = parser.DiagnosticList(mapData.GetDataRoot())
+		structData = parser.DiagnosticList(mapData.GetDataMap())
 	}
 }
 

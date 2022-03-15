@@ -26,7 +26,7 @@ import (
 )
 
 type DetailPage struct {
-	Uid                         *parser.Path
+	SelectedPath                *parser.Path // The raw path from the selection of the LHS tree
 	Heading, User, Group, Title string
 	ViewFunc                    func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject
 	CntlFunc                    func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject
@@ -35,7 +35,7 @@ type DetailPage struct {
 }
 
 func NewDetailPage(
-	uid *parser.Path,
+	selectedPath *parser.Path,
 	user string,
 	group string,
 	title string,
@@ -48,13 +48,13 @@ func NewDetailPage(
 	if user != "" {
 		heading = fmt.Sprintf("User:  %s - %s", user, title)
 	}
-	return &DetailPage{Uid: uid, Heading: heading, Title: title, Group: group, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, DataRootMap: dataRootMap, Preferences: preferences}
+	return &DetailPage{SelectedPath: selectedPath, Heading: heading, Title: title, Group: group, User: user, ViewFunc: viewFunc, CntlFunc: cntlFunc, DataRootMap: dataRootMap, Preferences: preferences}
 }
 
-func (p *DetailPage) GetObjectsForUid() *parser.JsonObject {
-	m, err := lib.GetUserDataForUid(p.DataRootMap, p.Uid)
+func (p *DetailPage) GetObjectsForPage() *parser.JsonObject {
+	m, err := lib.GetNodeForUserPath(p.DataRootMap, p.SelectedPath)
 	if err != nil {
-		panic(fmt.Sprintf("DetailPage.GetMapForUid. Uid '%s' not found. %s", p.Uid, err.Error()))
+		panic(fmt.Sprintf("DetailPage.GetMapForUid. Uid '%s' not found. %s", p.SelectedPath, err.Error()))
 	}
 	if m.GetNodeType() == parser.NT_OBJECT {
 		return m.(*parser.JsonObject)

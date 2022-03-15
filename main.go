@@ -90,7 +90,7 @@ var (
 	splitContainerOffsetPref float64          = -1
 
 	findCaseSensitive  = binding.NewBool()
-	currentUid         = parser.NewBarPath("")
+	currentSelPath     = parser.NewBarPath("")
 	shouldCloseLock    = false
 	hasDataChanges     = false
 	releaseTheBeast    = make(chan int, 1)
@@ -103,7 +103,6 @@ var (
 	linkDialogTimePrefName    = parser.NewDotPath("dialog.linkTimeOutMS")
 	saveDialogTimePrefName    = parser.NewDotPath("dialog.saveTimeOutMS")
 	errorDialogTimePrefName   = parser.NewDotPath("dialog.errorTimeOutMS")
-	warningDialogTimePrefName = parser.NewDotPath("dialog.warningTimeOutMS")
 	getUrlPrefName            = parser.NewDotPath("file.getDataUrl")
 	postUrlPrefName           = parser.NewDotPath("file.postDataUrl")
 	importPathPrefName        = parser.NewDotPath("import.path")
@@ -207,7 +206,7 @@ func main() {
 	window.SetMaster()
 
 	statusDisplay = gui.NewStatusDisplay("Select an item from the list above", "Hint")
-	wp := gui.GetWelcomePage(parser.NewBarPath(""), *preferences)
+	wp := gui.GetWelcomePage(*preferences)
 	title := container.NewHBox()
 	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil, preferences, statusDisplay)}
 	contentRHS := container.NewMax()
@@ -219,17 +218,17 @@ func main() {
 		This updates the contentRHS which is the RHS page for editing data
 	*/
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
-		currentUid = detailPage.Uid
+		currentSelPath = detailPage.SelectedPath
 		if searchWindow != nil {
-			go searchWindow.Select(currentUid)
+			go searchWindow.Select(currentSelPath)
 		}
-		log(fmt.Sprintf("Page User:'%s' Uid:'%s'", currentUid.StringFirst(), currentUid))
-		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentUid.StringFirst()))
+		log(fmt.Sprintf("Page User:'%s' Uid:'%s'", currentSelPath.StringFirst(), currentSelPath))
+		window.SetTitle(fmt.Sprintf("Data File: [%s]. Current User: %s", fileData.GetFileName(), currentSelPath.StringFirst()))
 		/*
 			Create the menus
 		*/
 		window.SetMainMenu(makeMenus())
-		navTreeLHS.OpenBranch(currentUid.String())
+		navTreeLHS.OpenBranch(currentSelPath.String())
 		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction, preferences, statusDisplay)}
 		title.Refresh()
 		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage, controlActionFunction, preferences, statusDisplay)}
@@ -303,8 +302,8 @@ func main() {
 				// Init the devider (split)
 				// Populate the window and we are done!
 				navTreeLHS = makeNavTree(setPageRHSFunc)
-				lib.InitUserAssetsCache(jsonData.GetDataRoot())
-				selectTreeElement("MAIN_THREAD_RELOAD_TREE", currentUid)
+				lib.InitUserAssetsCache(jsonData.GetDataMap())
+				selectTreeElement("MAIN_THREAD_RELOAD_TREE", currentSelPath)
 				if splitContainerOffset < 0 {
 					splitContainerOffset = splitContainerOffsetPref
 				} else {
@@ -315,9 +314,9 @@ func main() {
 				window.SetContent(container.NewBorder(buttonBar, statusDisplay.StatusContainer, nil, nil, splitContainer))
 				futureReleaseTheBeast(0, MAIN_THREAD_RE_MENU)
 			case MAIN_THREAD_RESELECT:
-				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentUid))
-				lib.InitUserAssetsCache(jsonData.GetDataRoot())
-				t := gui.GetDetailPage(currentUid, jsonData.GetDataRoot(), *preferences)
+				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentSelPath))
+				lib.InitUserAssetsCache(jsonData.GetDataMap())
+				t := gui.GetDetailPage(currentSelPath, jsonData.GetDataMap(), *preferences)
 				setPageRHSFunc(*t)
 			case MAIN_THREAD_RE_MENU:
 				log("Refresh menu and buttons")
@@ -441,14 +440,14 @@ func logDataRequest(action string) {
 	case "navmap":
 		log(fmt.Sprintf("NavMap: ----------------\n%s", jsonData.GetNavIndexAsString()))
 	case "select":
-		m, err := lib.GetUserDataForUid(jsonData.GetDataRoot(), currentUid)
+		m, err := lib.GetNodeForUserPath(jsonData.GetDataMap(), currentSelPath)
 		if err != nil {
-			log(fmt.Sprintf("Data for uid [%s] not found. %s", currentUid, err.Error()))
+			log(fmt.Sprintf("Data for uid [%s] not found. %s", currentSelPath, err.Error()))
 		}
 		if m != nil {
-			log(fmt.Sprintf("uid:'%s'. Json:%s", currentUid, m.JsonValueIndented(4)))
+			log(fmt.Sprintf("uid:'%s'. Json:%s", currentSelPath, m.JsonValueIndented(4)))
 		} else {
-			log(fmt.Sprintf("Data for uid [%s] returned null", currentUid))
+			log(fmt.Sprintf("Data for uid [%s] returned null", currentSelPath))
 		}
 	default:
 		log(fmt.Sprintf("Log Action: '%s' unknown", action))
@@ -471,8 +470,8 @@ func makeMenus() *fyne.MainMenu {
 	hintName := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	noteName := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Note")
 	assetName := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
-	hint := currentUid.StringAt(UID_POS_PWHINT)
-	user := currentUid.StringAt(UID_POS_USER)
+	hint := currentSelPath.StringAt(UID_POS_PWHINT)
+	user := currentSelPath.StringAt(UID_POS_USER)
 
 	n1 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem)
 	n3 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", hintName, user), addNewHint)
@@ -592,9 +591,9 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 			log(fmt.Sprintf("On Update:'UID:%s Type:[%s] Group:%s Title:%s'", uid, lib.NodeAnnotationPrefixNames[type1], group1, title))
 			obj.(*widget.Label).SetText(title)
 		},
-		OnSelected: func(uid string) {
-			log(fmt.Sprintf("On Select:'%s'", uid))
-			t := gui.GetDetailPage(parser.NewBarPath(uid), jsonData.GetDataRoot(), *preferences)
+		OnSelected: func(selectedPathString string) {
+			log(fmt.Sprintf("On Select:'%s'", selectedPathString))
+			t := gui.GetDetailPage(parser.NewBarPath(selectedPathString), jsonData.GetDataMap(), *preferences)
 			setPage(*t)
 		},
 	}
@@ -630,12 +629,14 @@ We need to open the parent branches or we will never see the selected element
 */
 func selectTreeElement(desc string, uid *parser.Path) {
 	if uid.IsEmpty() {
-		uid = jsonData.GetUserPath(uid)
-	} else {
-		n, err := parser.Find(jsonData.GetUserRoot(), uid)
-		if err != nil || !n.IsContainer() {
-			uid = uid.PathParent()
-		}
+		user := jsonData.GetFirstUserName()
+		navTreeLHS.OpenBranch(user)
+		navTreeLHS.Select(user)
+		return
+	}
+	n, err := parser.Find(jsonData.GetUserRoot(), uid)
+	if err != nil || !n.IsContainer() {
+		uid = uid.PathParent()
 	}
 	user := uid.StringFirst()
 	parent := uid.PathParent().String()
@@ -657,8 +658,8 @@ func dataMapUpdated(desc string, dataPath *parser.Path, err error) {
 		futureReleaseTheBeast(100, MAIN_THREAD_RELOAD_TREE)
 	}()
 	if err == nil {
-		currentUid = lib.GetUidPathFromDataPath(dataPath)
-		log(fmt.Sprintf("dataMapUpdated OK. Desc:'%s' DataPath:'%s'. Derived currentUid:'%s'", desc, dataPath, currentUid))
+		currentSelPath = lib.GetUidPathFromDataPath(dataPath)
+		log(fmt.Sprintf("dataMapUpdated OK. Desc:'%s' DataPath:'%s'. Derived currentSelPath:'%s'", desc, dataPath, currentSelPath))
 		hasDataChanges = true
 	} else {
 		log(fmt.Sprintf("dataMapUpdated Error. Desc:'%s' DataPath:'%s', Err:'%s'", desc, dataPath, err.Error()))
@@ -734,7 +735,7 @@ Add a hint via addNewEntity
 */
 func addNewHint() {
 	n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
-	ch := currentUid.StringAt(UID_POS_USER)
+	ch := currentSelPath.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New "+n, "A User needs to be selected")
 	} else {
@@ -795,9 +796,13 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 func importCSVTransactions(dataPath *parser.Path, fileName string) error {
 	skipHeader := preferences.GetBoolWithFallback(importCsvSkipHPrefName, true)
 	dateFmt := preferences.GetStringWithFallback(importCsvDateFmtPrefName, lib.TIME_FORMAT_CSV)
-	dataMapList := preferences.GetStringListWithFallback(importCsvColNamesPrefName, lib.IMPORT_CSV_COLUM_NAMES)
-	tNode := jsonData.GetUserNode(dataPath)
-	return lib.ImportCsvData(tNode, fileName, skipHeader, dateFmt, dataMapList)
+	dataMapList := preferences.GetStringListWithFallback(importCsvColNamesPrefName, nil)
+	if dataMapList == nil {
+		preferences.PutStringList(importCsvColNamesPrefName, lib.IMPORT_CSV_COLUM_NAMES, false)
+		dataMapList = preferences.GetStringListWithFallback(importCsvColNamesPrefName, nil)
+	}
+	tNode, _ := jsonData.GetNodeForUserPath(dataPath)
+	return lib.ImportCsvData(tNode.(*parser.JsonObject), fileName, skipHeader, dateFmt, dataMapList)
 }
 
 func importTransactions(dataPath *parser.Path, extra string) {
@@ -860,7 +865,7 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 				count = count + lib.UpdateNodeFromTranactionData(tx, v.Id, v.Value, txd.TxType())
 			}
 			if count > 0 {
-				lib.InitUserAssetsCache(jsonData.GetDataRoot())
+				lib.InitUserAssetsCache(jsonData.GetDataMap())
 				dataMapUpdated("Transaction updated", dataPath.PathParent(), nil)
 			}
 		})
@@ -899,7 +904,7 @@ Add a asset via addNewEntity
 */
 func addNewAsset() {
 	n := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
-	ch := currentUid.StringAt(UID_POS_USER)
+	ch := currentSelPath.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New "+n, "A User needs to be selected")
 	} else {
@@ -912,7 +917,7 @@ Selecting the menu to add an item to a hint
 */
 func addNewAssetItem() {
 	n := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
-	ch := currentUid.StringAt(UID_POS_USER)
+	ch := currentSelPath.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New Atem to "+n, "A User needs to be selected")
 	} else {
@@ -925,7 +930,7 @@ Selecting the menu to add an item to a hint
 */
 func addNewHintItem() {
 	n := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Hint")
-	ch := currentUid.StringAt(UID_POS_USER)
+	ch := currentSelPath.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New Item to "+n, "A User needs to be selected")
 	} else {
@@ -938,7 +943,7 @@ Selecting the menu to add an item to the notes
 */
 func addNewNoteItem() {
 	n := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Note")
-	ch := currentUid.StringAt(UID_POS_USER)
+	ch := currentSelPath.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New Item to "+n, "A User needs to be selected")
 	} else {
@@ -951,7 +956,7 @@ Add an entity to the model.
 Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
 */
 func addNewEntity(head string, name string, addType int, isNote bool) {
-	cu := currentUid.PathAt(UID_POS_USER)
+	cu := currentSelPath.PathAt(UID_POS_USER)
 	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, lib.NOTE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
 		if accept {
 			entityName, err := lib.ProcessEntityName(newName, nt)
@@ -966,13 +971,13 @@ func addNewEntity(head string, name string, addType int, isNote bool) {
 				case ADD_TYPE_ASSET:
 					err = jsonData.AddAsset(cu, entityName)
 				case ADD_TYPE_ASSET_ITEM:
-					err = jsonData.AddSubItem(currentUid, entityName, "asset")
+					err = jsonData.AddSubItem(currentSelPath, entityName, "asset")
 				case ADD_TYPE_HINT_CLONE:
-					err = jsonData.CloneHint(currentUid, entityName, false)
+					err = jsonData.CloneHint(currentSelPath, entityName, false)
 				case ADD_TYPE_HINT_CLONE_FULL:
-					err = jsonData.CloneHint(currentUid, entityName, true)
+					err = jsonData.CloneHint(currentSelPath, entityName, true)
 				case ADD_TYPE_HINT_ITEM:
-					err = jsonData.AddSubItem(currentUid, entityName, "hint")
+					err = jsonData.AddSubItem(currentSelPath, entityName, "hint")
 				}
 			}
 			if err != nil {
@@ -1005,7 +1010,7 @@ dataMapUpdated id called if a change is made to the model
 */
 func renameAction(dataPath *parser.Path, extra string) {
 	log(fmt.Sprintf("renameAction dataPath:'%s' Extra:'%s'", dataPath, extra))
-	m, _ := jsonData.GetUserDataForUid(dataPath)
+	m, _ := jsonData.GetNodeForUserPath(dataPath)
 	if m != nil {
 		at, fromName := lib.GetNodeAnnotationTypeAndName(dataPath.StringLast())
 		toName := ""
@@ -1241,7 +1246,7 @@ func countChangedItems() int {
 }
 
 func commitChangedItems() (int, error) {
-	count := gui.EditEntryListCache.Commit(jsonData.GetDataRoot())
+	count := gui.EditEntryListCache.Commit(jsonData.GetDataMap())
 	jsonData.SetDateTime()
 	c := jsonData.ToJson()
 	fileData.SetContent([]byte(c))
