@@ -88,7 +88,7 @@ type UserAsset struct {
 }
 
 type TranactionData struct {
-	dateTime  string
+	dateTime  time.Time
 	value     float64
 	ref       string
 	txType    TransactionTypeEnum
@@ -237,12 +237,21 @@ func newAccountData(accountNode parser.NodeC, initialValue float64) *AccountData
 	v := initialValue
 	for _, n := range accountNode.GetValues() {
 		if n.GetName() == IdTransactions && n.IsContainer() {
+			var iv *TranactionData
 			for _, ni := range n.(parser.NodeC).GetValues() {
-				d = append(d, NewTranactionDataFromNode(ni))
+				td := NewTranactionDataFromNode(ni)
+				if td.txType == TX_TYPE_IV {
+					iv = td
+				} else {
+					d = append(d, td)
+				}
 			}
 			sort.Slice(d, func(i, j int) bool {
-				return getMillisForDateTime(d[i].dateTime) < getMillisForDateTime(d[j].dateTime)
+				return d[i].dateTime.After(d[j].dateTime)
 			})
+			if iv != nil {
+				d = append([]*TranactionData{iv}, d...)
+			}
 			for _, ni := range d {
 				if ni.txType == TX_TYPE_DEB {
 					ni.SetLineValue(v - ni.AbsValue())
@@ -267,8 +276,8 @@ func (t *AccountData) LatestTransaction() *TranactionData {
 	var td int64 = 0
 	ind := 0
 	for i, t := range t.Transactions {
-		if td < getMillisForDateTime(t.dateTime) {
-			td = getMillisForDateTime(t.dateTime)
+		if td < t.dateTime.UnixMilli() {
+			td = t.dateTime.UnixMilli()
 			ind = i
 		}
 	}
@@ -303,8 +312,12 @@ func GetTransactionNode(n parser.NodeC, datePlusRef string) (parser.NodeC, error
 	return nil, fmt.Errorf("failed GetTransaction. '%s' transaction not found", datePlusRef)
 }
 
-func newTranactionData(dateTime string, value float64, ref string, typ TransactionTypeEnum) *TranactionData {
-	return &TranactionData{dateTime: dateTime, value: value, ref: ref, lineValue: 0.0, txType: typ}
+func newTranactionData(dateTime string, value float64, ref string, typ TransactionTypeEnum, n parser.NodeI) *TranactionData {
+	dt, err := ParseDateString(dateTime)
+	if err != nil {
+		return &TranactionData{err: fmt.Errorf("datetime format error: %s '%s'", err, n.JsonValue()), lineValue: 0.0, txType: TX_TYPE_ERR}
+	}
+	return &TranactionData{dateTime: dt, value: value, ref: ref, lineValue: 0.0, txType: typ}
 }
 
 func newTranactionDataError(err string, n parser.NodeI) *TranactionData {
@@ -312,7 +325,7 @@ func newTranactionDataError(err string, n parser.NodeI) *TranactionData {
 }
 
 func (t *TranactionData) DateTime() string {
-	return t.dateTime
+	return FormatDateTime(t.dateTime)
 }
 
 func (t *TranactionData) Key() string {
@@ -359,14 +372,6 @@ func (t *TranactionData) String() string {
 
 func (t *TranactionData) HasError() bool {
 	return t.err != nil
-}
-
-func getMillisForDateTime(dt string) int64 {
-	t, err := ParseDateString(dt)
-	if err != nil {
-		return 0
-	}
-	return t.UnixMilli()
 }
 
 func CurrentDateString() string {
@@ -428,23 +433,9 @@ func UpdateNodeFromTranactionData(txNode parser.NodeC, key, value string, txType
 //
 func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
 	if n.IsContainer() {
-		dt := n.(parser.NodeC).GetNodeWithName(IdTxDate)
-		if dt == nil {
+		dtn := n.(parser.NodeC).GetNodeWithName(IdTxDate)
+		if dtn == nil {
 			return newTranactionDataError(fmt.Sprintf("Invalid Transaction node has no '%s' member", IdTxDate), n)
-		}
-		dts := dt.String()
-		_, err := time.Parse(DATE_TIME_FORMAT_TXN, dts)
-		if err != nil {
-			_, err := time.Parse(DATE_FORMAT_TXN, dts)
-			if err != nil {
-				return newTranactionDataError("invalid 'date time' for transaction %s", n)
-			}
-		}
-		if strings.Contains(dts, "00:00:00") {
-			dts = dts[0:10]
-		}
-		if len(dts) < 11 {
-			dts = fmt.Sprintf("%s %s", dts, "        ")
 		}
 		ty := n.(parser.NodeC).GetNodeWithName(IdTxType)
 		tys := TX_TYPE_ERR
@@ -464,7 +455,7 @@ func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
 			return newTranactionDataError(fmt.Sprintf("Invalid Transaction node has no '%s' member", IdTxRef), n)
 		}
 		ref := rn.String()
-		return newTranactionData(dts, val, ref, tys)
+		return newTranactionData(dtn.String(), val, ref, tys, n)
 	} else {
 		return newTranactionDataError("invalid Transaction node has no members (date, val and ref) '%s'", n)
 	}
