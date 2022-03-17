@@ -71,6 +71,11 @@ func NewStringFieldRight(s string, w int) *widget.Label {
 	return widget.NewLabelWithStyle(lib.PadLeft(s, w), fyne.TextAlignLeading, ts)
 }
 
+func NewStringFieldLeft(s string, w int) *widget.Label {
+	ts := fyne.TextStyle{Bold: true, Italic: false, Monospace: true, Symbol: false, TabWidth: 2}
+	return widget.NewLabelWithStyle(lib.PadRight(s, w), fyne.TextAlignLeading, ts)
+}
+
 func NewFixedWLayout(w float32) *FixedWLayout {
 	return &FixedWLayout{w: w, h: 0}
 }

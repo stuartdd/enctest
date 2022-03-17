@@ -1,31 +1,30 @@
 
     {
-        "theme": "dark",
         "data": {
-            "transIsCalled": "Transaction",
-            "noteIsCalled": "Note",
             "presentationmode": false,
             "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset"
+            "assetIsCalled": "Asset",
+            "transIsCalled": "Transaction",
+            "noteIsCalled": "Note"
         },
         "screen": {
-            "height": 632.380981,
+            "width": 1242,
+            "height": 632,
             "fullScreen": false,
-            "split": 0.223558,
-            "width": 1242.380981
+            "split": 0.223558
         },
         "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
         },
         "search": {
+            "case": false,
             "lastGoodList": [
                 "notes",
                 "note",
                 "app",
                 "Principality note"
-            ],
-            "case": false
+            ]
         },
         "log": {
             "prefix": "INFO",
@@ -33,19 +32,11 @@
             "active": true
         },
         "file": {
+            "getDataUrl": "",
             "postDataUrl": "",
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
+            "datafile": "libtest/TestDataTypes.json"
         },
         "import": {
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/enctest/libtest/",
-            "filter": [
-                ".csvt",
-                ".txt",
-                ".go",
-                ".mod"
-            ],
             "csvSkipHeader": true,
             "csvColumns": [
                 "date",
@@ -56,6 +47,15 @@
                 "db",
                 "cr",
                 ""
+            ],
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/enctest/libtest/",
+            "filter": [
+                ".csvt",
+                ".txt",
+                ".go",
+                ".mod"
             ]
-        }
+        },
+        "theme": "dark"
     }

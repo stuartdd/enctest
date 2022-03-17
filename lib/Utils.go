@@ -20,6 +20,18 @@ import (
 	"strings"
 )
 
+func PadRight(s string, w int) string {
+	if len(s) > w {
+		return s[:w]
+	}
+	var sb strings.Builder
+	sb.WriteString(s)
+	for i := 0; i < (w - len(s)); i++ {
+		sb.WriteByte(32)
+	}
+	return sb.String()
+}
+
 func PadLeft(s string, w int) string {
 	if len(s) > w {
 		return s[:w]
@@ -27,9 +39,6 @@ func PadLeft(s string, w int) string {
 	var sb strings.Builder
 	for i := 0; i < (w - len(s)); i++ {
 		sb.WriteByte(32)
-		if sb.Len() >= w {
-			return sb.String()
-		}
 	}
 	sb.WriteString(s)
 	return sb.String()
