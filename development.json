@@ -1,48 +1,22 @@
 
     {
-        "file": {
-            "getDataUrl": "",
-            "postDataUrl": "",
-            "datafile": "libtest/TestDataTypes.json"
-        },
-        "import": {
-            "csvSkipHeader": true,
-            "csvColumns": [
-                "date",
-                "type",
-                "",
-                "",
-                "ref",
-                "db",
-                "cr",
-                ""
-            ],
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/enctest/libtest/",
-            "filter": [
-                ".csvt",
-                ".txt",
-                ".go",
-                ".mod"
-            ]
-        },
         "theme": "dark",
         "data": {
-            "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
             "noteIsCalled": "Note",
             "presentationmode": false,
-            "hintIsCalled": "Hint"
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset"
         },
         "screen": {
-            "width": 1242.380981,
             "height": 632.380981,
             "fullScreen": false,
-            "split": 0.223558
+            "split": 0.223558,
+            "width": 1242.380981
         },
         "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
         },
         "search": {
             "lastGoodList": [
@@ -57,5 +31,31 @@
             "prefix": "INFO",
             "fileName": "enctest.log",
             "active": true
+        },
+        "file": {
+            "postDataUrl": "",
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
+        },
+        "import": {
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/enctest/libtest/",
+            "filter": [
+                ".csvt",
+                ".txt",
+                ".go",
+                ".mod"
+            ],
+            "csvSkipHeader": true,
+            "csvColumns": [
+                "date",
+                "type",
+                "",
+                "",
+                "ref",
+                "db",
+                "cr",
+                ""
+            ]
         }
     }

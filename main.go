@@ -421,7 +421,7 @@ func timedNotification(msDelay int64, title, message string) {
 }
 
 func timedError(message string) {
-	timedNotification(5000, "Error", message)
+	timedNotification(10000, "Error", message)
 }
 
 func logInformationDialogWithPrefix(prefix, title, message string) dialog.Dialog {
@@ -751,7 +751,7 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 		func(m *gui.InputData) { // On OK
 			jsonData.AddTransaction(
 				dataPath,
-				m.GetString(lib.IdTxDate, time.Now().Local().Format(lib.TIME_FORMAT_TXN)),
+				m.GetString(lib.IdTxDate, time.Now().Local().Format(lib.DATE_TIME_FORMAT_TXN)),
 				m.GetString(lib.IdTxRef, "ref"),
 				m.GetFloat(lib.IdTxVal, 0.1),
 				lib.TransactionTypeEnum(m.GetString(lib.IdTxType, string(lib.TX_TYPE_DEB))))
@@ -760,7 +760,7 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 	d.Add(lib.IdTxDate, "Date", lib.CurrentDateString(), func(s string) error {
 		_, e := lib.ParseDateString(s)
 		if e != nil {
-			return fmt.Errorf("Format:%s", lib.TIME_FORMAT_TXN)
+			return fmt.Errorf("Format:%s or %s", lib.DATE_TIME_FORMAT_TXN, lib.DATE_FORMAT_TXN)
 		} else {
 			return nil
 		}
@@ -801,8 +801,16 @@ func importCSVTransactions(dataPath *parser.Path, fileName string) error {
 		preferences.PutStringList(importCsvColNamesPrefName, lib.IMPORT_CSV_COLUM_NAMES, false)
 		dataMapList = preferences.GetStringListWithFallback(importCsvColNamesPrefName, nil)
 	}
-	tNode, _ := jsonData.GetNodeForUserPath(dataPath)
-	return lib.ImportCsvData(tNode.(*parser.JsonObject), fileName, skipHeader, dateFmt, dataMapList)
+	n, _ := jsonData.GetNodeForUserPath(dataPath)
+	if n.IsContainer() {
+		t := n.(parser.NodeC).GetNodeWithName(lib.IdTransactions)
+		if t == nil {
+			return fmt.Errorf("data error: %s node missing for %s.\nPlease add an account transactions node", lib.IdTransactions, n.GetName())
+		}
+		return lib.ImportCsvData(t.(parser.NodeC), fileName, skipHeader, dateFmt, dataMapList)
+	}
+	return fmt.Errorf("data error: %s node is not a container node", n.GetName())
+
 }
 
 func importTransactions(dataPath *parser.Path, extra string) {
@@ -826,6 +834,8 @@ func importTransactions(dataPath *parser.Path, extra string) {
 					err := importCSVTransactions(dataPath, uc.URI().Path())
 					if err != nil {
 						timedError(fmt.Sprintf("Failed to import CSV file %s\nError: %s", uc.URI().Path(), err))
+					} else {
+						dataMapUpdated("Transactions imported", dataPath, nil)
 					}
 				} else {
 					timedError(fmt.Sprintf("Failed to read file %s\nError: %s", uc.URI().Path(), err))

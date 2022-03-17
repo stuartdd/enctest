@@ -30,14 +30,15 @@ import (
 type TransactionTypeEnum string
 
 const (
-	TIME_FORMAT_TXN = "2006-01-02 15:04:05"
-	TIME_FORMAT_CSV = "02/01/2006"
-	IdTransactions  = "transactions"
-	IdAssets        = "assets"
-	IdTxDate        = "date"
-	IdTxRef         = "ref"
-	IdTxVal         = "val"
-	IdTxType        = "type"
+	DATE_TIME_FORMAT_TXN = "2006-01-02 15:04:05"
+	DATE_FORMAT_TXN      = "2006-01-02"
+	TIME_FORMAT_CSV      = "02/01/2006"
+	IdTransactions       = "transactions"
+	IdAssets             = "assets"
+	IdTxDate             = "date"
+	IdTxRef              = "ref"
+	IdTxVal              = "val"
+	IdTxType             = "type"
 
 	TX_TYPE_ERR TransactionTypeEnum = "err"
 	TX_TYPE_IV  TransactionTypeEnum = "iv"
@@ -124,11 +125,12 @@ func ImportCsvData(txNode parser.NodeC, fileName string, skipFirstLine bool, dtF
 	if err != nil {
 		return err
 	}
-	for i, m := range data {
+	for _, m := range data {
 		dt, err := time.Parse(TIME_FORMAT_CSV, m["date"])
 		if err != nil {
 			return err
 		}
+		dts := FormatDateTime(dt)
 		tx := TX_TYPE_ERR
 		var va float64
 		if m["cr"] != "" {
@@ -146,10 +148,17 @@ func ImportCsvData(txNode parser.NodeC, fileName string, skipFirstLine bool, dtF
 				}
 			}
 		}
-		re := fmt.Sprintf("[%s]%s", m["type"], m["ref"])
 
-		fmt.Printf("%d:%s:%s:%s:%f\n", i, dt.Format(TIME_FORMAT_TXN), tx, re, va)
-
+		re := fmt.Sprintf("%s [%s]", m["ref"], m["type"])
+		if strings.TrimSpace(m["type"]) == "" {
+			re = m["ref"]
+		}
+		tn := parser.NewJsonObject("")
+		tn.Add(parser.NewJsonString(IdTxDate, dts))
+		tn.Add(parser.NewJsonString(IdTxRef, re))
+		tn.Add(parser.NewJsonString(IdTxType, string(tx)))
+		tn.Add(parser.NewJsonNumber(IdTxVal, va))
+		txNode.Add(tn)
 	}
 	return nil
 }
@@ -353,7 +362,7 @@ func (t *TranactionData) HasError() bool {
 }
 
 func getMillisForDateTime(dt string) int64 {
-	t, err := time.Parse(TIME_FORMAT_TXN, dt)
+	t, err := ParseDateString(dt)
 	if err != nil {
 		return 0
 	}
@@ -361,13 +370,25 @@ func getMillisForDateTime(dt string) int64 {
 }
 
 func CurrentDateString() string {
-	return time.Now().Format(TIME_FORMAT_TXN)
+	return FormatDateTime(time.Now())
+}
+
+func FormatDateTime(dt time.Time) string {
+	dts := dt.Format(DATE_TIME_FORMAT_TXN)
+	if strings.Contains(dts, "00:00:00") {
+		dts = dts[0:10]
+	}
+	return dts
 }
 
 func ParseDateString(dts string) (time.Time, error) {
-	dt, err := time.Parse(TIME_FORMAT_TXN, dts)
+	dtst := strings.TrimSpace(dts)
+	dt, err := time.Parse(DATE_TIME_FORMAT_TXN, dtst)
 	if err != nil {
-		return time.Now(), err
+		dt, err = time.Parse(DATE_FORMAT_TXN, dtst)
+		if err != nil {
+			return time.Now(), err
+		}
 	}
 	return dt, nil
 }
@@ -407,13 +428,23 @@ func UpdateNodeFromTranactionData(txNode parser.NodeC, key, value string, txType
 //
 func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
 	if n.IsContainer() {
-		tn := n.(parser.NodeC).GetNodeWithName(IdTxDate)
-		if tn == nil {
+		dt := n.(parser.NodeC).GetNodeWithName(IdTxDate)
+		if dt == nil {
 			return newTranactionDataError(fmt.Sprintf("Invalid Transaction node has no '%s' member", IdTxDate), n)
 		}
-		_, err := time.Parse(TIME_FORMAT_TXN, tn.String())
+		dts := dt.String()
+		_, err := time.Parse(DATE_TIME_FORMAT_TXN, dts)
 		if err != nil {
-			return newTranactionDataError("invalid 'date time' for transaction %s", n)
+			_, err := time.Parse(DATE_FORMAT_TXN, dts)
+			if err != nil {
+				return newTranactionDataError("invalid 'date time' for transaction %s", n)
+			}
+		}
+		if strings.Contains(dts, "00:00:00") {
+			dts = dts[0:10]
+		}
+		if len(dts) < 11 {
+			dts = fmt.Sprintf("%s %s", dts, "        ")
 		}
 		ty := n.(parser.NodeC).GetNodeWithName(IdTxType)
 		tys := TX_TYPE_ERR
@@ -433,7 +464,7 @@ func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
 			return newTranactionDataError(fmt.Sprintf("Invalid Transaction node has no '%s' member", IdTxRef), n)
 		}
 		ref := rn.String()
-		return newTranactionData(tn.String(), val, ref, tys)
+		return newTranactionData(dts, val, ref, tys)
 	} else {
 		return newTranactionDataError("invalid Transaction node has no members (date, val and ref) '%s'", n)
 	}

@@ -443,7 +443,7 @@ func addDefaultAccountItemsToAsset(account *parser.JsonObject) {
 	tx := account.GetNodeWithName(IdTransactions)
 	if tx == nil {
 		txl := parser.NewJsonList(IdTransactions)
-		addTransactionToAsset(txl, time.Now().Local().Format(TIME_FORMAT_TXN), "Opening Balance", 0.0, TX_TYPE_IV)
+		addTransactionToAsset(txl, time.Now().Local().Format(DATE_TIME_FORMAT_TXN), "Opening Balance", 0.0, TX_TYPE_IV)
 		account.Add(txl)
 	}
 }
