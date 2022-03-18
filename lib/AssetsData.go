@@ -288,28 +288,19 @@ func (t *AccountData) LatestTransaction() *TranactionData {
 // Give node (n) must be a 'transactions' container node
 //	return a sub node that has a date and ref the san=me as datePlusRef
 //
-func GetTransactionNode(n parser.NodeC, datePlusRef string) (parser.NodeC, error) {
-	if n.GetName() != IdTransactions {
-		return nil, fmt.Errorf("GetTransaction failed. Node is not '%s'", IdTransactions)
+func GetTransactionDataAndNodeForKey(txNode parser.NodeC, key string) (*TranactionData, parser.NodeC, error) {
+	if txNode.GetName() != IdTransactions {
+		return nil, nil, fmt.Errorf("GetTransaction failed. Node is not '%s'", IdTransactions)
 	}
-	for _, t := range n.GetValues() {
+	for _, t := range txNode.GetValues() {
 		if t.IsContainer() {
-			tc := t.(parser.NodeC)
-			tdt := tc.GetNodeWithName(IdTxDate)
-			if tdt == nil {
-				return nil, fmt.Errorf("failed GetTransaction. '%s' member not found", IdTxDate)
-			}
-			tref := tc.GetNodeWithName(IdTxRef)
-			if tref == nil {
-				return nil, fmt.Errorf("failed GetTransaction. '%s' member not found", tref)
-			}
-			s := fmt.Sprintf("%s %s", tdt, tref)
-			if s == datePlusRef {
-				return tc, nil
+			txd := NewTranactionDataFromNode(t)
+			if txd.Key() == key {
+				return txd, t.(parser.NodeC), nil
 			}
 		}
 	}
-	return nil, fmt.Errorf("failed GetTransaction. '%s' transaction not found", datePlusRef)
+	return nil, nil, fmt.Errorf("failed GetTransactionNode. Transaction with key '%s' not found", key)
 }
 
 func newTranactionData(dateTime string, value float64, ref string, typ TransactionTypeEnum, n parser.NodeI) *TranactionData {
@@ -329,7 +320,11 @@ func (t *TranactionData) DateTime() string {
 }
 
 func (t *TranactionData) Key() string {
-	return fmt.Sprintf("%s %s", t.dateTime, t.ref)
+	return fmt.Sprintf("%s %s %s %s", FormatDateTime(t.dateTime), t.ref, t.txType, t.Val())
+}
+
+func (t1 *TranactionData) Equal(t2 *TranactionData) bool {
+	return t1.Key() == t2.Key()
 }
 
 func (t *TranactionData) Ref() string {
@@ -405,7 +400,7 @@ func ParseDateString(dts string) (time.Time, error) {
 // else node is a non empty string
 //
 //
-func UpdateNodeFromTranactionData(txNode parser.NodeC, key, value string, txType TransactionTypeEnum) int {
+func UpdateNodeFromTranactionData(txNode parser.NodeC, key, value string) int {
 	vn := txNode.GetNodeWithName(key)
 	if vn == nil {
 		return 0

@@ -859,23 +859,21 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 	if err != nil {
 		return
 	}
-	tx, err := lib.GetTransactionNode(data.(parser.NodeC), extra)
+	txd, txNode, err := lib.GetTransactionDataAndNodeForKey(data.(parser.NodeC), extra)
 	if err != nil {
 		return
 	}
-	txd := lib.NewTranactionDataFromNode(tx.(parser.NodeI))
 
 	d := gui.NewInputDataWindow(
-		fmt.Sprintf("Update '%s' Reference '%s'", txd.DateTime(), txd.Ref()),
+		fmt.Sprintf("Update '%s'", txd.Ref()),
 		fmt.Sprintf("Update %s data and press OK", t),
 		func() {}, // On Cancel
 		func(m *gui.InputData) { // On OK
 			count := 0
 			for _, v := range m.Data() {
-				count = count + lib.UpdateNodeFromTranactionData(tx, v.Id, v.Value, txd.TxType())
+				count = count + lib.UpdateNodeFromTranactionData(txNode, v.Id, v.Value)
 			}
 			if count > 0 {
-				lib.InitUserAssetsCache(jsonData.GetDataMap())
 				dataMapUpdated("Transaction updated", dataPath.PathParent(), nil)
 			}
 		})
