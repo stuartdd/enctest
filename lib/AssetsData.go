@@ -303,12 +303,8 @@ func GetTransactionDataAndNodeForKey(txNode parser.NodeC, key string) (*Tranacti
 	return nil, nil, fmt.Errorf("failed GetTransactionNode. Transaction with key '%s' not found", key)
 }
 
-func newTranactionData(dateTime string, value float64, ref string, typ TransactionTypeEnum, n parser.NodeI) *TranactionData {
-	dt, err := ParseDateString(dateTime)
-	if err != nil {
-		return &TranactionData{err: fmt.Errorf("datetime format error: %s '%s'", err, n.JsonValue()), lineValue: 0.0, txType: TX_TYPE_ERR}
-	}
-	return &TranactionData{dateTime: dt, value: value, ref: ref, lineValue: 0.0, txType: typ}
+func newTranactionData(dateTime time.Time, value float64, ref string, typ TransactionTypeEnum, n parser.NodeI) *TranactionData {
+	return &TranactionData{dateTime: dateTime, value: value, ref: ref, lineValue: 0.0, txType: typ}
 }
 
 func newTranactionDataError(err string, n parser.NodeI) *TranactionData {
@@ -432,6 +428,10 @@ func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
 		if dtn == nil {
 			return newTranactionDataError(fmt.Sprintf("Invalid Transaction node has no '%s' member", IdTxDate), n)
 		}
+		dt, err := ParseDateString(dtn.String())
+		if err != nil {
+			return newTranactionDataError("invalid date time. member '%s'", dtn)
+		}
 		ty := n.(parser.NodeC).GetNodeWithName(IdTxType)
 		tys := TX_TYPE_ERR
 		if ty != nil && ty.GetNodeType() == parser.NT_STRING {
@@ -450,7 +450,7 @@ func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
 			return newTranactionDataError(fmt.Sprintf("Invalid Transaction node has no '%s' member", IdTxRef), n)
 		}
 		ref := rn.String()
-		return newTranactionData(dtn.String(), val, ref, tys, n)
+		return newTranactionData(dt, val, ref, tys, n)
 	} else {
 		return newTranactionDataError("invalid Transaction node has no members (date, val and ref) '%s'", n)
 	}

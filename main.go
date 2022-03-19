@@ -749,9 +749,10 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 		"Update the data and press OK",
 		func() {}, // On Cancel
 		func(m *gui.InputData) { // On OK
+			dt, _ := lib.ParseDateString(m.GetString(lib.IdTxDate, lib.FormatDateTime(time.Now())))
 			jsonData.AddTransaction(
 				dataPath,
-				m.GetString(lib.IdTxDate, time.Now().Local().Format(lib.DATE_TIME_FORMAT_TXN)),
+				dt,
 				m.GetString(lib.IdTxRef, "ref"),
 				m.GetFloat(lib.IdTxVal, 0.1),
 				lib.TransactionTypeEnum(m.GetString(lib.IdTxType, string(lib.TX_TYPE_DEB))))
