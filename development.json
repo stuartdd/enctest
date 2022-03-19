@@ -1,9 +1,5 @@
 
     {
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
         "search": {
             "lastGoodList": [
                 "notes",
@@ -14,16 +10,24 @@
             "case": false
         },
         "log": {
-            "prefix": "INFO",
             "fileName": "enctest.log",
-            "active": true
+            "active": true,
+            "prefix": "INFO"
         },
         "file": {
-            "postDataUrl": "",
             "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
+            "getDataUrl": "",
+            "postDataUrl": ""
         },
         "import": {
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/libtest/",
+            "filter": [
+                ".csvt",
+                ".txt",
+                ".go",
+                ".mod"
+            ],
             "csvSkipHeader": true,
             "csvColumns": [
                 "date",
@@ -34,28 +38,24 @@
                 "db",
                 "cr",
                 ""
-            ],
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/libtest/",
-            "filter": [
-                ".csvt",
-                ".txt",
-                ".go",
-                ".mod"
             ]
         },
         "theme": "dark",
         "data": {
+            "presentationmode": false,
             "hintIsCalled": "Hint",
             "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
-            "noteIsCalled": "Note",
-            "presentationmode": false
+            "noteIsCalled": "Note"
         },
         "screen": {
-            "fullScreen": false,
             "split": 0.223558,
-            "width": 1235.416626,
-            "height": 625.416626
+            "width": 1038,
+            "height": 557,
+            "fullScreen": false
+        },
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
         }
     }
