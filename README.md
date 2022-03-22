@@ -1,5 +1,9 @@
 # enctest
 
+## Bug List
+
+Add user menu option missing
+
 ## Create and Test encryption in GO
 
 

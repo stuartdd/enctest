@@ -1,24 +1,5 @@
 
     {
-        "search": {
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note"
-            ],
-            "case": false
-        },
-        "log": {
-            "fileName": "enctest.log",
-            "active": true,
-            "prefix": "INFO"
-        },
-        "file": {
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": "",
-            "postDataUrl": ""
-        },
         "import": {
             "csvDateFormat": "02/01/2006",
             "path": "/home/stuart/git/golang/enctest/libtest/",
@@ -42,20 +23,39 @@
         },
         "theme": "dark",
         "data": {
-            "presentationmode": false,
-            "hintIsCalled": "Hint",
             "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
-            "noteIsCalled": "Note"
+            "noteIsCalled": "Note",
+            "presentationmode": false,
+            "hintIsCalled": "Hint"
         },
         "screen": {
+            "fullScreen": false,
             "split": 0.223558,
-            "width": 1038,
-            "height": 557,
-            "fullScreen": false
+            "width": 1037.619141,
+            "height": 640
         },
         "dialog": {
             "copyTimeOutMS": 2500,
             "saveTimeOutMS": 3000
+        },
+        "search": {
+            "case": false,
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note"
+            ]
+        },
+        "log": {
+            "active": true,
+            "prefix": "INFO",
+            "fileName": "enctest.log"
+        },
+        "file": {
+            "postDataUrl": "",
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
         }
     }

@@ -62,6 +62,7 @@ const (
 	ADD_TYPE_NOTE_ITEM
 
 	UID_POS_USER       = 0
+	UID_POS_TYPE       = 1
 	UID_POS_PWHINT     = 2
 	UID_POS_ASSET_NAME = 2
 
@@ -470,26 +471,43 @@ func makeMenus() *fyne.MainMenu {
 	hintName := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	noteName := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Note")
 	assetName := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+
+	user := currentSelPath.StringFirst()
 	hint := currentSelPath.StringAt(UID_POS_PWHINT)
-	user := currentSelPath.StringAt(UID_POS_USER)
-
-	n1 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem)
-	n3 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", hintName, user), addNewHint)
-	n4 := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", assetName, user), addNewAsset)
-	n5 := fyne.NewMenuItem("User", addNewUser)
-	var newItem *fyne.Menu
-	if hint == "" {
-		newItem = fyne.NewMenu("New", n1, n3, n4)
-	} else {
-		newItem = fyne.NewMenu("New",
-			n1,
-			fyne.NewMenuItem(fmt.Sprintf("%s Item for '%s'", hintName, hint), addNewHintItem),
-			n3,
-			fyne.NewMenuItem(fmt.Sprintf("Clone '%s'", hint), cloneHint),
-			fyne.NewMenuItem(fmt.Sprintf("Clone Full '%s'", hint), cloneHintFull),
-			n4, n5)
+	selType := currentSelPath.StringAt(UID_POS_TYPE)
+	newItem := fyne.NewMenu("New")
+	switch selType {
+	case lib.IdNotes:
+		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem))
+	case lib.IdHints:
+		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s Item for '%s'", hintName, user), addNewHintItem))
+		if hint != "" {
+			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("Clone '%s'", hint), cloneHint))
+			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("Clone Full '%s'", hint), cloneHintFull))
+		}
+	case lib.IdAssets:
+	default:
+		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", hintName, user), addNewHint))
+		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem))
+		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", assetName, user), addNewAsset))
+		newItem.Items = append(newItem.Items, fyne.NewMenuItem("New User", addNewUser))
 	}
-
+	// addNoteM := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem)
+	// addHintM := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", hintName, user), addNewHint)
+	// addAssetM := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", assetName, user), addNewAsset)
+	// addUserM := fyne.NewMenuItem("User", addNewUser)
+	// if hint == "" {
+	// 	newItem = fyne.NewMenu("New", addNoteM, addHintM, addAssetM, addUserM)
+	// } else {
+	// 	newItem = fyne.NewMenu("New",
+	// 		addNoteM,
+	// 		addHintM,
+	// 		fyne.NewMenuItem(fmt.Sprintf("%s Item for '%s'", hintName, hint), addNewHintItem),
+	// 		fyne.NewMenuItem(fmt.Sprintf("Clone '%s'", hint), cloneHint),
+	// 		fyne.NewMenuItem(fmt.Sprintf("Clone Full '%s'", hint), cloneHintFull),
+	// 		addAssetM,
+	// 		addUserM)
+	// }
 	var themeMenuItem *fyne.MenuItem
 	if preferences.GetStringWithFallback(themeVarPrefName, "dark") == "dark" {
 		themeMenuItem = fyne.NewMenuItem("Light Theme", func() {
@@ -761,7 +779,7 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 	d.Add(lib.IdTxDate, "Date", lib.CurrentDateString(), func(s string) error {
 		_, e := lib.ParseDateString(s)
 		if e != nil {
-			return fmt.Errorf("Format:%s or %s", lib.DATE_TIME_FORMAT_TXN, lib.DATE_FORMAT_TXN)
+			return fmt.Errorf("format:%s or %s", lib.DATE_TIME_FORMAT_TXN, lib.DATE_FORMAT_TXN)
 		} else {
 			return nil
 		}
