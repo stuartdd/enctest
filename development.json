@@ -1,39 +1,18 @@
 
     {
-        "import": {
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/libtest/",
-            "filter": [
-                ".csvt",
-                ".txt",
-                ".go",
-                ".mod"
-            ],
-            "csvSkipHeader": true,
-            "csvColumns": [
-                "date",
-                "type",
-                "",
-                "",
-                "ref",
-                "db",
-                "cr",
-                ""
-            ]
-        },
         "theme": "dark",
         "data": {
+            "presentationmode": true,
+            "hintIsCalled": "Hint",
             "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
-            "noteIsCalled": "Note",
-            "presentationmode": false,
-            "hintIsCalled": "Hint"
+            "noteIsCalled": "Note"
         },
         "screen": {
+            "height": 704.285767,
             "fullScreen": false,
             "split": 0.223558,
-            "width": 1037.619141,
-            "height": 640
+            "width": 1142.380981
         },
         "dialog": {
             "copyTimeOutMS": 2500,
@@ -54,8 +33,29 @@
             "fileName": "enctest.log"
         },
         "file": {
-            "postDataUrl": "",
             "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
+            "getDataUrl": "",
+            "postDataUrl": ""
+        },
+        "import": {
+            "path": "/home/stuart/git/golang/enctest/libtest/",
+            "filter": [
+                ".csvt",
+                ".txt",
+                ".go",
+                ".mod"
+            ],
+            "csvSkipHeader": true,
+            "csvColumns": [
+                "date",
+                "type",
+                "",
+                "",
+                "ref",
+                "db",
+                "cr",
+                ""
+            ],
+            "csvDateFormat": "02/01/2006"
         }
     }

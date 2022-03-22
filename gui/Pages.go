@@ -374,6 +374,7 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 	data := details.GetObjectsForPage()
 	cObj := make([]fyne.CanvasObject, 0)
 	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
+	transPath := parser.NewPath("", ".")
 	for _, k := range keys {
 		v := data.GetNodeWithName(k)
 		idd := details.SelectedPath.StringAppend(k)
@@ -394,12 +395,7 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 		editEntry.RefreshData()
 		na := editEntry.NodeAnnotation
 		if v.GetName() == lib.IdTransactions && v.IsContainer() {
-			cObj = append(cObj, widget.NewSeparator())
-			accountData, err := lib.FindUserAccount(details.User, details.Title)
-			accountData.Path = *editEntry.Path
-			if err == nil {
-				cObj = getTransactionalCanvasObjects(actionFunc, cObj, accountData, pref, statusDisplay)
-			}
+			transPath = editEntry.Path
 		} else {
 			clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {
 				w.Clipboard().SetContent(editEntry.GetCurrentText())
@@ -459,6 +455,14 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 				editEntry.We = we
 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
 			}
+		}
+	}
+	if !transPath.IsEmpty() {
+		cObj = append(cObj, widget.NewSeparator())
+		accountData, err := lib.FindUserAccount(details.User, details.Title)
+		accountData.Path = *transPath
+		if err == nil {
+			cObj = getTransactionalCanvasObjects(actionFunc, cObj, accountData, pref, statusDisplay)
 		}
 	}
 	return container.NewScroll(container.NewVBox(cObj...))

@@ -229,7 +229,15 @@ func (p *JsonData) AddAsset(userPath *parser.Path, assetName string) error {
 func (p *JsonData) AddTransaction(dataPath *parser.Path, date time.Time, ref string, amount float64, txType TransactionTypeEnum) error {
 	data, err := parser.Find(p.GetUserRoot(), dataPath)
 	if err != nil {
-		return fmt.Errorf("the transaction node for '%s' cannot be found", dataPath)
+		data, err = parser.Find(p.GetUserRoot(), dataPath.PathParent())
+		if err != nil {
+			return fmt.Errorf("the transaction node for '%s' cannot be found", dataPath)
+		}
+		addDefaultAccountItemsToAsset(data.(*parser.JsonObject))
+		data, err = parser.Find(p.GetUserRoot(), dataPath)
+		if err != nil {
+			return fmt.Errorf("the transaction node for '%s' cannot be found", dataPath)
+		}
 	}
 	addTransactionToAsset(data.(*parser.JsonList), newTranactionData(date, amount, ref, txType, data))
 	p.navIndex = createNavIndex(p.dataMap)

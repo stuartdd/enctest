@@ -473,7 +473,7 @@ func makeMenus() *fyne.MainMenu {
 	assetName := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
 
 	user := currentSelPath.StringFirst()
-	hint := currentSelPath.StringAt(UID_POS_PWHINT)
+	selTypeItem := currentSelPath.StringAt(UID_POS_PWHINT)
 	selType := currentSelPath.StringAt(UID_POS_TYPE)
 	newItem := fyne.NewMenu("New")
 	switch selType {
@@ -481,33 +481,23 @@ func makeMenus() *fyne.MainMenu {
 		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem))
 	case lib.IdHints:
 		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s Item for '%s'", hintName, user), addNewHintItem))
-		if hint != "" {
-			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("Clone '%s'", hint), cloneHint))
-			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("Clone Full '%s'", hint), cloneHintFull))
+		if selTypeItem != "" {
+			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("Clone '%s'", selTypeItem), cloneHint))
+			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("Clone Full '%s'", selTypeItem), cloneHintFull))
 		}
 	case lib.IdAssets:
+		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", assetName, user), addNewAsset))
+		if selTypeItem != "" {
+			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s Item for '%s'", assetName, selTypeItem), addNewAssetItem))
+			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s Transaction for '%s'", assetName, selTypeItem), addTransaction))
+		}
 	default:
 		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", hintName, user), addNewHint))
 		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem))
 		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", assetName, user), addNewAsset))
 		newItem.Items = append(newItem.Items, fyne.NewMenuItem("New User", addNewUser))
 	}
-	// addNoteM := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem)
-	// addHintM := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", hintName, user), addNewHint)
-	// addAssetM := fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", assetName, user), addNewAsset)
-	// addUserM := fyne.NewMenuItem("User", addNewUser)
-	// if hint == "" {
-	// 	newItem = fyne.NewMenu("New", addNoteM, addHintM, addAssetM, addUserM)
-	// } else {
-	// 	newItem = fyne.NewMenu("New",
-	// 		addNoteM,
-	// 		addHintM,
-	// 		fyne.NewMenuItem(fmt.Sprintf("%s Item for '%s'", hintName, hint), addNewHintItem),
-	// 		fyne.NewMenuItem(fmt.Sprintf("Clone '%s'", hint), cloneHint),
-	// 		fyne.NewMenuItem(fmt.Sprintf("Clone Full '%s'", hint), cloneHintFull),
-	// 		addAssetM,
-	// 		addUserM)
-	// }
+
 	var themeMenuItem *fyne.MenuItem
 	if preferences.GetStringWithFallback(themeVarPrefName, "dark") == "dark" {
 		themeMenuItem = fyne.NewMenuItem("Light Theme", func() {
@@ -761,6 +751,10 @@ func addNewHint() {
 	}
 }
 
+func addTransaction() {
+	addTransactionValue(currentSelPath.StringAppend(lib.IdTransactions), currentSelPath.StringLast())
+}
+
 func addTransactionValue(dataPath *parser.Path, extra string) {
 	d := gui.NewInputDataWindow(
 		fmt.Sprintf("Add Transaction to account '%s'", extra),
@@ -768,12 +762,15 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 		func() {}, // On Cancel
 		func(m *gui.InputData) { // On OK
 			dt, _ := lib.ParseDateString(m.GetString(lib.IdTxDate, lib.FormatDateTime(time.Now())))
-			jsonData.AddTransaction(
+			err := jsonData.AddTransaction(
 				dataPath,
 				dt,
 				m.GetString(lib.IdTxRef, "ref"),
 				m.GetFloat(lib.IdTxVal, 0.1),
 				lib.TransactionTypeEnum(m.GetString(lib.IdTxType, string(lib.TX_TYPE_DEB))))
+			if err != nil {
+				timedError(err.Error())
+			}
 		})
 
 	d.Add(lib.IdTxDate, "Date", lib.CurrentDateString(), func(s string) error {
