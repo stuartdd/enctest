@@ -21,7 +21,7 @@ type InpuFieldData struct {
 	Labels     []string
 	Options    []string
 	Value      string
-	Validator  func(string) error
+	Validator  func(string) (string, error)
 	errorLabel *widget.Label
 }
 
@@ -45,7 +45,7 @@ func newInpuData() *InputData {
 	return &InputData{entries: make([]*InpuFieldData, 0)}
 }
 
-func (inD *InputData) add(id string, labels []string, value string, options []string, validator func(string) error) {
+func (inD *InputData) add(id string, labels []string, value string, options []string, validator func(string) (string, error)) {
 	inD.entries = append(inD.entries, newInpuFieldData(id, labels, value, options, validator))
 }
 
@@ -82,7 +82,7 @@ func (inD *InputData) GetFloat(name string, def float64) float64 {
 	return v
 }
 
-func newInpuFieldData(id string, labels []string, value string, options []string, validator func(string) error) *InpuFieldData {
+func newInpuFieldData(id string, labels []string, value string, options []string, validator func(string) (string, error)) *InpuFieldData {
 	return &InpuFieldData{
 		Id:         id,
 		Labels:     labels,
@@ -110,11 +110,11 @@ func NewInputDataWindow(title string, info string, cancelFunction func(), select
 	}
 }
 
-func (idl *InputDataWindow) AddOptions(id string, labels []string, value string, options []string, validator func(string) error) {
+func (idl *InputDataWindow) AddOptions(id string, labels []string, value string, options []string, validator func(string) (string, error)) {
 	idl.entries.add(id, labels, value, options, validator)
 }
 
-func (idl *InputDataWindow) Add(id string, label string, value string, validator func(string) error) {
+func (idl *InputDataWindow) Add(id string, label string, value string, validator func(string) (string, error)) {
 	if idl.longestLabel < len(label) {
 		idl.longestLabel = len(label)
 	}
@@ -200,15 +200,17 @@ func (idl *InputDataWindow) createRow(ifd *InpuFieldData) *fyne.Container {
 
 func (idl *InputDataWindow) validateAll() {
 	errStr := ""
+	infoStr := ""
 	field := ""
 	for _, v := range idl.entries.Data() {
 		var err error = nil
-		err = v.Validator(v.Value)
+		s, err := v.Validator(v.Value)
 		if err != nil {
 			v.errorLabel.SetText(ERROR_BAD)
 			errStr = err.Error()
 			field = v.Labels[0]
 		} else {
+			infoStr = s
 			v.errorLabel.SetText(ERROR_GOOD)
 		}
 	}
@@ -217,7 +219,11 @@ func (idl *InputDataWindow) validateAll() {
 		idl.infoLabel.SetText(fmt.Sprintf("Error in '%s:'. Field %s.", field, errStr))
 	} else {
 		idl.okButton.Enable()
-		idl.infoLabel.SetText(idl.info)
+		if infoStr != "" {
+			idl.infoLabel.SetText(idl.info)
+		} else {
+			idl.infoLabel.SetText(infoStr)
+		}
 	}
 }
 

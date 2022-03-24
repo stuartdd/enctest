@@ -2,21 +2,21 @@
     {
         "theme": "dark",
         "data": {
-            "presentationmode": true,
+            "presentationmode": false,
             "hintIsCalled": "Hint",
             "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
             "noteIsCalled": "Note"
         },
         "screen": {
-            "height": 704.285767,
+            "height": 705,
             "fullScreen": false,
             "split": 0.223558,
-            "width": 1142.380981
+            "width": 1142
         },
         "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
         },
         "search": {
             "case": false,

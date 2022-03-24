@@ -277,6 +277,7 @@ func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(stri
 
 func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string), cObj []fyne.CanvasObject, accData *lib.AccountData, pref *pref.PrefData, statusDisplay *StatusDisplay) []fyne.CanvasObject {
 	transAreCalled := pref.GetStringWithFallback(DataTransIsCalledPrefName, "Transaction")
+	editMode := !pref.GetBoolWithFallback(DataPresModePrefName, true)
 	txList := accData.Transactions
 	refMax := 10
 	for _, tx := range txList {
@@ -285,17 +286,21 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 		}
 	}
 	hbTop := container.NewHBox()
-	imp := NewMyIconButton("", theme.StorageIcon(), func() {
-		actionFunc(ACTION_IMPORT_TRANSACTION, accData.Path.PathParent(), accData.AccountName)
-	}, statusDisplay, "Import from CSV file")
-	hbTop.Add(imp)
+	if editMode {
+		imp := NewMyIconButton("", theme.StorageIcon(), func() {
+			actionFunc(ACTION_IMPORT_TRANSACTION, accData.Path.PathParent(), accData.AccountName)
+		}, statusDisplay, "Import from CSV file")
+		hbTop.Add(imp)
+	}
 	hbTop.Add(widget.NewLabel(fmt.Sprintf("%s. List of %s(s). Current balance %0.2f", accData.AccountName, transAreCalled, accData.ClosingValue)))
 	cObj = append(cObj, hbTop)
 	hb := container.NewHBox()
-	add := NewMyIconButton("", theme.ContentAddIcon(), func() {
-		actionFunc(ACTION_ADD_TRANSACTION, &accData.Path, accData.AccountName)
-	}, statusDisplay, fmt.Sprintf("Add a transaction '%s'", accData.AccountName))
-	hb.Add(add)
+	if editMode {
+		add := NewMyIconButton("", theme.ContentAddIcon(), func() {
+			actionFunc(ACTION_ADD_TRANSACTION, &accData.Path, accData.AccountName)
+		}, statusDisplay, fmt.Sprintf("Add a transaction '%s'", accData.AccountName))
+		hb.Add(add)
+	}
 	hb.Add(NewStringFieldLeft("Date Time:", 19))
 	hb.Add(NewStringFieldRight("Reference:", refMax))
 	hb.Add(NewStringFieldRight("In:", 10))
@@ -305,10 +310,12 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 	for _, tx := range txList {
 		s := tx.Key()
 		hb := container.NewHBox()
-		rename := NewMyIconButton("", theme2.EditIcon(), func() {
-			actionFunc(ACTION_UPDATE_TRANSACTION, &accData.Path, s)
-		}, statusDisplay, fmt.Sprintf("Upate '%s'", tx.Ref()))
-		hb.Add(rename)
+		if editMode {
+			rename := NewMyIconButton("", theme2.EditIcon(), func() {
+				actionFunc(ACTION_UPDATE_TRANSACTION, &accData.Path, s)
+			}, statusDisplay, fmt.Sprintf("Upate '%s'", tx.Ref()))
+			hb.Add(rename)
+		}
 		switch tx.TxType() {
 		case lib.TX_TYPE_IV:
 			hb.Add(NewStringFieldLeft("---- -- -- -- -- --", 19))

@@ -773,36 +773,36 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 			}
 		})
 
-	d.Add(lib.IdTxDate, "Date", lib.CurrentDateString(), func(s string) error {
+	d.Add(lib.IdTxDate, "Date", lib.CurrentDateString(), func(s string) (string, error) {
 		_, e := lib.ParseDateString(s)
 		if e != nil {
-			return fmt.Errorf("format:%s or %s", lib.DATE_TIME_FORMAT_TXN, lib.DATE_FORMAT_TXN)
+			return "", fmt.Errorf("format:%s or %s", lib.DATE_TIME_FORMAT_TXN, lib.DATE_FORMAT_TXN)
 		} else {
-			return nil
+			return "", nil
 		}
 	})
 
-	d.Add(lib.IdTxRef, "Reference", "ref", func(s string) error {
+	d.Add(lib.IdTxRef, "Reference", "ref", func(s string) (string, error) {
 		if s == "" {
-			return fmt.Errorf("cannot be empty")
+			return "", fmt.Errorf("cannot be empty")
 		} else {
-			return nil
+			return "", nil
 		}
 	})
 
-	d.Add(lib.IdTxVal, "Amount", "0.1", func(s string) error {
+	d.Add(lib.IdTxVal, "Amount", "0.1", func(s string) (string, error) {
 		v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 		if v <= 0.0 {
-			return fmt.Errorf("cannot be 0.0 or less")
+			return "", fmt.Errorf("cannot be 0.0 or less")
 		}
 		if err != nil {
-			return fmt.Errorf("is not a valid amount")
+			return "", fmt.Errorf("is not a valid amount")
 		}
-		return nil
+		return "", nil
 	})
 
-	d.AddOptions(lib.IdTxType, lib.TX_TYPE_LIST_LABLES, string(lib.TX_TYPE_DEB), lib.TX_TYPE_LIST_OPTIONS, func(s string) error {
-		return nil
+	d.AddOptions(lib.IdTxType, lib.TX_TYPE_LIST_LABLES, string(lib.TX_TYPE_DEB), lib.TX_TYPE_LIST_OPTIONS, func(s string) (string, error) {
+		return "", nil
 	})
 
 	d.Show(window)
@@ -894,28 +894,31 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 			}
 		})
 
-	d.Add(lib.IdTxRef, "Reference", txd.Ref(), func(s string) error {
+	d.Add(lib.IdTxRef, "Reference", txd.Ref(), func(s string) (string, error) {
 		if s == "" {
-			return fmt.Errorf("cannot be empty")
+			return "", fmt.Errorf("cannot be empty")
 		} else {
-			return nil
+			return "", nil
 		}
 	})
 
-	d.Add(lib.IdTxVal, "Amount", txd.Val(), func(s string) error {
+	d.Add(lib.IdTxVal, "Amount", txd.Val(), func(s string) (string, error) {
 		v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
-		if v < 0.1 {
-			return fmt.Errorf("cannot be less than 0.1")
-		}
 		if err != nil {
-			return fmt.Errorf("is not a valid amount")
+			return "", fmt.Errorf("is not a valid amount")
 		}
-		return nil
+		if v < 0 {
+			return "", fmt.Errorf("cannot be less than 0.1")
+		}
+		if v < 0.00001 {
+			return "Zero value will delete transaction", nil
+		}
+		return "", nil
 	})
 
 	if txd.TxType() != lib.TX_TYPE_IV {
-		d.AddOptions(lib.IdTxType, lib.TX_TYPE_LIST_LABLES, string(txd.TxType()), lib.TX_TYPE_LIST_OPTIONS, func(s string) error {
-			return nil
+		d.AddOptions(lib.IdTxType, lib.TX_TYPE_LIST_LABLES, string(txd.TxType()), lib.TX_TYPE_LIST_OPTIONS, func(s string) (string, error) {
+			return "", nil
 		})
 	}
 
