@@ -158,9 +158,15 @@ func ImportCsvData(txNode parser.NodeC, fileName string, skipFirstLine bool, dtF
 		tn.Add(parser.NewJsonString(IdTxRef, re))
 		tn.Add(parser.NewJsonString(IdTxType, string(tx)))
 		tn.Add(parser.NewJsonNumber(IdTxVal, va))
-		txNode.Add(tn)
+		if !txnExists(txNode, tn) {
+			txNode.Add(tn)
+		}
 	}
 	return nil
+}
+
+func txnExists(parentNode parser.NodeC, newNode parser.NodeI) bool {
+	return false
 }
 
 //
@@ -223,6 +229,10 @@ func newUserAsset(userNode, assetsNode parser.NodeC) *UserAsset {
 }
 
 func (t *UserAsset) keyForUserAsset() string {
+	return userAssetKey(t.user, t.asset)
+}
+
+func (t *UserAsset) String() string {
 	return userAssetKey(t.user, t.asset)
 }
 
@@ -352,6 +362,13 @@ func (t *TranactionData) LineValue() float64 {
 
 func (t *TranactionData) SetLineValue(lineValue float64) {
 	t.lineValue = lineValue
+}
+
+func (t *TranactionData) Description() string {
+	if t.HasError() {
+		return t.err.Error()
+	}
+	return fmt.Sprintf("%s %s %s", t.DateTime(), t.Ref(), t.Val())
 }
 
 func (t *TranactionData) String() string {

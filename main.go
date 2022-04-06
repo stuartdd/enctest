@@ -97,7 +97,7 @@ var (
 	releaseTheBeast    = make(chan int, 1)
 	dataIsNotLoadedYet = true
 
-	importFileFilter = []string{".csv", ".txt", ".go", ".mod"}
+	importFileFilter = []string{".csv", ".csvt"}
 
 	dataFilePrefName          = parser.NewDotPath("file.datafile")
 	copyDialogTimePrefName    = parser.NewDotPath("dialog.copyTimeOutMS")
@@ -881,17 +881,17 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 		logInformationDialog("Error updating transaction value", err.Error())
 		return
 	}
-
+	deleteIfZero := txd.TxType() != lib.TX_TYPE_IV
 	d := gui.NewInputDataWindow(
-		fmt.Sprintf("Update '%s'", txd.Ref()),
+		fmt.Sprintf("Update '%s'", txd.Description()),
 		fmt.Sprintf("Update %s data and press OK", t),
 		func() {}, // On Cancel
 		func(m *gui.InputData) { // On OK
 			count := 0
 			vs := m.Get(lib.IdTxVal).Value
 			v, _ := strconv.ParseFloat(strings.TrimSpace(vs), 64)
-			if v < 0.00001 {
-				dil := dialog.NewConfirm(fmt.Sprintf("Delete %s", t), fmt.Sprintf("%s\n\nAre you sure?", extra), func(b bool) {
+			if v < 0.00001 && deleteIfZero {
+				dil := dialog.NewConfirm(fmt.Sprintf("Delete %s", t), fmt.Sprintf("%s\n\nAre you sure?", txd.Description()), func(b bool) {
 					if b {
 						data.(parser.NodeC).Remove(txNode)
 						dataMapUpdated("Transaction deleted", dataPath.PathParent(), nil)
@@ -921,11 +921,11 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 		if err != nil {
 			return "", fmt.Errorf("is not a valid amount")
 		}
-		if v < 0 {
-			return "", fmt.Errorf("cannot be less than 0.1")
+		if v < 0.01 {
+			return "", fmt.Errorf("cannot be less than 0.01")
 		}
-		if v < 0.00001 {
-			return "Zero value will delete transaction", nil
+		if v < 0.00001 && deleteIfZero {
+			return "Zero value will delete this transaction", nil
 		}
 		return "", nil
 	})
