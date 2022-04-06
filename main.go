@@ -873,10 +873,12 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 	t := preferences.GetStringWithFallback(gui.DataTransIsCalledPrefName, "Transaction")
 	data, err := parser.Find(jsonData.GetUserRoot(), dataPath)
 	if err != nil {
+		logInformationDialog("Error updating transaction value", err.Error())
 		return
 	}
 	txd, txNode, err := lib.GetTransactionDataAndNodeForKey(data.(parser.NodeC), extra)
 	if err != nil {
+		logInformationDialog("Error updating transaction value", err.Error())
 		return
 	}
 
@@ -886,11 +888,23 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 		func() {}, // On Cancel
 		func(m *gui.InputData) { // On OK
 			count := 0
-			for _, v := range m.Data() {
-				count = count + lib.UpdateNodeFromTranactionData(txNode, v.Id, v.Value)
-			}
-			if count > 0 {
-				dataMapUpdated("Transaction updated", dataPath.PathParent(), nil)
+			vs := m.Get(lib.IdTxVal).Value
+			v, _ := strconv.ParseFloat(strings.TrimSpace(vs), 64)
+			if v < 0.00001 {
+				dil := dialog.NewConfirm(fmt.Sprintf("Delete %s", t), fmt.Sprintf("%s\n\nAre you sure?", extra), func(b bool) {
+					if b {
+						data.(parser.NodeC).Remove(txNode)
+						dataMapUpdated("Transaction deleted", dataPath.PathParent(), nil)
+					}
+				}, window)
+				dil.Show()
+			} else {
+				for _, v := range m.Data() {
+					count = count + lib.UpdateNodeFromTranactionData(txNode, v.Id, v.Value)
+				}
+				if count > 0 {
+					dataMapUpdated("Transaction updated", dataPath.PathParent(), nil)
+				}
 			}
 		})
 

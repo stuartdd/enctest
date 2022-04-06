@@ -200,7 +200,7 @@ func (idl *InputDataWindow) createRow(ifd *InpuFieldData) *fyne.Container {
 
 func (idl *InputDataWindow) validateAll() {
 	errStr := ""
-	infoStr := ""
+	infoStr := idl.info
 	field := ""
 	for _, v := range idl.entries.Data() {
 		var err error = nil
@@ -210,8 +210,10 @@ func (idl *InputDataWindow) validateAll() {
 			errStr = err.Error()
 			field = v.Labels[0]
 		} else {
-			infoStr = s
 			v.errorLabel.SetText(ERROR_GOOD)
+		}
+		if s != "" {
+			infoStr = s
 		}
 	}
 	if errStr != "" {
@@ -219,11 +221,7 @@ func (idl *InputDataWindow) validateAll() {
 		idl.infoLabel.SetText(fmt.Sprintf("Error in '%s:'. Field %s.", field, errStr))
 	} else {
 		idl.okButton.Enable()
-		if infoStr != "" {
-			idl.infoLabel.SetText(idl.info)
-		} else {
-			idl.infoLabel.SetText(infoStr)
-		}
+		idl.infoLabel.SetText(infoStr)
 	}
 }
 
