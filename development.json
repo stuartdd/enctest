@@ -1,38 +1,5 @@
 
     {
-        "import": {
-            "filter": [
-                ".csvt",
-                ".csv"
-            ],
-            "csvSkipHeader": true,
-            "csvColumns": [
-                "date",
-                "type",
-                "",
-                "",
-                "ref",
-                "db",
-                "cr",
-                ""
-            ],
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/libtest/"
-        },
-        "theme": "dark",
-        "data": {
-            "presentationmode": false,
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction",
-            "noteIsCalled": "Note"
-        },
-        "screen": {
-            "split": 0.223558,
-            "width": 1187.619141,
-            "height": 804.285767,
-            "fullScreen": false
-        },
         "dialog": {
             "saveTimeOutMS": 3000,
             "copyTimeOutMS": 2500
@@ -52,8 +19,41 @@
             "fileName": "enctest.log"
         },
         "file": {
-            "postDataUrl": "",
             "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
+            "getDataUrl": "",
+            "postDataUrl": ""
+        },
+        "import": {
+            "csvSkipHeader": true,
+            "csvColumns": [
+                "date",
+                "type",
+                "",
+                "",
+                "ref",
+                "db",
+                "cr",
+                ""
+            ],
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/libtest/",
+            "filter": [
+                ".csvt",
+                ".csv"
+            ]
+        },
+        "theme": "dark",
+        "data": {
+            "noteIsCalled": "Note",
+            "presentationmode": false,
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset",
+            "transIsCalled": "Transaction"
+        },
+        "screen": {
+            "split": 0.223558,
+            "width": 1187.142944,
+            "height": 797.61908,
+            "fullScreen": false
         }
     }

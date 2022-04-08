@@ -120,15 +120,16 @@ func InitUserAssetsCache(root *parser.JsonObject) {
 	cachedUserAssets = cache
 }
 
-func ImportCsvData(txNode parser.NodeC, fileName string, skipFirstLine bool, dtFormat string, mapList []string) error {
+func ImportCsvData(txNode parser.NodeC, fileName string, skipFirstLine bool, dtFormat string, mapList []string) (int, error) {
+	count := 0
 	data, err := ParseFileToMap(fileName, skipFirstLine, mapList)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	for _, m := range data {
 		dt, err := time.Parse(TIME_FORMAT_CSV, m["date"])
 		if err != nil {
-			return err
+			return 0, err
 		}
 		dts := FormatDateTime(dt)
 		tx := TX_TYPE_ERR
@@ -137,14 +138,14 @@ func ImportCsvData(txNode parser.NodeC, fileName string, skipFirstLine bool, dtF
 			tx = TX_TYPE_CRE
 			va, err = strconv.ParseFloat(m["cr"], 64)
 			if err != nil {
-				return err
+				return 0, err
 			}
 		} else {
 			if m["db"] != "" {
 				tx = TX_TYPE_DEB
 				va, err = strconv.ParseFloat(m["db"], 64)
 				if err != nil {
-					return err
+					return 0, err
 				}
 			}
 		}
@@ -158,14 +159,23 @@ func ImportCsvData(txNode parser.NodeC, fileName string, skipFirstLine bool, dtF
 		tn.Add(parser.NewJsonString(IdTxRef, re))
 		tn.Add(parser.NewJsonString(IdTxType, string(tx)))
 		tn.Add(parser.NewJsonNumber(IdTxVal, va))
-		if !txnExists(txNode, tn) {
+		if !NodeExistsInContainer(txNode, tn) {
+			count++
 			txNode.Add(tn)
 		}
 	}
-	return nil
+	if count == 0 {
+		return 0, fmt.Errorf("no NEW tranactions have been added")
+	}
+	return count, nil
 }
 
-func txnExists(parentNode parser.NodeC, newNode parser.NodeI) bool {
+func NodeExistsInContainer(parentNode parser.NodeC, newNode parser.NodeI) bool {
+	for _, v := range parentNode.GetValues() {
+		if v.Equal(newNode) {
+			return true
+		}
+	}
 	return false
 }
 

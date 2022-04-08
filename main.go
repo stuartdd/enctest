@@ -809,7 +809,7 @@ func addTransactionValue(dataPath *parser.Path, extra string) {
 	go d.Validate()
 }
 
-func importCSVTransactions(dataPath *parser.Path, fileName string) error {
+func importCSVTransactions(dataPath *parser.Path, fileName string) (int, error) {
 	skipHeader := preferences.GetBoolWithFallback(importCsvSkipHPrefName, true)
 	dateFmt := preferences.GetStringWithFallback(importCsvDateFmtPrefName, lib.TIME_FORMAT_CSV)
 	dataMapList := preferences.GetStringListWithFallback(importCsvColNamesPrefName, nil)
@@ -821,11 +821,11 @@ func importCSVTransactions(dataPath *parser.Path, fileName string) error {
 	if n.IsContainer() {
 		t := n.(parser.NodeC).GetNodeWithName(lib.IdTransactions)
 		if t == nil {
-			return fmt.Errorf("data error: %s node missing for %s.\nPlease add an account transactions node", lib.IdTransactions, n.GetName())
+			return 0, fmt.Errorf("data error: %s node missing for %s.\nPlease add an account transactions node", lib.IdTransactions, n.GetName())
 		}
 		return lib.ImportCsvData(t.(parser.NodeC), fileName, skipHeader, dateFmt, dataMapList)
 	}
-	return fmt.Errorf("data error: %s node is not a container node", n.GetName())
+	return 0, fmt.Errorf("data error: %s node is not a container node", n.GetName())
 
 }
 
@@ -843,15 +843,18 @@ func importTransactions(dataPath *parser.Path, extra string) {
 			} else {
 				p := uc.URI().Path()
 				p = p[0 : len(p)-len(uc.URI().Name())]
+				n := uc.URI().Name()
 				if len(p) >= 2 {
 					preferences.PutString(importPathPrefName, p)
 				}
 				if err == nil {
-					err := importCSVTransactions(dataPath, uc.URI().Path())
+					count, err := importCSVTransactions(dataPath, uc.URI().Path())
 					if err != nil {
-						timedError(fmt.Sprintf("Failed to import CSV file %s\nError: %s", uc.URI().Path(), err))
+						timedError(fmt.Sprintf("Failed to import CSV file %s\nError: %s", n, err))
 					} else {
-						dataMapUpdated("Transactions imported", dataPath, nil)
+						s := fmt.Sprintf("%d transaction(s) imported from file %s", count, n)
+						dataMapUpdated(s, dataPath, nil)
+						timedNotification(5000, "Successful import", s)
 					}
 				} else {
 					timedError(fmt.Sprintf("Failed to read file %s\nError: %s", uc.URI().Path(), err))
@@ -891,10 +894,10 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 			vs := m.Get(lib.IdTxVal).Value
 			v, _ := strconv.ParseFloat(strings.TrimSpace(vs), 64)
 			if v < 0.00001 && deleteIfZero {
-				dil := dialog.NewConfirm(fmt.Sprintf("Delete %s", t), fmt.Sprintf("%s\n\nAre you sure?", txd.Description()), func(b bool) {
+				dil := dialog.NewConfirm(fmt.Sprintf("REMOVE: %s", t), fmt.Sprintf("%s\n\nAre you sure?", txd.Description()), func(b bool) {
 					if b {
 						data.(parser.NodeC).Remove(txNode)
-						dataMapUpdated("Transaction deleted", dataPath.PathParent(), nil)
+						dataMapUpdated("Transaction removed", dataPath.PathParent(), nil)
 					}
 				}, window)
 				dil.Show()
@@ -921,11 +924,11 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 		if err != nil {
 			return "", fmt.Errorf("is not a valid amount")
 		}
-		if v < 0.01 {
-			return "", fmt.Errorf("cannot be less than 0.01")
-		}
 		if v < 0.00001 && deleteIfZero {
-			return "Zero value will delete this transaction", nil
+			return "Zero value will REMOVE this transaction", nil
+		}
+		if v < 0.0 {
+			return "", fmt.Errorf("cannot be less than 0.0")
 		}
 		return "", nil
 	})
