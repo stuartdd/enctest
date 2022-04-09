@@ -292,7 +292,7 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 		}, statusDisplay, "Import from CSV file")
 		hbTop.Add(imp)
 	}
-	hbTop.Add(widget.NewLabel(fmt.Sprintf("%s. List of %s(s). Current balance %0.2f", accData.AccountName, transAreCalled, accData.ClosingValue)))
+	hbTop.Add(widget.NewLabel(fmt.Sprintf("%s. List of [%d] %s(s). Current balance %0.2f", accData.AccountName, len(accData.Transactions), transAreCalled, accData.ClosingValue)))
 	cObj = append(cObj, hbTop)
 	hb := container.NewHBox()
 	if editMode {
