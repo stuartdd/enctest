@@ -83,8 +83,8 @@ func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool
 	return runModalEntryPopup(w, heading, txt, true, false, lib.NOTE_TYPE_SL, accept)
 }
 
-func GetWelcomePage(preferences pref.PrefData) *DetailPage {
-	return NewDetailPage(parser.NewBarPath(""), welcomeTitle, "", "", welcomeScreen, welcomeControls, nil, preferences)
+func GetWelcomePage(preferences pref.PrefData, log func(string)) *DetailPage {
+	return NewDetailPage(parser.NewBarPath(""), welcomeTitle, "", "", welcomeScreen, welcomeControls, nil, preferences, log)
 }
 
 /*
@@ -122,37 +122,37 @@ func GetDetailTypeGroupTitle(selectedPath *parser.Path, preferences pref.PrefDat
 	}
 }
 
-func GetDetailPage(selectedPath *parser.Path, dataRootMap parser.NodeI, preferences pref.PrefData) *DetailPage {
+func GetDetailPage(selectedPath *parser.Path, dataRootMap parser.NodeI, preferences pref.PrefData, log func(string)) *DetailPage {
 	user0 := selectedPath.StringAt(0)
 	_, group1, title := GetDetailTypeGroupTitle(selectedPath, preferences)
 	switch selectedPath.Len() {
 	case 1:
-		return NewDetailPage(selectedPath, "", "", selectedPath.String(), welcomeScreen, userControls, dataRootMap, preferences)
+		return NewDetailPage(selectedPath, "", "", selectedPath.String(), welcomeScreen, userControls, dataRootMap, preferences, log)
 	case 2:
 		if group1 == idPwDetails {
-			return NewDetailPage(selectedPath, user0, group1, title+"s", welcomeScreen, hintControls, dataRootMap, preferences)
+			return NewDetailPage(selectedPath, user0, group1, title+"s", welcomeScreen, hintControls, dataRootMap, preferences, log)
 		}
 		if group1 == idNotes {
-			return NewDetailPage(selectedPath, user0, group1, title+"s", detailsScreen, noteDetailsControls, dataRootMap, preferences)
+			return NewDetailPage(selectedPath, user0, group1, title+"s", detailsScreen, noteDetailsControls, dataRootMap, preferences, log)
 		}
 		if group1 == lib.IdAssets {
-			return NewDetailPage(selectedPath, user0, group1, title+"s", assetScreen, assetSummaryControls, dataRootMap, preferences)
+			return NewDetailPage(selectedPath, user0, group1, title+"s", assetScreen, assetSummaryControls, dataRootMap, preferences, log)
 		}
-		return NewDetailPage(selectedPath, user0, group1, title, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(selectedPath, user0, group1, title, welcomeScreen, welcomeControls, dataRootMap, preferences, log)
 	case 3:
 		_, name2 := lib.GetNodeAnnotationTypeAndName(selectedPath.StringAt(2))
 		if group1 == idPwDetails {
-			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, hintDetailsControls, dataRootMap, preferences)
+			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, hintDetailsControls, dataRootMap, preferences, log)
 		}
 		if group1 == idNotes {
-			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, noteDetailsControls, dataRootMap, preferences)
+			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, noteDetailsControls, dataRootMap, preferences, log)
 		}
 		if group1 == lib.IdAssets {
-			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, assetControls, dataRootMap, preferences)
+			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, assetControls, dataRootMap, preferences, log)
 		}
-		return NewDetailPage(selectedPath, user0, group1, name2, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(selectedPath, user0, group1, name2, welcomeScreen, welcomeControls, dataRootMap, preferences, log)
 	default:
-		return NewDetailPage(selectedPath, user0, group1, title, welcomeScreen, welcomeControls, dataRootMap, preferences)
+		return NewDetailPage(selectedPath, user0, group1, title, welcomeScreen, welcomeControls, dataRootMap, preferences, log)
 	}
 }
 
@@ -186,13 +186,13 @@ func positional(s string) fyne.CanvasObject {
 	return NewPositional(s, 17, theme2.ColorForName(theme.ColorNameForeground), theme2.ColorForName(theme.ColorNameButton))
 }
 
-func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
+func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
 
-func userControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
+func userControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, details.SelectedPath, "")
@@ -206,7 +206,7 @@ func userControls(_ fyne.Window, details DetailPage, actionFunc func(string, *pa
 	return container.NewHBox(cObj...)
 }
 
-func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
+func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	logo := canvas.NewImageFromFile("background.png")
 	logo.FillMode = canvas.ImageFillContain
 	logo.SetMinSize(fyne.NewSize(228, 167))
@@ -228,7 +228,7 @@ func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 		)))
 }
 
-func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
+func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	head := fmt.Sprintf("%s: Asset - %s", details.User, details.Title)
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
@@ -247,7 +247,7 @@ func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 	return container.NewHBox(cObj...)
 }
 
-func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
+func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	head := fmt.Sprintf("Asset Summary for user %s", details.User)
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
@@ -257,7 +257,7 @@ func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(str
 	return container.NewHBox(cObj...)
 }
 
-func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
+func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_HINT, details.SelectedPath, "")
@@ -266,7 +266,7 @@ func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *pa
 	return container.NewHBox(cObj...)
 }
 
-func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
+func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_NOTE, details.SelectedPath, "")
@@ -275,7 +275,7 @@ func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(stri
 	return container.NewHBox(cObj...)
 }
 
-func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string), cObj []fyne.CanvasObject, accData *lib.AccountData, pref *pref.PrefData, statusDisplay *StatusDisplay) []fyne.CanvasObject {
+func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string), cObj []fyne.CanvasObject, accData *lib.AccountData, pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) []fyne.CanvasObject {
 	transAreCalled := pref.GetStringWithFallback(DataTransIsCalledPrefName, "Transaction")
 	editMode := !pref.GetBoolWithFallback(DataPresModePrefName, true)
 	txList := accData.Transactions
@@ -343,7 +343,7 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 	return cObj
 }
 
-func assetScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
+func assetScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, widget.NewSeparator())
 	accountData, err := lib.FindAllUserAccounts(details.User)
@@ -377,7 +377,7 @@ func assetScreen(w fyne.Window, details DetailPage, actionFunc func(string, *par
 	return container.NewScroll(container.NewVBox(cObj...))
 }
 
-func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
+func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	data := details.GetObjectsForPage()
 	cObj := make([]fyne.CanvasObject, 0)
 	keys := listOfNonDupeInOrderKeys(data, preferedOrderReversed)
@@ -388,14 +388,6 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 		editEntry, ok := EditEntryListCache.Get(idd)
 		if !ok {
 			editEntry = NewEditEntry(v, idd, k, v.String(),
-				func(newWalue string, path *parser.Path) { //onChangeFunction
-					err := entryChangedFunction(newWalue, path)
-					if err == nil {
-						actionFunc(ACTION_UPDATED, parser.NewBarPath(""), "")
-					} else {
-						actionFunc(ACTION_ERROR_DIALOG, parser.NewBarPath(""), err.Error())
-					}
-				},
 				unDoFunction, actionFunc, statusDisplay)
 			EditEntryListCache.Add(editEntry)
 		}
@@ -450,6 +442,7 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 						contHeight = 250
 					}
 				}
+				we.SetText(editEntry.GetCurrentText())
 				we.OnChanged = func(newWalue string) {
 					err := entryChangedFunction(newWalue, editEntry.Path)
 					if err == nil {
@@ -458,7 +451,6 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 						actionFunc(ACTION_ERROR_DIALOG, editEntry.Path, err.Error())
 					}
 				}
-				we.SetText(editEntry.GetCurrentText())
 				editEntry.We = we
 				cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flRemove, flRename, flLink, flLab, flUnDo), nil, container.New(NewFixedHLayout(300, contHeight), we)))
 			}
@@ -469,7 +461,7 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 		accountData, err := lib.FindUserAccount(details.User, details.Title)
 		accountData.Path = *transPath
 		if err == nil {
-			cObj = getTransactionalCanvasObjects(actionFunc, cObj, accountData, pref, statusDisplay)
+			cObj = getTransactionalCanvasObjects(actionFunc, cObj, accountData, pref, statusDisplay, log)
 		}
 	}
 	return container.NewScroll(container.NewVBox(cObj...))
@@ -501,7 +493,7 @@ func unDoFunction(path *parser.Path) {
 	}
 }
 
-func hintDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject {
+func hintDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE, details.SelectedPath, "")
@@ -584,7 +576,7 @@ func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNot
 		radioGroup.SetSelected(lib.NodeAnnotationPrefixNames[annotation])
 		styles = container.NewCenter(container.New(layout.NewHBoxLayout()), radioGroup)
 	}
-	entry := &widget.Entry{Text: txt, Password: password, OnChanged: func(s string) {}, OnSubmitted: submitInternal}
+	entry := &widget.Entry{Text: txt, Password: password, OnChanged: nil, OnSubmitted: submitInternal}
 	buttons := container.NewCenter(container.New(layout.NewHBoxLayout(), widget.NewButton("Cancel", func() {
 		modal.Hide()
 		accept(false, entry.Text, noteTypeId)

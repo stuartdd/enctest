@@ -30,7 +30,6 @@ type EditEntry struct {
 	Rename         *MyButton
 	NodeAnnotation lib.NodeAnnotationEnum
 	NodeType       parser.NodeType
-	OnChangeFunc   func(input string, path *parser.Path)
 	UnDoFunc       func(path *parser.Path)
 	ActionFunc     func(string, *parser.Path, string)
 	StatusDisplay  *StatusDisplay
@@ -78,7 +77,7 @@ func (p *EditEntryList) Count() int {
 	return count
 }
 
-func NewEditEntry(node parser.NodeI, path *parser.Path, titleWithAnnotation string, currentTxt string, onChangeFunc func(s string, path *parser.Path), unDoFunc func(path *parser.Path), actionFunc func(string, *parser.Path, string), statusData *StatusDisplay) *EditEntry {
+func NewEditEntry(node parser.NodeI, path *parser.Path, titleWithAnnotation string, currentTxt string, unDoFunc func(path *parser.Path), actionFunc func(string, *parser.Path, string), statusData *StatusDisplay) *EditEntry {
 	nodeAnnotation, title := lib.GetNodeAnnotationTypeAndName(titleWithAnnotation)
 	lab := widget.NewLabel(fmt.Sprintf(" %s ", title))
 	nType := node.GetNodeType()
@@ -92,7 +91,7 @@ func NewEditEntry(node parser.NodeI, path *parser.Path, titleWithAnnotation stri
 		actionFunc(ACTION_RENAME, path, "")
 	}, statusData, fmt.Sprintf("Rename '%s'", title))
 	undo.Disable()
-	ee := &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, NodeType: nType, We: nil, Lab: lab, UnDo: undo, Link: nil, Remove: remove, Rename: rename, OldTxt: currentTxt, NewTxt: currentTxt, OnChangeFunc: onChangeFunc, UnDoFunc: unDoFunc, ActionFunc: actionFunc, StatusDisplay: statusData}
+	ee := &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, NodeType: nType, We: nil, Lab: lab, UnDo: undo, Link: nil, Remove: remove, Rename: rename, OldTxt: currentTxt, NewTxt: currentTxt, UnDoFunc: unDoFunc, ActionFunc: actionFunc, StatusDisplay: statusData}
 	link := NewMyIconButton("", theme2.LinkToWebIcon(), func() {
 		actionFunc(ACTION_LINK, path, ee.Url)
 	}, statusData, fmt.Sprintf("Follow the link in '%s'. Launches a seperate browser.", title))

@@ -28,8 +28,8 @@ import (
 type DetailPage struct {
 	SelectedPath                *parser.Path // The raw path from the selection of the LHS tree
 	Heading, User, Group, Title string
-	ViewFunc                    func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject
-	CntlFunc                    func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject
+	ViewFunc                    func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject
+	CntlFunc                    func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject
 	DataRootMap                 parser.NodeI
 	Preferences                 pref.PrefData
 }
@@ -39,10 +39,11 @@ func NewDetailPage(
 	user string,
 	group string,
 	title string,
-	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject,
-	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay) fyne.CanvasObject,
+	viewFunc func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject,
+	cntlFunc func(w fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject,
 	dataRootMap parser.NodeI,
-	preferences pref.PrefData) *DetailPage {
+	preferences pref.PrefData,
+	log func(string)) *DetailPage {
 
 	heading := fmt.Sprintf("User:  %s", title)
 	if user != "" {

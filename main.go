@@ -207,9 +207,9 @@ func main() {
 	window.SetMaster()
 
 	statusDisplay = gui.NewStatusDisplay("Select an item from the list above", "Hint")
-	wp := gui.GetWelcomePage(*preferences)
+	wp := gui.GetWelcomePage(*preferences, log)
 	title := container.NewHBox()
-	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil, preferences, statusDisplay)}
+	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil, preferences, statusDisplay, log)}
 	contentRHS := container.NewMax()
 	layoutRHS := container.NewBorder(title, container.NewWithoutLayout(), nil, nil, contentRHS)
 	buttonBar := makeButtonBar()
@@ -230,9 +230,9 @@ func main() {
 		*/
 		window.SetMainMenu(makeMenus())
 		navTreeLHS.OpenBranch(currentSelPath.String())
-		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction, preferences, statusDisplay)}
+		title.Objects = []fyne.CanvasObject{detailPage.CntlFunc(window, detailPage, controlActionFunction, preferences, statusDisplay, log)}
 		title.Refresh()
-		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage, controlActionFunction, preferences, statusDisplay)}
+		contentRHS.Objects = []fyne.CanvasObject{detailPage.ViewFunc(window, detailPage, controlActionFunction, preferences, statusDisplay, log)}
 		contentRHS.Refresh()
 	}
 
@@ -317,7 +317,7 @@ func main() {
 			case MAIN_THREAD_RESELECT:
 				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentSelPath))
 				lib.InitUserAssetsCache(jsonData.GetDataMap())
-				t := gui.GetDetailPage(currentSelPath, jsonData.GetDataMap(), *preferences)
+				t := gui.GetDetailPage(currentSelPath, jsonData.GetDataMap(), *preferences, log)
 				setPageRHSFunc(*t)
 			case MAIN_THREAD_RE_MENU:
 				log("Refresh menu and buttons")
@@ -595,13 +595,12 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 			return widget.NewLabel("?")
 		},
 		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
-			type1, group1, title := gui.GetDetailTypeGroupTitle(parser.NewBarPath(uid), *preferences)
-			log(fmt.Sprintf("On Update:'UID:%s Type:[%s] Group:%s Title:%s'", uid, lib.NodeAnnotationPrefixNames[type1], group1, title))
+			_, _, title := gui.GetDetailTypeGroupTitle(parser.NewBarPath(uid), *preferences)
 			obj.(*widget.Label).SetText(title)
 		},
 		OnSelected: func(selectedPathString string) {
 			log(fmt.Sprintf("On Select:'%s'", selectedPathString))
-			t := gui.GetDetailPage(parser.NewBarPath(selectedPathString), jsonData.GetDataMap(), *preferences)
+			t := gui.GetDetailPage(parser.NewBarPath(selectedPathString), jsonData.GetDataMap(), *preferences, log)
 			setPage(*t)
 		},
 	}
@@ -678,7 +677,7 @@ func dataMapUpdated(desc string, dataPath *parser.Path, err error) {
 This is called when a button is pressed of the RH page
 */
 func controlActionFunction(action string, dataPath *parser.Path, extra string) {
-	log(fmt.Sprintf("Action:%s path:'%s' extra:'%s'", action, dataPath, extra))
+	log(fmt.Sprintf("Action:%s. Path:'%s'. Extra:'%s'", action, dataPath, extra))
 	switch action {
 	case gui.ACTION_REMOVE_CLEAN:
 		removeAction(dataPath, -1)

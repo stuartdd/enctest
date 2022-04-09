@@ -1,8 +1,8 @@
 
     {
         "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
         },
         "search": {
             "case": false,
@@ -14,17 +14,16 @@
             ]
         },
         "log": {
-            "active": true,
             "prefix": "INFO",
-            "fileName": "enctest.log"
+            "fileName": "enctest.log",
+            "active": true
         },
         "file": {
+            "postDataUrl": "",
             "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": "",
-            "postDataUrl": ""
+            "getDataUrl": ""
         },
         "import": {
-            "csvSkipHeader": true,
             "csvColumns": [
                 "date",
                 "type",
@@ -36,24 +35,25 @@
                 ""
             ],
             "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/libtest/",
+            "path": "/home/stuart/Downloads/",
             "filter": [
                 ".csvt",
                 ".csv"
-            ]
+            ],
+            "csvSkipHeader": true
         },
         "theme": "dark",
         "data": {
-            "noteIsCalled": "Note",
             "presentationmode": false,
             "hintIsCalled": "Hint",
             "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction"
+            "transIsCalled": "Transaction",
+            "noteIsCalled": "Note"
         },
         "screen": {
-            "split": 0.223558,
-            "width": 1187.142944,
-            "height": 797.61908,
-            "fullScreen": false
+            "width": 1201.428589,
+            "height": 887.142883,
+            "fullScreen": false,
+            "split": 0.223558
         }
     }
