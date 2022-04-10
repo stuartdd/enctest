@@ -37,6 +37,10 @@ import (
 )
 
 const (
+	txDateColWidth  = 20
+	txNumColWidth   = 12
+	txColumMaxWidth = 150
+
 	welcomeTitle = "Welcome"
 	appDesc      = "Welcome to Valt"
 	idNotes      = "notes"
@@ -285,6 +289,7 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 			refMax = len(tx.Ref())
 		}
 	}
+	refMax++
 	hbTop := container.NewHBox()
 	if editMode {
 		imp := NewMyIconButton("", theme.StorageIcon(), func() {
@@ -301,11 +306,16 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 		}, statusDisplay, fmt.Sprintf("Add a transaction '%s'", accData.AccountName))
 		hb.Add(add)
 	}
-	hb.Add(NewStringFieldLeft("Date Time:", 19))
-	hb.Add(NewStringFieldRight("Reference:", refMax))
-	hb.Add(NewStringFieldRight("In:", 10))
-	hb.Add(NewStringFieldRight("Out:", 10))
-	hb.Add(NewStringFieldRight("Balance:", 10))
+
+	ts := fyne.TextStyle{Bold: true, Italic: false, Monospace: true, Symbol: false, TabWidth: 2}
+
+	lb := lib.NewLine(txColumMaxWidth)
+	lb.Apply("Date Time:", txDateColWidth)
+	lb.ApplyRev("Reference:", refMax)
+	lb.ApplyRev("In:", txNumColWidth)
+	lb.ApplyRev("Out:", txNumColWidth)
+	lb.ApplyRev("Balance:", txNumColWidth)
+	hb.Add(widget.NewLabelWithStyle(lb.String(), fyne.TextAlignLeading, ts))
 	cObj = append(cObj, hb)
 	for _, tx := range txList {
 		s := tx.Key()
@@ -318,25 +328,33 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 		}
 		switch tx.TxType() {
 		case lib.TX_TYPE_IV:
-			hb.Add(NewStringFieldLeft("---- -- -- -- -- --", 19))
-			hb.Add(NewStringFieldRight(tx.Ref(), refMax))
-			hb.Add(NewStringFieldRight("", 10))
-			hb.Add(NewStringFieldRight("", 10))
-			hb.Add(NewFloatFieldRight(tx.LineValue(), 10))
+			lb.Clear()
+			lb.Apply("---- -- -- -- -- --", txDateColWidth)
+			lb.ApplyRev(tx.Ref(), refMax)
+			lb.Apply("", txNumColWidth)
+			lb.Apply("", txNumColWidth)
+			lb.ApplyRev(fmt.Sprintf("%9.2f", tx.LineValue()), txNumColWidth)
+			hb.Add(widget.NewLabelWithStyle(lb.String(), fyne.TextAlignLeading, ts))
 		case lib.TX_TYPE_CRE:
-			hb.Add(NewStringFieldLeft(tx.DateTime(), 19))
-			hb.Add(NewStringFieldRight(tx.Ref(), refMax))
-			hb.Add(NewFloatFieldRight(tx.Value(), 10))
-			hb.Add(NewStringFieldRight("", 10))
-			hb.Add(NewFloatFieldRight(tx.LineValue(), 10))
+			lb.Clear()
+			lb.Apply(tx.DateTime(), txDateColWidth)
+			lb.ApplyRev(tx.Ref(), refMax)
+			lb.ApplyRev(fmt.Sprintf("%9.2f", tx.Value()), txNumColWidth)
+			lb.Apply("", txNumColWidth)
+			lb.ApplyRev(fmt.Sprintf("%9.2f", tx.LineValue()), txNumColWidth)
+			hb.Add(widget.NewLabelWithStyle(lb.String(), fyne.TextAlignLeading, ts))
 		case lib.TX_TYPE_DEB:
-			hb.Add(NewStringFieldLeft(tx.DateTime(), 19))
-			hb.Add(NewStringFieldRight(tx.Ref(), refMax))
-			hb.Add(NewStringFieldRight("", 10))
-			hb.Add(NewFloatFieldRight(tx.Value(), 10))
-			hb.Add(NewFloatFieldRight(tx.LineValue(), 10))
+			lb.Clear()
+			lb.Apply(tx.DateTime(), txDateColWidth)
+			lb.ApplyRev(tx.Ref(), refMax)
+			lb.Apply("", txNumColWidth)
+			lb.ApplyRev(fmt.Sprintf("%9.2f", tx.Value()), txNumColWidth)
+			lb.ApplyRev(fmt.Sprintf("%9.2f", tx.LineValue()), txNumColWidth)
+			hb.Add(widget.NewLabelWithStyle(lb.String(), fyne.TextAlignLeading, ts))
 		default:
-			hb.Add(NewStringFieldRight("ERR", 3))
+			lb.Clear()
+			lb.Apply("ERR", 3)
+			hb.Add(widget.NewLabelWithStyle(lb.String(), fyne.TextAlignLeading, ts))
 		}
 		cObj = append(cObj, hb)
 	}
