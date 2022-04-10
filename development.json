@@ -1,17 +1,13 @@
 
     {
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
         "search": {
-            "case": false,
             "lastGoodList": [
                 "notes",
                 "note",
                 "app",
                 "Principality note"
-            ]
+            ],
+            "case": false
         },
         "log": {
             "prefix": "INFO",
@@ -24,6 +20,11 @@
             "getDataUrl": ""
         },
         "import": {
+            "filter": [
+                ".csvt",
+                ".csv"
+            ],
+            "csvSkipHeader": true,
             "csvColumns": [
                 "date",
                 "type",
@@ -35,25 +36,24 @@
                 ""
             ],
             "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/Downloads/",
-            "filter": [
-                ".csvt",
-                ".csv"
-            ],
-            "csvSkipHeader": true
+            "path": "/home/stuart/Downloads/"
         },
         "theme": "dark",
         "data": {
+            "noteIsCalled": "Note",
             "presentationmode": false,
             "hintIsCalled": "Hint",
             "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction",
-            "noteIsCalled": "Note"
+            "transIsCalled": "Transaction"
         },
         "screen": {
-            "width": 1201.428589,
-            "height": 887.142883,
             "fullScreen": false,
-            "split": 0.223558
+            "split": 0.223558,
+            "width": 983,
+            "height": 592
+        },
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
         }
     }
