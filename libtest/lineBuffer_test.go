@@ -6,7 +6,7 @@ import (
 	"stuartdd.com/lib"
 )
 
-func TestNew(t *testing.T) {
+func TestNewLineBuffer(t *testing.T) {
 	lb := lib.NewLine(18)
 	if lb.String() != "" {
 		t.Errorf("Buffer [%s] should == ''", lb.String())

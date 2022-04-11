@@ -267,7 +267,7 @@ func newAccountData(accountNode parser.NodeC, initialValue float64) *AccountData
 				}
 			}
 			sort.Slice(d, func(i, j int) bool {
-				return d[i].dateTime.Before(d[j].dateTime)
+				return d[i].dateTime.After(d[j].dateTime)
 			})
 			if iv != nil {
 				d = append([]*TranactionData{iv}, d...)
