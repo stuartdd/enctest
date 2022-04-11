@@ -1,11 +1,13 @@
 
     {
-        "file": {
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": "",
-            "postDataUrl": ""
-        },
         "import": {
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/",
+            "filter": [
+                ".csvt",
+                ".csv"
+            ],
+            "csvSkipHeader": true,
             "csvColumns": [
                 "date",
                 "type",
@@ -15,28 +17,21 @@
                 "db",
                 "cr",
                 ""
-            ],
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/Downloads/",
-            "filter": [
-                ".csvt",
-                ".csv"
-            ],
-            "csvSkipHeader": true
+            ]
         },
         "theme": "dark",
         "data": {
-            "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction",
             "noteIsCalled": "Note",
-            "presentationmode": false,
-            "hintIsCalled": "Hint"
+            "presentationmode": true,
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset",
+            "transIsCalled": "Transaction"
         },
         "screen": {
+            "fullScreen": false,
             "split": 0.223558,
-            "width": 1176,
-            "height": 665,
-            "fullScreen": false
+            "width": 1273.333374,
+            "height": 774.285767
         },
         "dialog": {
             "saveTimeOutMS": 3000,
@@ -47,13 +42,19 @@
                 "notes",
                 "note",
                 "app",
-                "Principality note"
+                "Principality note",
+                "TV LIC"
             ],
             "case": false
         },
         "log": {
-            "fileName": "enctest.log",
             "active": true,
-            "prefix": "INFO"
+            "prefix": "INFO",
+            "fileName": "enctest.log"
+        },
+        "file": {
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": "",
+            "postDataUrl": ""
         }
     }
