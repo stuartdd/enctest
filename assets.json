@@ -1,19 +1,8 @@
 
     {
-        "file": {
-            "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
-            "datafile": "mydbAssets.data",
-            "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name"
-        },
-        "search": {
-            "lastGoodList": [
-                "LLOYDS TSB"
-            ],
-            "case": true
-        },
         "dialog": {
-            "saveTimeOutMS": 1000,
-            "copyTimeOutMS": 2500
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 1000
         },
         "data": {
             "assetIsCalled": "Asset",
@@ -28,10 +17,10 @@
             "fileName": "encAssets.log"
         },
         "screen": {
+            "width": 1285,
+            "height": 843,
             "split": 0.239396,
-            "fullScreen": false,
-            "width": 1284.285767,
-            "height": 843.333374
+            "fullScreen": false
         },
         "import": {
             "csvSkipHeader": true,
@@ -48,5 +37,16 @@
             ],
             "path": "/home/stuart/Downloads/"
         },
-        "theme": "dark"
+        "theme": "dark",
+        "file": {
+            "datafile": "mydbAssets.data",
+            "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
+            "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name"
+        },
+        "search": {
+            "lastGoodList": [
+                "LLOYDS TSB"
+            ],
+            "case": true
+        }
     }

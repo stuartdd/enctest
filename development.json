@@ -1,13 +1,28 @@
 
     {
+        "search": {
+            "case": false,
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note",
+                "TV LIC",
+                "Lloyds",
+                "Balance"
+            ]
+        },
+        "log": {
+            "prefix": "INFO",
+            "fileName": "enctest.log",
+            "active": true
+        },
+        "file": {
+            "postDataUrl": "",
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
+        },
         "import": {
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/",
-            "filter": [
-                ".csvt",
-                ".csv"
-            ],
-            "csvSkipHeader": true,
             "csvColumns": [
                 "date",
                 "type",
@@ -17,44 +32,31 @@
                 "db",
                 "cr",
                 ""
-            ]
+            ],
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/",
+            "filter": [
+                ".csvt",
+                ".csv"
+            ],
+            "csvSkipHeader": true
         },
         "theme": "dark",
         "data": {
-            "noteIsCalled": "Note",
-            "presentationmode": true,
             "hintIsCalled": "Hint",
             "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction"
+            "transIsCalled": "Transaction",
+            "noteIsCalled": "Note",
+            "presentationmode": true
         },
         "screen": {
+            "height": 396.359375,
             "fullScreen": false,
             "split": 0.223558,
-            "width": 1273.333374,
-            "height": 774.285767
+            "width": 846
         },
         "dialog": {
             "saveTimeOutMS": 3000,
             "copyTimeOutMS": 2500
-        },
-        "search": {
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note",
-                "TV LIC"
-            ],
-            "case": false
-        },
-        "log": {
-            "active": true,
-            "prefix": "INFO",
-            "fileName": "enctest.log"
-        },
-        "file": {
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": "",
-            "postDataUrl": ""
         }
     }

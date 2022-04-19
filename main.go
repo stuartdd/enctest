@@ -1154,8 +1154,9 @@ func search(s string) {
 	// The map key is the human readable results e.g. 'User [Hint] app: noteName'
 	// The values are paths within the model! user.pwHints.app.noteName
 	searchWindow.Reset()
-	jsonData.Search(func(path *parser.Path, desc string) {
-		searchWindow.Add(desc, path)
+	jsonData.Search(func(trail *parser.Trail) {
+		fmt.Printf("%s\n", trail.String())
+		searchWindow.Add(trail.String(), parser.NewBarPath(trail.String()))
 	}, s, matchCase)
 
 	// Use the sorted keys to populate the result window

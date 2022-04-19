@@ -174,11 +174,9 @@ func (p *JsonData) ToJson() string {
 	return p.dataMap.JsonValue()
 }
 
-func (p *JsonData) Search(addPath func(*parser.Path, string), needle string, matchCase bool) {
+func (p *JsonData) Search(addTrailFunc func(*parser.Trail), needle string, matchCase bool) {
 	groups := p.dataMap.GetNodeWithName(dataMapRootName).(*parser.JsonObject)
-	for _, v := range groups.GetValues() {
-		searchUsers(addPath, needle, v.GetName(), v.(*parser.JsonObject), matchCase)
-	}
+	searchGroups(addTrailFunc, needle, groups, matchCase)
 }
 
 func (p *JsonData) CloneHint(dataPath *parser.Path, hintItemName string, cloneLeafNodeData bool) error {
@@ -378,16 +376,36 @@ func ProcessEntityName(entry string, nt NodeAnnotationEnum) (string, error) {
 	return GetNodeAnnotationNameWithPrefix(nt, entry), nil
 }
 
-func searchUsers(addPath func(*parser.Path, string), needle, user string, m *parser.JsonObject, matchCase bool) {
-	for _, v := range m.GetValues() {
-		if v.GetName() == IdHints {
-			for _, v1 := range v.(*parser.JsonObject).GetValues() {
-				searchLeafNodes(addPath, true, needle, user, v1.GetName(), v1.(*parser.JsonObject), matchCase)
-			}
-		} else {
-			searchLeafNodes(addPath, false, needle, user, v.GetName(), v.(*parser.JsonObject), matchCase)
-		}
+func searchGroups(addTrailFunc func(*parser.Trail), needle string, m *parser.JsonObject, matchCase bool) {
+	if matchCase {
+		needle = strings.ToLower(needle)
 	}
+	parser.WalkNodeTreeForTrail(m, func(t *parser.Trail, i int) bool {
+		last := t.GetLast()
+		if last != nil {
+			name := last.GetName()
+			if name != "" {
+				if matchCase {
+					name = strings.ToLower(name)
+				}
+				if strings.Contains(name, needle) {
+					addTrailFunc(t)
+				}
+			}
+			if !last.IsContainer() {
+				value := last.String()
+				if value != "" {
+					if matchCase {
+						value = strings.ToLower(value)
+					}
+					if strings.Contains(value, needle) {
+						addTrailFunc(t)
+					}
+				}
+			}
+		}
+		return false
+	})
 }
 
 func SearchNodesWithName(name string, m *parser.JsonObject, f func(node, parent parser.NodeI)) {
@@ -399,43 +417,6 @@ func SearchNodesWithName(name string, m *parser.JsonObject, f func(node, parent 
 		}
 		return false
 	})
-}
-
-func searchLeafNodes(addPath func(*parser.Path, string), isHint bool, needle, user, name string, m parser.NodeC, matchCase bool) {
-	tag1 := PATH_SEP
-	if isHint {
-		tag1 = PATH_SEP + IdHints + PATH_SEP
-	}
-	if containsWithCase(name, needle, matchCase) {
-		addPath(parser.NewBarPath(user+tag1+name), searchDeriveText(user, isHint, name, "LHS Tree", ""))
-	}
-	for _, s := range m.GetValues() {
-		if containsWithCase(s.GetName(), needle, matchCase) {
-			addPath(parser.NewBarPath(user+tag1+name), searchDeriveText(user, isHint, name, "Field Name", s.GetName()))
-		}
-		if s.GetNodeType() == parser.NT_STRING {
-			if containsWithCase(s.(*parser.JsonString).GetValue(), needle, matchCase) {
-				addPath(parser.NewBarPath(user+tag1+name), searchDeriveText(user, isHint, name, "In Text", s.GetName()))
-			}
-		} else {
-			if s.IsContainer() {
-				searchLeafNodes(addPath, isHint, needle, user, s.GetName(), s.(parser.NodeC), matchCase)
-			}
-		}
-	}
-}
-
-func searchDeriveText(user string, isHint bool, name, desc, key string) string {
-	if key != "" {
-		key = "'" + key + "'"
-	}
-	if isHint {
-		return user + " [Hint] " + name + ":  " + desc + ": " + key
-	}
-	if name == "notes" {
-		return user + " [Notes] :  " + desc + ": " + key
-	}
-	return user + " " + name + ":  " + desc + ": " + key
 }
 
 func addDefaultHintItemsToHint(hint *parser.JsonObject) {
@@ -516,16 +497,6 @@ func addNoteToUser(userO *parser.JsonObject, noteName, noteText string) {
 	if note == nil {
 		note = parser.NewJsonString(noteName, noteText)
 		notesO.Add(note)
-	}
-}
-
-func containsWithCase(haystack, needle string, matchCase bool) bool {
-	if matchCase {
-		return strings.Contains(haystack, needle)
-	} else {
-		h := strings.ToLower(haystack)
-		n := strings.ToLower(needle)
-		return strings.Contains(h, n)
 	}
 }
 
