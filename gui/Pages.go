@@ -57,6 +57,7 @@ const (
 	ACTION_CLONE_FULL         = "clonefull"
 	ACTION_LINK               = "link"
 	ACTION_UPDATED            = "update"
+	ACTION_FILTER             = "filter"
 	ACTION_ADD_NOTE           = "addnode"
 	ACTION_ADD_HINT           = "addhint"
 	ACTION_ADD_ASSET          = "addasset"
@@ -297,7 +298,16 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 		}, statusDisplay, "Import from CSV file")
 		hbTop.Add(imp)
 	}
-	hbTop.Add(widget.NewLabel(fmt.Sprintf("%s - %d %s(s). Current balance %0.2f", accData.AccountName, len(accData.Transactions), transAreCalled, accData.ClosingValue)))
+	filter := lib.GetUserAccountFilter(accData.User, accData.AccountName)
+	filterEntry := widget.NewEntry()
+	filterEntry.SetText(filter)
+	filterEntry.OnChanged = func(s string) {
+		lib.SetUserAccountFilter(accData.User, accData.AccountName, s)
+		actionFunc(ACTION_FILTER, accData.Path.PathParent(), s)
+	}
+	hbTop.Add(widget.NewLabel("Filter:"))
+	hbTop.Add(container.New(NewFixedWLayout(150), filterEntry))
+	hbTop.Add(widget.NewLabel(fmt.Sprintf(" %d %s(s). Current balance %0.2f", len(accData.Transactions), transAreCalled, accData.ClosingValue)))
 	cObj = append(cObj, hbTop)
 	hb := container.NewHBox()
 	if editMode {
@@ -335,6 +345,7 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 			lb.Apply("", txNumColWidth)
 			lb.ApplyRev(fmt.Sprintf("%9.2f", tx.LineValue()), txNumColWidth)
 			hb.Add(widget.NewLabelWithStyle(lb.String(), fyne.TextAlignLeading, ts))
+			cObj = append(cObj, hb)
 		case lib.TX_TYPE_CRE:
 			lb.Clear()
 			lb.Apply(tx.DateTime(), txDateColWidth)
@@ -343,6 +354,9 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 			lb.Apply("", txNumColWidth)
 			lb.ApplyRev(fmt.Sprintf("%9.2f", tx.LineValue()), txNumColWidth)
 			hb.Add(widget.NewLabelWithStyle(lb.String(), fyne.TextAlignLeading, ts))
+			if lb.Contains(filter) {
+				cObj = append(cObj, hb)
+			}
 		case lib.TX_TYPE_DEB:
 			lb.Clear()
 			lb.Apply(tx.DateTime(), txDateColWidth)
@@ -351,12 +365,14 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 			lb.ApplyRev(fmt.Sprintf("%9.2f", tx.Value()), txNumColWidth)
 			lb.ApplyRev(fmt.Sprintf("%9.2f", tx.LineValue()), txNumColWidth)
 			hb.Add(widget.NewLabelWithStyle(lb.String(), fyne.TextAlignLeading, ts))
+			if lb.Contains(filter) {
+				cObj = append(cObj, hb)
+			}
 		default:
 			lb.Clear()
 			lb.Apply("ERR", 3)
 			hb.Add(widget.NewLabelWithStyle(lb.String(), fyne.TextAlignLeading, ts))
 		}
-		cObj = append(cObj, hb)
 	}
 	return cObj
 }

@@ -96,6 +96,7 @@ var (
 	hasDataChanges     = false
 	releaseTheBeast    = make(chan int, 1)
 	dataIsNotLoadedYet = true
+	pageDataFilter     = ""
 
 	importFileFilter = []string{".csv", ".csvt"}
 
@@ -213,7 +214,9 @@ func main() {
 	contentRHS := container.NewMax()
 	layoutRHS := container.NewBorder(title, container.NewWithoutLayout(), nil, nil, contentRHS)
 	buttonBar := makeButtonBar()
-	searchWindow = gui.NewSearchDataWindow(closeSearchWindow, selectTreeElement)
+	searchWindow = gui.NewSearchDataWindow(selectTreeElement)
+	lib.ClearUserAccountFilter()
+
 	/*
 		function called when a selection is made in the LHS tree.
 		This updates the contentRHS which is the RHS page for editing data
@@ -707,6 +710,9 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 		cloneHintFull()
 	case gui.ACTION_CLONE:
 		cloneHint()
+	case gui.ACTION_FILTER:
+		pageDataFilter = extra
+		futureReleaseTheBeast(300, MAIN_THREAD_RESELECT)
 	case gui.ACTION_UPDATED:
 		futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
 	case gui.ACTION_COPIED:
@@ -1134,39 +1140,72 @@ func setFullScreen(fullScreen, refreshMenu bool) {
 	}
 }
 
-func closeSearchWindow() {
-	if searchWindow != nil {
-		searchWindow.Close()
-	}
-}
-
 /*
 The search button has been pressed
 */
-func search(s string) {
-	if s == "" {
+func search(searchFor string) {
+	if searchFor == "" {
 		return
 	}
 	matchCase, _ := findCaseSensitive.Get()
+	pageDataFilter = ""
+	lib.ClearUserAccountFilter()
 
 	// Do the search. The map contains the returned search entries
 	// This ensures no duplicates are displayed
 	// The map key is the human readable results e.g. 'User [Hint] app: noteName'
 	// The values are paths within the model! user.pwHints.app.noteName
+	searchWindow = gui.NewSearchDataWindow(selectTreeElement)
 	searchWindow.Reset()
 	jsonData.Search(func(trail *parser.Trail) {
-		fmt.Printf("%s\n", trail.String())
-		searchWindow.Add(trail.String(), parser.NewBarPath(trail.String()))
-	}, s, matchCase)
+		user := trail.GetNodeAt(0).GetName()
+		kind := trail.GetNodeAt(1).GetName()
+		fmt.Printf("Trail:%s \n", trail.String())
+		switch kind {
+		case lib.IdNotes:
+			n := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Note")
+			s := stringTrailFromTo(trail, 2)
+			p := trail.GetPath(0, 2, "|")
+			searchWindow.Add(fmt.Sprintf("%s %s. Field '%s'", user, n, s), p)
+		case lib.IdAssets:
+			s := stringTrailFromTo(trail, 2, 4)
+			p := trail.GetPath(0, 3, "|")
+			n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Asset")
+			t := trail.GetNodeAt(3)
+			if t != nil && t.GetName() == lib.IdTransactions {
+				lib.SetUserAccountFilter(user, trail.GetNodeAt(2).GetName(), searchFor)
+			}
+			searchWindow.Add(fmt.Sprintf("%s %s. Item '%s'", user, n, s), p)
+		case lib.IdHints:
+			s := stringTrailFromTo(trail, 2)
+			p := trail.GetPath(0, 3, "|")
+			n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+			searchWindow.Add(fmt.Sprintf("%s %s. Item '%s'", user, n, s), p)
+		}
+	}, searchFor, matchCase)
 
 	// Use the sorted keys to populate the result window
 	if searchWindow.Len() > 0 {
-		preferences.AddToDropDownList(searchLastGoodPrefName, s, 10)
-		defer futureReleaseTheBeast(200, MAIN_THREAD_RELOAD_TREE)
-		searchWindow.Show(500, 350, s)
+		preferences.AddToDropDownList(searchLastGoodPrefName, searchFor, 10)
+		searchWindow.Show(800, 350, searchFor)
 	} else {
-		logInformationDialog("Search results", fmt.Sprintf("Nothing found for search '%s'", s))
+		logInformationDialog("Search results", fmt.Sprintf("Nothing found for search '%s'", searchFor))
 	}
+	defer futureReleaseTheBeast(200, MAIN_THREAD_RELOAD_TREE)
+}
+
+func stringTrailFromTo(trail *parser.Trail, ind ...int) string {
+	var st strings.Builder
+	for _, v := range ind {
+		if v >= 0 && v < trail.Len() {
+			n := trail.GetNodeAt(uint(v)).GetName()
+			if n != "" {
+				st.WriteString(n)
+				st.WriteRune('.')
+			}
+		}
+	}
+	return st.String()
 }
 
 /**

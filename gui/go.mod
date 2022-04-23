@@ -10,7 +10,7 @@ replace stuartdd.com/theme2 => ../theme2
 
 require (
 	fyne.io/fyne/v2 v2.1.2-rc2.0.20220205054620-919d8dd6749e
-	github.com/stuartdd2/JsonParser4go/parser v0.0.0-20220419203446-bc23b42a17c3
+	github.com/stuartdd2/JsonParser4go/parser v0.0.0-20220423103514-a885cd31b1aa
 	stuartdd.com/lib v0.0.0-00010101000000-000000000000
 	stuartdd.com/pref v0.0.0
 	stuartdd.com/theme2 v0.0.0-00010101000000-000000000000

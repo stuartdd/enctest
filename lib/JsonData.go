@@ -30,7 +30,7 @@ type NodeAnnotationEnum int
 const (
 	IdHints            = "pwHints"
 	IdNotes            = "notes"
-	dataMapRootName    = "groups"
+	DataMapRootName    = "groups"
 	timeStampName      = "timeStamp"
 	tabdata            = "                                     "
 	allowedCharsInName = " *@#$%^&*()_+=?"
@@ -53,13 +53,23 @@ var (
 	defaultHintNames          = []string{"notes", "post", "pre", "userId"}
 	defaultAssetNames         = []string{"Account Num.", "Sort Code"}
 	timeStampPath             = parser.NewBarPath(timeStampName)
-	dataMapRootPath           = parser.NewBarPath(dataMapRootName)
+	dataMapRootPath           = parser.NewBarPath(DataMapRootName)
 )
 
 type JsonData struct {
 	dataMap        *parser.JsonObject
 	navIndex       *map[string][]string
 	dataMapUpdated func(string, *parser.Path, error)
+}
+
+func GetUidPathFromDataPath(dataPath *parser.Path) *parser.Path {
+	if dataPath.Len() == 0 {
+		return dataPath
+	}
+	if dataPath.StringFirst() == DataMapRootName {
+		dataPath = dataPath.PathLast(dataPath.Len() - 1)
+	}
+	return dataPath
 }
 
 func NewJsonData(j []byte, dataMapUpdated func(string, *parser.Path, error)) (*JsonData, error) {
@@ -72,12 +82,12 @@ func NewJsonData(j []byte, dataMapUpdated func(string, *parser.Path, error)) (*J
 	}
 	rO := mIn.(*parser.JsonObject)
 
-	u := rO.GetNodeWithName(dataMapRootName)
+	u := rO.GetNodeWithName(DataMapRootName)
 	if u == nil {
-		return nil, fmt.Errorf("root '%s' element is missing", dataMapRootName)
+		return nil, fmt.Errorf("root '%s' element is missing", DataMapRootName)
 	}
 	if u.GetNodeType() != parser.NT_OBJECT {
-		return nil, fmt.Errorf("root '%s' element is NOT a JsonObject", dataMapRootName)
+		return nil, fmt.Errorf("root '%s' element is NOT a JsonObject", DataMapRootName)
 	}
 	ts, err := parser.Find(rO, timeStampPath)
 	if err != nil {
@@ -133,7 +143,7 @@ func vToStr(v []string) string {
 	Returns the node containing all of the users (groups).
 */
 func (p *JsonData) GetUserRoot() *parser.JsonObject {
-	return p.dataMap.GetNodeWithName(dataMapRootName).(*parser.JsonObject)
+	return p.dataMap.GetNodeWithName(DataMapRootName).(*parser.JsonObject)
 }
 
 /*
@@ -175,7 +185,7 @@ func (p *JsonData) ToJson() string {
 }
 
 func (p *JsonData) Search(addTrailFunc func(*parser.Trail), needle string, matchCase bool) {
-	groups := p.dataMap.GetNodeWithName(dataMapRootName).(*parser.JsonObject)
+	groups := p.dataMap.GetNodeWithName(DataMapRootName).(*parser.JsonObject)
 	searchGroups(addTrailFunc, needle, groups, matchCase)
 }
 
@@ -294,7 +304,7 @@ func (p *JsonData) Rename(dataPath *parser.Path, newName string) error {
 		return fmt.Errorf("rename '%s' failed. Error: '%s'", dataPath, err.Error())
 	}
 	p.navIndex = createNavIndex(p.dataMap)
-	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
+	if parent.GetName() == DataMapRootName { // If the parent is groups then the user was renamed
 		p.dataMapUpdated(fmt.Sprintf("Renamed User '%s'", n.GetName()), parser.NewBarPath(newName), nil)
 	} else {
 		p.dataMapUpdated(fmt.Sprintf("Renamed Item '%s'", n.GetName()), dataPath.PathParent().StringAppend(newName), nil)
@@ -324,7 +334,7 @@ func (p *JsonData) Remove(dataPath *parser.Path, min int) error {
 		parser.Remove(p.dataMap, parentObj)
 	}
 	p.navIndex = createNavIndex(p.dataMap)
-	if parent.GetName() == dataMapRootName { // If the parent is groups then the user was renamed
+	if parent.GetName() == DataMapRootName { // If the parent is groups then the user was renamed
 		p.dataMapUpdated(fmt.Sprintf("Removed User '%s'", n.GetName()), parser.NewBarPath(""), nil)
 	} else {
 		p.dataMapUpdated(fmt.Sprintf("Removed Item '%s'", n.GetName()), dataPath.PathParent(), nil)
@@ -592,16 +602,6 @@ func GetLastId(uid string) string {
 	}
 }
 
-func GetUidPathFromDataPath(dataPath *parser.Path) *parser.Path {
-	if dataPath.Len() == 0 {
-		return dataPath
-	}
-	if dataPath.StringFirst() == dataMapRootName {
-		dataPath = dataPath.PathLast(dataPath.Len() - 1)
-	}
-	return dataPath
-}
-
 func GetParentId(uid string) string {
 	if uid == "" {
 		return uid
@@ -711,7 +711,7 @@ func GetNodeAnnotationPrefixName(nae NodeAnnotationEnum) string {
 
 func CreateEmptyJsonData() []byte {
 	root := parser.NewJsonObject("")
-	g := parser.NewJsonObject(dataMapRootName)
+	g := parser.NewJsonObject(DataMapRootName)
 	u := parser.NewJsonObject("tempUser")
 	n := parser.NewJsonObject(IdNotes)
 	h := parser.NewJsonObject(IdHints)

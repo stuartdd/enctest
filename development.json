@@ -1,7 +1,23 @@
 
     {
+        "data": {
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset",
+            "transIsCalled": "Transaction",
+            "noteIsCalled": "Note",
+            "presentationmode": false
+        },
+        "screen": {
+            "height": 607,
+            "fullScreen": false,
+            "split": 0.223558,
+            "width": 1097
+        },
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
+        },
         "search": {
-            "case": false,
             "lastGoodList": [
                 "notes",
                 "note",
@@ -10,12 +26,13 @@
                 "TV LIC",
                 "Lloyds",
                 "Balance"
-            ]
+            ],
+            "case": false
         },
         "log": {
-            "prefix": "INFO",
             "fileName": "enctest.log",
-            "active": true
+            "active": true,
+            "prefix": "INFO"
         },
         "file": {
             "postDataUrl": "",
@@ -23,6 +40,13 @@
             "getDataUrl": ""
         },
         "import": {
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/",
+            "filter": [
+                ".csvt",
+                ".csv"
+            ],
+            "csvSkipHeader": true,
             "csvColumns": [
                 "date",
                 "type",
@@ -32,31 +56,7 @@
                 "db",
                 "cr",
                 ""
-            ],
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/",
-            "filter": [
-                ".csvt",
-                ".csv"
-            ],
-            "csvSkipHeader": true
+            ]
         },
-        "theme": "dark",
-        "data": {
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction",
-            "noteIsCalled": "Note",
-            "presentationmode": true
-        },
-        "screen": {
-            "height": 396.359375,
-            "fullScreen": false,
-            "split": 0.223558,
-            "width": 846
-        },
-        "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
-        }
+        "theme": "dark"
     }

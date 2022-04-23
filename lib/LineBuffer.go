@@ -1,5 +1,7 @@
 package lib
 
+import "strings"
+
 type Line struct {
 	chars []rune
 	pos   int
@@ -37,6 +39,13 @@ func (l *Line) ApplyRev(s string, width int) {
 		}
 	}
 	l.pos = l.pos + width
+}
+
+func (l *Line) Contains(s string) bool {
+	if s == "" {
+		return true
+	}
+	return strings.Contains(l.String(), s)
 }
 
 func (l *Line) String() string {

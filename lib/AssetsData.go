@@ -50,6 +50,7 @@ var (
 	TX_TYPE_LIST_LABLES    = []string{"In (Credit)", "Out (Debit)"}
 	TX_TYPE_LIST_OPTIONS   = []string{string(TX_TYPE_CRE), string(TX_TYPE_DEB)}
 	IMPORT_CSV_COLUM_NAMES = []string{"date", "type", "", "", "ref", "db", "cr", ""}
+	cachedUserFilters      = make(map[string]string)
 )
 
 var cachedUserAssets *UserAssetCache
@@ -97,11 +98,13 @@ type TranactionData struct {
 }
 
 type AccountData struct {
+	User         string
 	Path         parser.Path
 	AccountName  string            // Like Lloyds Bank Current Account
 	InitialValue float64           // initial value.
 	ClosingValue float64           // initial value -+ all transactions
 	Transactions []*TranactionData // Each transaction
+	Filter       string
 }
 
 //
@@ -216,6 +219,22 @@ func FindUserAccount(user, account string) (*AccountData, error) {
 	return nil, fmt.Errorf("account '%s' not found for user '%s'", account, user)
 }
 
+func GetUserAccountFilter(user, account string) string {
+	s, ok := cachedUserFilters[fmt.Sprintf("%s:%s", user, account)]
+	if ok {
+		return s
+	}
+	return ""
+}
+
+func SetUserAccountFilter(user, account, filter string) {
+	cachedUserFilters[fmt.Sprintf("%s:%s", user, account)] = filter
+}
+
+func ClearUserAccountFilter() {
+	cachedUserFilters = make(map[string]string)
+}
+
 func StringUserAsset() string {
 	if cachedUserAssets == nil {
 		return "UserAssetCache:is nil"
@@ -232,7 +251,7 @@ func newUserAsset(userNode, assetsNode parser.NodeC) *UserAsset {
 	ad := make([]*AccountData, 0)
 	for _, accN := range assetsNode.GetValues() {
 		if accN.IsContainer() {
-			ad = append(ad, newAccountData(accN.(parser.NodeC), 0.0))
+			ad = append(ad, newAccountData(accN.(parser.NodeC), userNode, 0.0))
 		}
 	}
 	return &UserAsset{user: userNode, asset: assetsNode, data: ad}
@@ -252,7 +271,7 @@ func userAssetKey(userNode, assetsNode parser.NodeC) string {
 
 // !tx node. List of all transactions.
 // Sorted by datetime.
-func newAccountData(accountNode parser.NodeC, initialValue float64) *AccountData {
+func newAccountData(accountNode, userNode parser.NodeC, initialValue float64) *AccountData {
 	d := make([]*TranactionData, 0)
 	v := initialValue
 	for _, n := range accountNode.GetValues() {
@@ -282,7 +301,7 @@ func newAccountData(accountNode parser.NodeC, initialValue float64) *AccountData
 			}
 		}
 	}
-	return &AccountData{AccountName: accountNode.GetName(), InitialValue: initialValue, ClosingValue: v, Transactions: d}
+	return &AccountData{User: userNode.GetName(), AccountName: accountNode.GetName(), InitialValue: initialValue, ClosingValue: v, Transactions: d}
 }
 
 func (t *AccountData) String() string {

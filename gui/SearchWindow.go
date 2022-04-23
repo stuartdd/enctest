@@ -20,7 +20,6 @@ type SearchDataWindow struct {
 	paths          map[string]*SearchData
 	checks         map[string]*widget.Button
 	canSelect      bool
-	closeIntercept func()
 	selectFunction func(string, *parser.Path)
 	searchWindow   fyne.Window
 }
@@ -33,8 +32,8 @@ func (sd *SearchData) String() string {
 	return sd.path.String()
 }
 
-func NewSearchDataWindow(closeIntercept func(), selectFunction func(string, *parser.Path)) *SearchDataWindow {
-	return &SearchDataWindow{closeIntercept: closeIntercept, selectFunction: selectFunction, canSelect: true, paths: make(map[string]*SearchData)}
+func NewSearchDataWindow(selectFunction func(string, *parser.Path)) *SearchDataWindow {
+	return &SearchDataWindow{selectFunction: selectFunction, canSelect: true, paths: make(map[string]*SearchData)}
 }
 
 func (lw *SearchDataWindow) Add(desc string, path *parser.Path) {
@@ -130,7 +129,6 @@ func (lw *SearchDataWindow) Show(w, h float32, searchFor string) {
 	}
 	c := container.NewScroll(vc)
 	lw.searchWindow.SetContent(c)
-	lw.searchWindow.SetCloseIntercept(lw.closeIntercept)
 	lw.searchWindow.Resize(fyne.NewSize(w, h))
 	lw.searchWindow.SetFixedSize(true)
 	lw.searchWindow.Show()
