@@ -50,10 +50,10 @@ var (
 	TX_TYPE_LIST_LABLES    = []string{"In (Credit)", "Out (Debit)"}
 	TX_TYPE_LIST_OPTIONS   = []string{string(TX_TYPE_CRE), string(TX_TYPE_DEB)}
 	IMPORT_CSV_COLUM_NAMES = []string{"date", "type", "", "", "ref", "db", "cr", ""}
-	cachedUserFilters      = make(map[string]string)
-)
 
-var cachedUserAssets *UserAssetCache
+	cachedUserAssets  *UserAssetCache
+	cachedUserFilters map[string]string
+)
 
 //
 // UserAssetCache map[string]*UserAsset
@@ -469,6 +469,9 @@ func UpdateNodeFromTranactionData(txNode parser.NodeC, key, value string) int {
 // Create a transaction (TranactionData) from a json Node
 //
 func NewTranactionDataFromNode(n parser.NodeI) *TranactionData {
+	if n == nil {
+		return newTranactionDataError("invalid Transaction node is null", nil)
+	}
 	if n.IsContainer() {
 		dtn := n.(parser.NodeC).GetNodeWithName(IdTxDate)
 		if dtn == nil {

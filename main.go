@@ -1155,32 +1155,48 @@ func search(searchFor string) {
 	// This ensures no duplicates are displayed
 	// The map key is the human readable results e.g. 'User [Hint] app: noteName'
 	// The values are paths within the model! user.pwHints.app.noteName
+	if searchWindow != nil {
+		searchWindow.Close()
+	}
 	searchWindow = gui.NewSearchDataWindow(selectTreeElement)
 	searchWindow.Reset()
 	jsonData.Search(func(trail *parser.Trail) {
-		user := trail.GetNodeAt(0).GetName()
-		kind := trail.GetNodeAt(1).GetName()
+		user := searchStringNodeName(trail.GetNodeAt(0))
+		kind := searchStringNodeName(trail.GetNodeAt(1))
 		fmt.Printf("Trail:%s \n", trail.String())
 		switch kind {
 		case lib.IdNotes:
 			n := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Note")
-			s := stringTrailFromTo(trail, 2)
+			s := searchStringTrailFromTo(trail, 2)
 			p := trail.GetPath(0, 2, "|")
-			searchWindow.Add(fmt.Sprintf("%s %s. Field '%s'", user, n, s), p)
+			searchWindow.Add(fmt.Sprintf("%s %s In Field [ %s ]", user, n, s), p)
 		case lib.IdAssets:
-			s := stringTrailFromTo(trail, 2, 4)
+			s := searchStringTrailFromTo(trail, 2, 4)
 			p := trail.GetPath(0, 3, "|")
-			n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Asset")
-			t := trail.GetNodeAt(3)
-			if t != nil && t.GetName() == lib.IdTransactions {
-				lib.SetUserAccountFilter(user, trail.GetNodeAt(2).GetName(), searchFor)
+			n := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+			t3 := trail.GetNodeAt(3)
+			if t3 != nil {
+				if searchStringNodeName(t3) == lib.IdTransactions {
+					lib.SetUserAccountFilter(user, searchStringNodeName(trail.GetNodeAt(2)), searchFor)
+					t5 := trail.GetLast()
+					if t5 != nil {
+						searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In Transaction [ %s ]", user, n, s, t5.String()), p)
+					} else {
+						searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In Transaction Data", user, n, s), p)
+					}
+				} else {
+					searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In Field [ %s ]", user, n, s, searchStringNodeName(t3)), p)
+				}
 			}
-			searchWindow.Add(fmt.Sprintf("%s %s. Item '%s'", user, n, s), p)
 		case lib.IdHints:
-			s := stringTrailFromTo(trail, 2)
+			s := searchStringTrailFromTo(trail, 2)
 			p := trail.GetPath(0, 3, "|")
 			n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
-			searchWindow.Add(fmt.Sprintf("%s %s. Item '%s'", user, n, s), p)
+			if trail.Len() > 3 {
+				searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In Field [ %s ]", user, n, s, searchStringNodeName(trail.GetNodeAt(3))), p)
+			} else {
+				searchWindow.Add(fmt.Sprintf("%s %s [ %s ]", user, n, s), p)
+			}
 		}
 	}, searchFor, matchCase)
 
@@ -1194,18 +1210,26 @@ func search(searchFor string) {
 	defer futureReleaseTheBeast(200, MAIN_THREAD_RELOAD_TREE)
 }
 
-func stringTrailFromTo(trail *parser.Trail, ind ...int) string {
+func searchStringTrailFromTo(trail *parser.Trail, ind ...int) string {
 	var st strings.Builder
 	for _, v := range ind {
 		if v >= 0 && v < trail.Len() {
-			n := trail.GetNodeAt(uint(v)).GetName()
+			n := searchStringNodeName(trail.GetNodeAt(uint(v)))
 			if n != "" {
 				st.WriteString(n)
 				st.WriteRune('.')
 			}
 		}
 	}
-	return st.String()
+	return strings.Trim(st.String(), ".")
+}
+
+func searchStringNodeName(node parser.NodeI) string {
+	if node == nil {
+		return "nil"
+	}
+	_, n := lib.GetNodeAnnotationTypeAndName(node.GetName())
+	return n
 }
 
 /**

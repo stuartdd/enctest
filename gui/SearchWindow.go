@@ -37,7 +37,7 @@ func NewSearchDataWindow(selectFunction func(string, *parser.Path)) *SearchDataW
 }
 
 func (lw *SearchDataWindow) Add(desc string, path *parser.Path) {
-	lw.paths[path.String()] = newSearchData(path, desc)
+	lw.paths[desc] = newSearchData(path, desc)
 }
 
 func (lw *SearchDataWindow) Reset() {
@@ -86,23 +86,30 @@ func (lw *SearchDataWindow) Select(path *parser.Path) {
 	}
 }
 
-func (lw *SearchDataWindow) createRow(sd *SearchData) *fyne.Container {
+func (lw *SearchDataWindow) createRow(sd *SearchData, duplicate bool) *fyne.Container {
 	c := container.NewHBox()
 	w := widget.NewButtonWithIcon("", theme.MailForwardIcon(), func() {})
 	w.SetIcon(theme.CheckButtonIcon())
-	lw.checks[sd.path.String()] = w
 	b := widget.NewButtonWithIcon("", theme.MailForwardIcon(), func() {
 		if lw.canSelect {
 			go lw.selectFunction(sd.desc, sd.path)
 		}
 	})
-	c.Add(b)
-	c.Add(w)
+	if !duplicate {
+		lw.checks[sd.path.String()] = w
+		hb := container.NewHBox()
+		hb.Add(b)
+		hb.Add(w)
+		c.Add(container.New(NewFixedWLayout(85), hb))
+	} else {
+		c.Add(container.New(NewFixedWLayout(85), widget.NewLabel("And...")))
+	}
 	c.Add(widget.NewLabel(sd.desc))
 	return c
 }
 
 func (lw *SearchDataWindow) Show(w, h float32, searchFor string) {
+	pathMap := make(map[string]string)
 	lw.canSelect = false
 	defer func() {
 		lw.canSelect = true
@@ -125,7 +132,14 @@ func (lw *SearchDataWindow) Show(w, h float32, searchFor string) {
 	vc.Add(hb)
 	lw.checks = make(map[string]*widget.Button)
 	for _, v := range pathList {
-		vc.Add(lw.createRow(lw.paths[v]))
+		sd := lw.paths[v]
+		_, ok := pathMap[sd.path.String()]
+		if ok {
+			vc.Add(lw.createRow(sd, true))
+		} else {
+			pathMap[sd.path.String()] = ""
+			vc.Add(lw.createRow(sd, false))
+		}
 	}
 	c := container.NewScroll(vc)
 	lw.searchWindow.SetContent(c)
