@@ -13,7 +13,7 @@ replace stuartdd.com/pref => ./pref
 // replace fyne.io/fyne/v2 => github.com/andydotxyz/fyne/v2 07e8477c8
 
 require (
-	fyne.io/fyne/v2 v2.1.2-rc2.0.20220205054620-919d8dd6749e
+	fyne.io/fyne/v2 v2.1.4-0.20220420185608-436df62b722f
 	github.com/stuartdd2/JsonParser4go/parser v0.0.0-20220423103514-a885cd31b1aa
 	stuartdd.com/gui v0.0.0-00010101000000-000000000000
 	stuartdd.com/lib v0.0.0-00010101000000-000000000000
@@ -22,6 +22,8 @@ require (
 )
 
 require (
+	fyne.io/systray v1.9.1-0.20220331100914-9177bf851614 // indirect
+	github.com/Kodeworks/golang-image-ico v0.0.0-20141118225523-73f0f4cfade9 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fredbi/uri v0.0.0-20181227131451-3dcfdacbaaf3 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
@@ -29,7 +31,7 @@ require (
 	github.com/fyne-io/glfw-js v0.0.0-20220120001248-ee7290d23504 // indirect
 	github.com/go-gl/gl v0.0.0-20211210172815-726fda9656d6 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20211213063430-748e38ca8aec // indirect
-	github.com/godbus/dbus/v5 v5.0.6 // indirect
+	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/goki/freetype v0.0.0-20181231101311-fa8a33aabaff // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20211219123610-ec9572f70e60 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

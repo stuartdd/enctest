@@ -1162,7 +1162,6 @@ func search(searchFor string) {
 	jsonData.Search(func(trail *parser.Trail) {
 		user := searchStringNodeName(trail.GetNodeAt(0))
 		kind := searchStringNodeName(trail.GetNodeAt(1))
-		fmt.Printf("Trail:%s \n", trail.String())
 		switch kind {
 		case lib.IdNotes:
 			n := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Note")
