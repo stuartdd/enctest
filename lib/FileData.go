@@ -27,7 +27,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/stuartdd2/JsonParser4go/parser"
 
@@ -46,13 +48,14 @@ const (
 )
 
 type FileData struct {
-	fileName    string
-	postDataUrl string
-	getDataUrl  string
-	key         []byte
-	content     []byte
-	isEmpty     bool
-	isEncrypted bool
+	fileName       string
+	postDataUrl    string
+	getDataUrl     string
+	backupFileName string
+	key            []byte
+	content        []byte
+	isEmpty        bool
+	isEncrypted    bool
 }
 
 /**
@@ -96,8 +99,8 @@ func CheckImageFile(pathToImage string) (ImageRefType, string) {
 	return IMAGE_URL, ""
 }
 
-func NewFileData(fName string, getUrl string, postUrl string) (*FileData, error) {
-	fd := FileData{fileName: fName, getDataUrl: getUrl, postDataUrl: postUrl, content: make([]byte, 0), isEmpty: true, isEncrypted: false, key: make([]byte, 0)}
+func NewFileData(fName, backupName string, getUrl string, postUrl string) (*FileData, error) {
+	fd := FileData{fileName: fName, backupFileName: backupName, getDataUrl: getUrl, postDataUrl: postUrl, content: make([]byte, 0), isEmpty: true, isEncrypted: false, key: make([]byte, 0)}
 	return &fd, fd.loadData()
 }
 
@@ -202,12 +205,39 @@ func (r *FileData) SetContent(data []byte) {
 }
 
 func (r *FileData) storeData(data []byte) error {
+	var err error
 	if r.postDataUrl != "" {
-		_, err := parser.PostJsonBytes(fmt.Sprintf("%s/%s", r.postDataUrl, r.fileName), data)
-		return err
+		_, err = parser.PostJsonBytes(fmt.Sprintf("%s/%s", r.postDataUrl, r.fileName), data)
 	} else {
-		return ioutil.WriteFile(r.fileName, data, 0644)
+		err = ioutil.WriteFile(r.fileName, data, 0644)
 	}
+	if r.backupFileName != "" {
+		mfn := r.backupFileName
+		if strings.Contains(mfn, "%d") {
+			mfn = strings.ReplaceAll(mfn, "%d", time.Now().Format("2006-01-02"))
+		}
+		if strings.Contains(mfn, "%h") {
+			mfn = strings.ReplaceAll(mfn, "%h", strPad2(time.Now().Hour()))
+		}
+		if strings.Contains(mfn, "%m") {
+			mfn = strings.ReplaceAll(mfn, "%m", strPad2(time.Now().Minute()))
+		}
+		if strings.Contains(mfn, "%s") {
+			mfn = strings.ReplaceAll(mfn, "%s", strPad2(time.Now().Second()))
+		}
+		err2 := ioutil.WriteFile(mfn, data, 0644)
+		if err2 != nil {
+			fmt.Printf("Error writing Mirror file [%s]. Error message: %s\n", mfn, err2)
+		}
+	}
+	return err
+}
+
+func strPad2(i int) string {
+	if i < 10 {
+		return "0" + strconv.Itoa(i)
+	}
+	return strconv.Itoa(i)
 }
 
 func (r *FileData) loadData() error {

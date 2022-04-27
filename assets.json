@@ -41,7 +41,8 @@
         "file": {
             "datafile": "mydbAssets.data",
             "postDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
-            "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name"
+            "getDataUrl": "http://192.168.1.243:8080/files/user/stuart/loc/mydb/name",
+            "mirrorfile": "/home/stuart/Documents/mydbAssets.data"
         },
         "search": {
             "lastGoodList": [

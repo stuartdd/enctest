@@ -1,5 +1,18 @@
 
     {
+        "data": {
+            "noteIsCalled": "Note",
+            "presentationmode": false,
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset",
+            "transIsCalled": "Transaction"
+        },
+        "screen": {
+            "fullScreen": false,
+            "split": 0.223558,
+            "width": 1086.666748,
+            "height": 597.142883
+        },
         "dialog": {
             "saveTimeOutMS": 3000,
             "copyTimeOutMS": 2500
@@ -18,16 +31,23 @@
             ]
         },
         "log": {
+            "fileName": "enctest.log",
             "active": true,
-            "prefix": "INFO",
-            "fileName": "enctest.log"
+            "prefix": "INFO"
         },
         "file": {
-            "datafile": "libtest/TestDataTypes.json",
             "getDataUrl": "",
-            "postDataUrl": ""
+            "postDataUrl": "",
+            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
+            "datafile": "libtest/TestDataTypes.json"
         },
         "import": {
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/",
+            "filter": [
+                ".csvt",
+                ".csv"
+            ],
             "csvSkipHeader": true,
             "csvColumns": [
                 "date",
@@ -38,26 +58,7 @@
                 "db",
                 "cr",
                 ""
-            ],
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/",
-            "filter": [
-                ".csvt",
-                ".csv"
             ]
         },
-        "theme": "dark",
-        "data": {
-            "transIsCalled": "Transaction",
-            "noteIsCalled": "Note",
-            "presentationmode": false,
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset"
-        },
-        "screen": {
-            "width": 1097,
-            "height": 607,
-            "fullScreen": false,
-            "split": 0.223558
-        }
+        "theme": "dark"
     }

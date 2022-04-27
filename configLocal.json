@@ -1,0 +1,45 @@
+    {
+        "search": {
+            "case": false,
+            "lastGoodList": [
+                "git",
+                "Geek",
+                "Lloyds TSB",
+                "tesco",
+                "Council",
+                "Bryn",
+                "Lloyds",
+                "EON",
+                "GWR",
+                "Lloyds "
+            ]
+        },
+        "dialog": {
+            "copyTimeOutMS": 500,
+            "linkTimeOutMS": 1500,
+            "saveTimeOutMS": 1500
+        },
+        "log": {
+            "active": true,
+            "fileName": "enctest.log",
+            "prefix": "INFO"
+        },
+        "theme": "dark",
+        "data": {
+            "hintIsCalled": "Hint",
+            "noteIsCalled": "Note",
+            "presentationmode": true,
+            "assetIsCalled": "Asset"
+        },
+        "file": {
+            "getDataUrl": "",
+            "postDataUrl": "",
+            "datafile": "/home/stuart/Documents/mydb.data"
+        },
+        "screen": {
+            "fullScreen": false,
+            "split": 0.228125,
+            "width": 1213.80957,
+            "height": 831.904785
+        }
+    }

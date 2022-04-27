@@ -96,11 +96,11 @@ var (
 	hasDataChanges     = false
 	releaseTheBeast    = make(chan int, 1)
 	dataIsNotLoadedYet = true
-	pageDataFilter     = ""
 
 	importFileFilter = []string{".csv", ".csvt"}
 
 	dataFilePrefName          = parser.NewDotPath("file.datafile")
+	backupFilePrefName        = parser.NewDotPath("file.backupfile")
 	copyDialogTimePrefName    = parser.NewDotPath("dialog.copyTimeOutMS")
 	linkDialogTimePrefName    = parser.NewDotPath("dialog.linkTimeOutMS")
 	saveDialogTimePrefName    = parser.NewDotPath("dialog.saveTimeOutMS")
@@ -145,7 +145,8 @@ func main() {
 	}
 	preferences = p
 
-	loadThreadFileName := p.GetStringWithFallback(dataFilePrefName, fallbackDataFile)
+	primaryFileName := p.GetStringWithFallback(dataFilePrefName, fallbackDataFile)
+	backupFileName := p.GetStringWithFallback(backupFilePrefName, "")
 	getDataUrl := p.GetStringWithFallback(getUrlPrefName, "")
 	postDataUrl := p.GetStringWithFallback(postUrlPrefName, "")
 	//
@@ -154,7 +155,7 @@ func main() {
 	if len(os.Args) > 2 {
 		switch os.Args[2] {
 		case "create":
-			createFile := oneOrTheOther(postDataUrl == "", loadThreadFileName, postDataUrl+"/"+loadThreadFileName)
+			createFile := oneOrTheOther(postDataUrl == "", primaryFileName, postDataUrl+"/"+primaryFileName)
 			fmt.Printf("-> Create new data file '%s'\n", createFile)
 			fmt.Printf("-> File is defined in config data file '%s'\n", prefFile)
 			fmt.Println("-> Existing data will be overwritten!")
@@ -168,9 +169,9 @@ func main() {
 			data := lib.CreateEmptyJsonData()
 			var err error
 			if postDataUrl != "" {
-				_, err = parser.PostJsonBytes(fmt.Sprintf("%s/%s", postDataUrl, loadThreadFileName), data)
+				_, err = parser.PostJsonBytes(fmt.Sprintf("%s/%s", postDataUrl, primaryFileName), data)
 			} else {
-				err = ioutil.WriteFile(loadThreadFileName, data, 0644)
+				err = ioutil.WriteFile(primaryFileName, data, 0644)
 			}
 			if err != nil {
 				fmt.Println(err.Error())
@@ -190,7 +191,7 @@ func main() {
 	a.Settings().SetTheme(theme2.NewAppTheme(preferences.GetStringWithFallback(themeVarPrefName, "dark")))
 	a.SetIcon(theme2.AppLogo())
 
-	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", loadThreadFileName))
+	window = a.NewWindow(fmt.Sprintf("Data File: %s not loaded yet", primaryFileName))
 	splitContainerOffsetPref = preferences.GetFloat64WithFallback(screenSplitPrefName, 0.2)
 	splitContainerOffset = -1
 
@@ -242,7 +243,7 @@ func main() {
 	/*
 		Thread keeps running in background
 		To Trigger it:
-			set loadThreadFileName = filename
+			set primaryFileName = filename
 			futureReleaseTheBeast(1000, MAIN_THREAD_LOAD)
 	*/
 	go func() {
@@ -261,14 +262,14 @@ func main() {
 					timedNotification(5000, "Log file error", logData.GetErr().Error())
 				}
 				// Load the file and decrypt it if required
-				fd, err := lib.NewFileData(loadThreadFileName, getDataUrl, postDataUrl)
+				fd, err := lib.NewFileData(primaryFileName, backupFileName, getDataUrl, postDataUrl)
 				if err != nil {
-					abortWithUsage(fmt.Sprintf("Failed to load data file %s. Error: %s\n", loadThreadFileName, err.Error()))
+					abortWithUsage(fmt.Sprintf("Failed to load data file %s. Error: %s\n", primaryFileName, err.Error()))
 				}
 				if getDataUrl != "" {
-					log(fmt.Sprintf("Remote File:'%s/%s'", getDataUrl, loadThreadFileName))
+					log(fmt.Sprintf("Remote File:'%s/%s'", getDataUrl, primaryFileName))
 				} else {
-					log(fmt.Sprintf("Local File:'%s'", loadThreadFileName))
+					log(fmt.Sprintf("Local File:'%s'", primaryFileName))
 				}
 				/*
 					While file is ENCRYPTED
@@ -277,7 +278,7 @@ func main() {
 				*/
 				message := ""
 				for fd.RequiresDecryption() {
-					log(fmt.Sprintf("Requires Decryption:'%s'", loadThreadFileName))
+					log(fmt.Sprintf("Requires Decryption:'%s'", primaryFileName))
 					getPasswordAndDecrypt(fd, message, func(s string) {
 						// FAIL
 						message = "Error: " + strings.TrimSpace(s) + ". Please try again"
@@ -292,12 +293,12 @@ func main() {
 				*/
 				dr, err := lib.NewJsonData(fd.GetContent(), dataMapUpdated)
 				if err != nil {
-					abortWithUsage(fmt.Sprintf("ERROR: Cannot process data in file '%s'.\n%s\n", loadThreadFileName, err))
+					abortWithUsage(fmt.Sprintf("ERROR: Cannot process data in file '%s'.\n%s\n", primaryFileName, err))
 				}
 				fileData = fd
 				jsonData = dr
 				dataIsNotLoadedYet = false
-				log(fmt.Sprintf("Data Parsed OK: File:'%s' DateTime:'%s'", loadThreadFileName, jsonData.GetTimeStampString()))
+				log(fmt.Sprintf("Data Parsed OK: File:'%s' DateTime:'%s'", primaryFileName, jsonData.GetTimeStampString()))
 				// Follow on action to rebuild the Tree and re-display it
 				futureReleaseTheBeast(100, MAIN_THREAD_RELOAD_TREE)
 			case MAIN_THREAD_RELOAD_TREE:
@@ -711,7 +712,6 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 	case gui.ACTION_CLONE:
 		cloneHint()
 	case gui.ACTION_FILTER:
-		pageDataFilter = extra
 		futureReleaseTheBeast(300, MAIN_THREAD_RESELECT)
 	case gui.ACTION_UPDATED:
 		futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
@@ -1148,7 +1148,6 @@ func search(searchFor string) {
 		return
 	}
 	matchCase, _ := findCaseSensitive.Get()
-	pageDataFilter = ""
 	lib.ClearUserAccountFilter()
 
 	// Do the search. The map contains the returned search entries
