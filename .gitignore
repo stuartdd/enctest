@@ -8,5 +8,5 @@
 tmp.*
 fyne-cross/**
 data.json
-config.json
+config*
 /enctest
