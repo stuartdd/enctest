@@ -30,7 +30,6 @@ type NodeAnnotationEnum int
 const (
 	// HI Remove Note
 	IdHints            = "pwHints"
-	IdNotes            = "notes"
 	DataMapRootName    = "groups"
 	timeStampName      = "timeStamp"
 	tabdata            = "                                     "
@@ -265,17 +264,6 @@ func (p *JsonData) AddHint(userUid *parser.Path, hintName string) error {
 	return nil
 }
 
-func (p *JsonData) AddNoteItem(userUid *parser.Path, itemName string) error {
-	u := p.getUserNode(userUid.StringFirst()) // User id is first path element
-	if u == nil {
-		return fmt.Errorf("the user '%s' cannot be found", userUid)
-	}
-	addNoteToUser(u, itemName, "")
-	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Note Item", userUid.StringAppend(IdNotes), nil)
-	return nil
-}
-
 func (p *JsonData) AddUser(userName string) error {
 	userPath := parser.NewBarPath(userName)
 	u := p.getUserNode(userPath.StringFirst()) // User id is first path element
@@ -283,7 +271,6 @@ func (p *JsonData) AddUser(userName string) error {
 		return fmt.Errorf("the user '%s' already exists", userName)
 	}
 	userO := parser.NewJsonObject(userName)
-	addNoteToUser(userO, "note", "text")
 	addHintToUser(userO, "App1")
 	p.GetUserRoot().Add(userO)
 	p.navIndex = createNavIndex(p.dataMap)
@@ -497,20 +484,6 @@ func addHintToUser(userO *parser.JsonObject, hintName string) {
 	addDefaultHintItemsToHint(hintO)
 }
 
-func addNoteToUser(userO *parser.JsonObject, noteName, noteText string) {
-	notes := userO.GetNodeWithName(IdNotes)
-	if notes == nil {
-		notes = parser.NewJsonObject(IdNotes)
-		userO.Add(notes)
-	}
-	notesO := notes.(*parser.JsonObject)
-	note := notesO.GetNodeWithName(noteName)
-	if note == nil {
-		note = parser.NewJsonString(noteName, noteText)
-		notesO.Add(note)
-	}
-}
-
 func createNavIndex(m parser.NodeI) *map[string][]string {
 	var uids = make(map[string][]string)
 	createNavIndexDetail("", &uids, m)
@@ -714,14 +687,10 @@ func CreateEmptyJsonData() []byte {
 	root := parser.NewJsonObject("")
 	g := parser.NewJsonObject(DataMapRootName)
 	u := parser.NewJsonObject("tempUser")
-	n := parser.NewJsonObject(IdNotes)
 	h := parser.NewJsonObject(IdHints)
-	n1 := parser.NewJsonString("note", "newNote")
 	app := parser.NewJsonObject("application")
 	name := parser.NewJsonString("name", "userName")
 	app.Add(name)
-	n.Add(n1)
-	u.Add(n)
 	u.Add(h)
 	g.Add(u)
 	h.Add(app)

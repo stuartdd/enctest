@@ -58,7 +58,6 @@ const (
 	ACTION_LINK               = "link"
 	ACTION_UPDATED            = "update"
 	ACTION_FILTER             = "filter"
-	ACTION_ADD_NOTE           = "addnode"
 	ACTION_ADD_HINT           = "addhint"
 	ACTION_ADD_ASSET          = "addasset"
 	ACTION_ADD_ASSET_ITEM     = "addassetitem"
@@ -137,9 +136,6 @@ func GetDetailPage(selectedPath *parser.Path, dataRootMap parser.NodeI, preferen
 		if group1 == idPwDetails {
 			return NewDetailPage(selectedPath, user0, group1, title+"s", welcomeScreen, hintControls, dataRootMap, preferences, log)
 		}
-		if group1 == idNotes {
-			return NewDetailPage(selectedPath, user0, group1, title+"s", detailsScreen, noteDetailsControls, dataRootMap, preferences, log)
-		}
 		if group1 == lib.IdAssets {
 			return NewDetailPage(selectedPath, user0, group1, title+"s", assetScreen, assetSummaryControls, dataRootMap, preferences, log)
 		}
@@ -148,9 +144,6 @@ func GetDetailPage(selectedPath *parser.Path, dataRootMap parser.NodeI, preferen
 		_, name2 := lib.GetNodeAnnotationTypeAndName(selectedPath.StringAt(2))
 		if group1 == idPwDetails {
 			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, hintDetailsControls, dataRootMap, preferences, log)
-		}
-		if group1 == idNotes {
-			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, noteDetailsControls, dataRootMap, preferences, log)
 		}
 		if group1 == lib.IdAssets {
 			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, assetControls, dataRootMap, preferences, log)
@@ -267,15 +260,6 @@ func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *pa
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_HINT, details.SelectedPath, "")
 	}, statusDisplay, fmt.Sprintf("Add new Hint to user: %s", details.User)))
-	cObj = append(cObj, widget.NewLabel(details.Heading))
-	return container.NewHBox(cObj...)
-}
-
-func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
-	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
-		actionFunc(ACTION_ADD_NOTE, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Add new Note to user: %s", details.User)))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
