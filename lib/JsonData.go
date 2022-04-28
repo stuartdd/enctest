@@ -28,7 +28,7 @@ import (
 type NodeAnnotationEnum int
 
 const (
-	// HI
+	// HI Remove Note
 	IdHints            = "pwHints"
 	IdNotes            = "notes"
 	DataMapRootName    = "groups"
