@@ -28,6 +28,7 @@ import (
 type NodeAnnotationEnum int
 
 const (
+	// HI
 	IdHints            = "pwHints"
 	IdNotes            = "notes"
 	DataMapRootName    = "groups"
