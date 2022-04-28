@@ -984,9 +984,9 @@ func addNewHintItem() {
 Add an entity to the model.
 Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
 */
-func addNewEntity(head string, name string, addType int, isNote bool) {
+func addNewEntity(head string, name string, addType int, isAnnotated bool) {
 	cu := currentSelPath.PathAt(UID_POS_USER)
-	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, lib.NOTE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
+	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isAnnotated, lib.NOTE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
 		if accept {
 			entityName, err := lib.ProcessEntityName(newName, nt)
 			if err == nil {
@@ -1041,12 +1041,12 @@ func renameAction(dataPath *parser.Path, extra string) {
 	if m != nil {
 		at, fromName := lib.GetNodeAnnotationTypeAndName(dataPath.StringLast())
 		toName := ""
-		isNote := false
+		isAnnotated := false
 		if jsonData.IsStringNode(m) {
 			toName = fromName
-			isNote = true
+			isAnnotated = true
 		}
-		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), toName, isNote, at, func(accept bool, toName string, nt lib.NodeAnnotationEnum) {
+		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), toName, isAnnotated, at, func(accept bool, toName string, nt lib.NodeAnnotationEnum) {
 			if accept {
 				s, err := lib.ProcessEntityName(toName, nt)
 				if err != nil {

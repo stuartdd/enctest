@@ -43,7 +43,6 @@ const (
 
 	welcomeTitle = "Welcome"
 	appDesc      = "Welcome to Valt"
-	idNotes      = "notes"
 	idPwDetails  = "pwHints"
 
 	PATH_SEP = "|"
@@ -74,13 +73,12 @@ var (
 	EditEntryListCache        = NewEditEntryList()
 	DataPresModePrefName      = parser.NewDotPath("data.presentationmode")
 	DataHintIsCalledPrefName  = parser.NewDotPath("data.hintIsCalled")
-	DataNoteIsCalledPrefName  = parser.NewDotPath("data.noteIsCalled")
 	DataTransIsCalledPrefName = parser.NewDotPath("data.transIsCalled")
 	DataAssetIsCalledPrefName = parser.NewDotPath("data.assetIsCalled")
 )
 
-func NewModalEntryDialog(w fyne.Window, heading, txt string, isNote bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
-	return runModalEntryPopup(w, heading, txt, false, isNote, annotation, accept)
+func NewModalEntryDialog(w fyne.Window, heading, txt string, isAnnotated bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
+	return runModalEntryPopup(w, heading, txt, false, isAnnotated, annotation, accept)
 }
 
 func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
@@ -94,7 +92,7 @@ func GetWelcomePage(preferences pref.PrefData, log func(string)) *DetailPage {
 /*
 	For a given path LENGTH return:
 	2: 	The annotation type of the second path element
-		The group the values of (idPwDetails, idNotes, IdAssets) or second node without annotation)
+		The group the values of (idPwDetails, IdAssets) or second node without annotation)
 		The value of the second node mapped via preferences to display format (pwHint-->Hint etc)
 	3: 	The annotation type of the second path element
 		The value of the second path element without annotation
@@ -109,9 +107,6 @@ func GetDetailTypeGroupTitle(selectedPath *parser.Path, preferences pref.PrefDat
 		type1, group1 := lib.GetNodeAnnotationTypeAndName(selectedPath.StringAt(1))
 		if group1 == idPwDetails {
 			return type1, group1, preferences.GetStringWithFallback(DataHintIsCalledPrefName, "Hint")
-		}
-		if group1 == idNotes {
-			return type1, group1, preferences.GetStringWithFallback(DataNoteIsCalledPrefName, "Note")
 		}
 		if group1 == lib.IdAssets {
 			return type1, group1, preferences.GetStringWithFallback(DataAssetIsCalledPrefName, "Asset")
@@ -570,7 +565,7 @@ func parseURL(urlStr string) *url.URL {
 	return link
 }
 
-func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
+func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isAnnotated bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
 	var radioGroup *widget.RadioGroup
 	var styles *fyne.Container
 	var noteTypeId lib.NodeAnnotationEnum = 0
@@ -589,7 +584,7 @@ func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNot
 		noteTypeId = 0
 	}
 
-	if isNote {
+	if isAnnotated {
 		radioGroup = widget.NewRadioGroup(lib.NodeAnnotationPrefixNames, radinGroupChanged)
 		radioGroup.SetSelected(lib.NodeAnnotationPrefixNames[annotation])
 		styles = container.NewCenter(container.New(layout.NewHBoxLayout()), radioGroup)
@@ -603,7 +598,7 @@ func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNot
 		accept(true, entry.Text, noteTypeId)
 	}),
 	))
-	if isNote {
+	if isAnnotated {
 		modal = widget.NewModalPopUp(
 			container.NewVBox(
 				container.NewCenter(widget.NewLabel("Select the TYPE of item from below")),
