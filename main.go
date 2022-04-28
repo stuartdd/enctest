@@ -978,7 +978,7 @@ func addNewAssetItem() {
 Selecting the menu to add an item to a hint
 */
 func addNewHintItem() {
-	n := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Hint")
+	n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	ch := currentSelPath.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New Item to "+n, "A User needs to be selected")
