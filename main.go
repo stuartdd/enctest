@@ -986,7 +986,7 @@ Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a ch
 */
 func addNewEntity(head string, name string, addType int, isAnnotated bool) {
 	cu := currentSelPath.PathAt(UID_POS_USER)
-	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isAnnotated, lib.NOTE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
+	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isAnnotated, lib.NODE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
 		if accept {
 			entityName, err := lib.ProcessEntityName(newName, nt)
 			if err == nil {

@@ -1,8 +1,30 @@
 
     {
+        "search": {
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note",
+                "TV LIC",
+                "Lloyds",
+                "2022",
+                "Balance"
+            ],
+            "case": false
+        },
+        "log": {
+            "fileName": "enctest.log",
+            "active": true,
+            "prefix": "INFO"
+        },
+        "file": {
+            "postDataUrl": "",
+            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
+        },
         "import": {
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/",
             "filter": [
                 ".csvt",
                 ".csv"
@@ -17,48 +39,26 @@
                 "db",
                 "cr",
                 ""
-            ]
+            ],
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/"
         },
         "theme": "dark",
         "data": {
-            "noteIsCalled": "Note",
             "presentationmode": false,
             "hintIsCalled": "Hint",
             "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction"
+            "transIsCalled": "Transaction",
+            "noteIsCalled": "Note"
         },
         "screen": {
+            "height": 582.380981,
             "fullScreen": false,
             "split": 0.223558,
-            "width": 1085.714355,
-            "height": 596.190491
+            "width": 1073.333374
         },
         "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
-        "search": {
-            "case": false,
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note",
-                "TV LIC",
-                "Lloyds",
-                "2022",
-                "Balance"
-            ]
-        },
-        "log": {
-            "active": true,
-            "prefix": "INFO",
-            "fileName": "enctest.log"
-        },
-        "file": {
-            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": "",
-            "postDataUrl": ""
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
         }
     }

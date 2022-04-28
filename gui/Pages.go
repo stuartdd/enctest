@@ -82,7 +82,7 @@ func NewModalEntryDialog(w fyne.Window, heading, txt string, isAnnotated bool, a
 }
 
 func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
-	return runModalEntryPopup(w, heading, txt, true, false, lib.NOTE_TYPE_SL, accept)
+	return runModalEntryPopup(w, heading, txt, true, false, lib.NODE_TYPE_SL, accept)
 }
 
 func GetWelcomePage(preferences pref.PrefData, log func(string)) *DetailPage {
@@ -97,7 +97,7 @@ func GetWelcomePage(preferences pref.PrefData, log func(string)) *DetailPage {
 	3: 	The annotation type of the second path element
 		The value of the second path element without annotation
 		The value of the third path element without annotation
-	Else The annotation type lib.NOTE_TYPE_SL (this should only happen if len == 0)
+	Else The annotation type lib.NODE_TYPE_SL (this should only happen if len == 0)
 		The path as a string,
 		The path as a string,
 */
@@ -117,7 +117,7 @@ func GetDetailTypeGroupTitle(selectedPath *parser.Path, preferences pref.PrefDat
 		_, name2 := lib.GetNodeAnnotationTypeAndName(selectedPath.StringAt(2))
 		return type1, group1, name2
 	default:
-		return lib.NOTE_TYPE_SL, selectedPath.String(), selectedPath.String()
+		return lib.NODE_TYPE_SL, selectedPath.String(), selectedPath.String()
 	}
 }
 
@@ -428,11 +428,11 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 			cObj = append(cObj, widget.NewSeparator())
 			if dp {
 				switch na {
-				case lib.NOTE_TYPE_RT:
+				case lib.NODE_TYPE_RT:
 					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())))
-				case lib.NOTE_TYPE_PO:
+				case lib.NODE_TYPE_PO:
 					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
-				case lib.NOTE_TYPE_IM:
+				case lib.NODE_TYPE_IM:
 					image, message := loadImage(editEntry.GetCurrentText())
 					if message == "" {
 						image.FillMode = canvas.ImageFillOriginal
@@ -451,7 +451,7 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 					we = widget.NewEntry()
 				} else {
 					we = widget.NewMultiLineEntry()
-					if na != lib.NOTE_TYPE_PO {
+					if na != lib.NODE_TYPE_PO {
 						contHeight = 250
 					}
 				}

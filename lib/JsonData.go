@@ -38,17 +38,17 @@ const (
 	PATH_SEP           = "|"
 	PATH_SEP_CHAR      = '|'
 
-	NOTE_TYPE_SL NodeAnnotationEnum = 0 // Single Line: These are indexes. Found issues when using iota!
-	NOTE_TYPE_ML NodeAnnotationEnum = 1 // Multi Line
-	NOTE_TYPE_RT NodeAnnotationEnum = 2 // Rich Text
-	NOTE_TYPE_PO NodeAnnotationEnum = 3 // POsitinal
-	NOTE_TYPE_IM NodeAnnotationEnum = 4 // IMage
+	NODE_TYPE_SL NodeAnnotationEnum = 0 // Single Line: These are indexes. Found issues when using iota!
+	NODE_TYPE_ML NodeAnnotationEnum = 1 // Multi Line
+	NODE_TYPE_RT NodeAnnotationEnum = 2 // Rich Text
+	NODE_TYPE_PO NodeAnnotationEnum = 3 // POsitinal
+	NODE_TYPE_IM NodeAnnotationEnum = 4 // IMage
 )
 
 var (
 	nodeAnnotationPrefix      = []string{"", "!ml", "!rt", "!po", "!im"}
 	NodeAnnotationPrefixNames = []string{"Single Line", "Multi Line", "Rich Text", "Positional", "Image"}
-	NodeAnnotationEnums       = []NodeAnnotationEnum{NOTE_TYPE_SL, NOTE_TYPE_ML, NOTE_TYPE_RT, NOTE_TYPE_PO, NOTE_TYPE_IM}
+	NodeAnnotationEnums       = []NodeAnnotationEnum{NODE_TYPE_SL, NODE_TYPE_ML, NODE_TYPE_RT, NODE_TYPE_PO, NODE_TYPE_IM}
 	NodeAnnotationsSingleLine = []bool{true, false, false, true, true}
 	defaultHintNames          = []string{"notes", "post", "pre", "userId"}
 	defaultAssetNames         = []string{"Account Num.", "Sort Code"}
@@ -97,6 +97,27 @@ func NewJsonData(j []byte, dataMapUpdated func(string, *parser.Path, error)) (*J
 	if err != nil {
 		return nil, fmt.Errorf("'%s' could not be parsed", timeStampPath)
 	}
+
+	nl := make([]parser.NodeI, 0)
+	for _, n := range u.(parser.NodeC).GetValues() {
+		parser.WalkNodeTreeForTrail(n.(parser.NodeC), func(t *parser.Trail, i int) bool {
+			if t.Len() == 1 {
+				nn := t.GetNodeAt(0).(parser.NodeC)
+				if nn.Len() > 0 && nn.GetValues()[0].GetNodeType() == parser.NT_STRING {
+					nl = append(nl, nn)
+				}
+			}
+			return false
+		})
+	}
+	for _, xx := range nl {
+		fmt.Printf("REM: %s %s\n", xx.GetName())
+		err := parser.Remove(u, xx)
+		if err != nil {
+			fmt.Printf("ERR: %s\n", err.Error())
+		}
+	}
+
 	dr := &JsonData{dataMap: rO, navIndex: createNavIndex(rO), dataMapUpdated: dataMapUpdated}
 	return dr, nil
 }
@@ -487,7 +508,6 @@ func addHintToUser(userO *parser.JsonObject, hintName string) {
 func createNavIndex(m parser.NodeI) *map[string][]string {
 	var uids = make(map[string][]string)
 	createNavIndexDetail("", &uids, m)
-
 	return &uids
 }
 
@@ -521,7 +541,7 @@ func createNavIndexDetail(id string, uids *map[string][]string, nodeI parser.Nod
 								for _, v3 := range m3O.GetValuesSorted() {
 									if v3.GetNodeType() == parser.NT_OBJECT {
 										an, _ := GetNodeAnnotationTypeAndName(v3.GetName())
-										if an == NOTE_TYPE_SL {
+										if an == NODE_TYPE_SL {
 											l3 := make([]string, 1)
 											l3[0] = v3.GetName()
 											(*uids)[ll2[ii3]] = l3
@@ -665,12 +685,12 @@ func IndexOfAnnotation(annotation string) int {
 func GetNodeAnnotationTypeAndName(combinedName string) (NodeAnnotationEnum, string) {
 	pos := strings.IndexRune(combinedName, '!')
 	if pos < 0 {
-		return NOTE_TYPE_SL, combinedName
+		return NODE_TYPE_SL, combinedName
 	}
 	aStr := combinedName[pos:]
 	indx := IndexOfAnnotation(aStr)
 	if indx == 0 {
-		return NOTE_TYPE_SL, combinedName
+		return NODE_TYPE_SL, combinedName
 	}
 	return NodeAnnotationEnums[indx], combinedName[:pos]
 }
