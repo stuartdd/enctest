@@ -59,7 +59,6 @@ const (
 	ADD_TYPE_HINT_CLONE
 	ADD_TYPE_HINT_CLONE_FULL
 	ADD_TYPE_HINT_ITEM
-	ADD_TYPE_NOTE_ITEM
 
 	UID_POS_USER       = 0
 	UID_POS_TYPE       = 1
@@ -473,7 +472,6 @@ func makeButtonBar() *fyne.Container {
 
 func makeMenus() *fyne.MainMenu {
 	hintName := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
-	noteName := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Note")
 	assetName := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
 
 	user := currentSelPath.StringFirst()
@@ -481,8 +479,6 @@ func makeMenus() *fyne.MainMenu {
 	selType := currentSelPath.StringAt(UID_POS_TYPE)
 	newItem := fyne.NewMenu("New")
 	switch selType {
-	case lib.IdNotes:
-		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem))
 	case lib.IdHints:
 		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s Item for '%s'", hintName, user), addNewHintItem))
 		if selTypeItem != "" {
@@ -497,7 +493,6 @@ func makeMenus() *fyne.MainMenu {
 		}
 	default:
 		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", hintName, user), addNewHint))
-		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", noteName, user), addNewNoteItem))
 		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", assetName, user), addNewAsset))
 		newItem.Items = append(newItem.Items, fyne.NewMenuItem("New User", addNewUser))
 	}
@@ -691,8 +686,6 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 		renameAction(dataPath, extra)
 	case gui.ACTION_LINK:
 		linkAction(dataPath, extra)
-	case gui.ACTION_ADD_NOTE:
-		addNewNoteItem()
 	case gui.ACTION_ADD_HINT:
 		addNewHint()
 	case gui.ACTION_ADD_ASSET:
@@ -978,7 +971,7 @@ func addNewAssetItem() {
 Selecting the menu to add an item to a hint
 */
 func addNewHintItem() {
-	n := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Hint")
+	n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
 	ch := currentSelPath.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New Item to "+n, "A User needs to be selected")
@@ -988,33 +981,18 @@ func addNewHintItem() {
 }
 
 /**
-Selecting the menu to add an item to the notes
-*/
-func addNewNoteItem() {
-	n := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Note")
-	ch := currentSelPath.StringAt(UID_POS_USER)
-	if ch == "" {
-		logInformationDialog("Add New Item to "+n, "A User needs to be selected")
-	} else {
-		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_NOTE_ITEM, true)
-	}
-}
-
-/**
 Add an entity to the model.
 Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
 */
-func addNewEntity(head string, name string, addType int, isNote bool) {
+func addNewEntity(head string, name string, addType int, isAnnotated bool) {
 	cu := currentSelPath.PathAt(UID_POS_USER)
-	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isNote, lib.NOTE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
+	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isAnnotated, lib.NODE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
 		if accept {
 			entityName, err := lib.ProcessEntityName(newName, nt)
 			if err == nil {
 				switch addType {
 				case ADD_TYPE_USER:
 					err = jsonData.AddUser(entityName)
-				case ADD_TYPE_NOTE_ITEM:
-					err = jsonData.AddNoteItem(cu, entityName)
 				case ADD_TYPE_HINT:
 					err = jsonData.AddHint(cu, entityName)
 				case ADD_TYPE_ASSET:
@@ -1063,12 +1041,12 @@ func renameAction(dataPath *parser.Path, extra string) {
 	if m != nil {
 		at, fromName := lib.GetNodeAnnotationTypeAndName(dataPath.StringLast())
 		toName := ""
-		isNote := false
+		isAnnotated := false
 		if jsonData.IsStringNode(m) {
 			toName = fromName
-			isNote = true
+			isAnnotated = true
 		}
-		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), toName, isNote, at, func(accept bool, toName string, nt lib.NodeAnnotationEnum) {
+		gui.NewModalEntryDialog(window, fmt.Sprintf("Rename entry '%s' ", fromName), toName, isAnnotated, at, func(accept bool, toName string, nt lib.NodeAnnotationEnum) {
 			if accept {
 				s, err := lib.ProcessEntityName(toName, nt)
 				if err != nil {
@@ -1163,11 +1141,6 @@ func search(searchFor string) {
 		user := searchStringNodeName(trail.GetNodeAt(0))
 		kind := searchStringNodeName(trail.GetNodeAt(1))
 		switch kind {
-		case lib.IdNotes:
-			n := preferences.GetStringWithFallback(gui.DataNoteIsCalledPrefName, "Note")
-			s := searchStringTrailFromTo(trail, 2)
-			p := trail.GetPath(0, 2, "|")
-			searchWindow.Add(fmt.Sprintf("%s %s In Field [ %s ]", user, n, s), p)
 		case lib.IdAssets:
 			s := searchStringTrailFromTo(trail, 2, 4)
 			p := trail.GetPath(0, 3, "|")
@@ -1186,7 +1159,7 @@ func search(searchFor string) {
 					searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In Field [ %s ]", user, n, s, searchStringNodeName(t3)), p)
 				}
 			}
-		case lib.IdHints:
+		default:
 			s := searchStringTrailFromTo(trail, 2)
 			p := trail.GetPath(0, 3, "|")
 			n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")

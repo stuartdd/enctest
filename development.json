@@ -1,17 +1,17 @@
 
     {
         "data": {
+            "transIsCalled": "Transaction",
             "noteIsCalled": "Note",
             "presentationmode": false,
             "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction"
+            "assetIsCalled": "Asset"
         },
         "screen": {
-            "fullScreen": false,
             "split": 0.223558,
-            "width": 1086.666748,
-            "height": 597.142883
+            "width": 1068.571533,
+            "height": 577.142883,
+            "fullScreen": false
         },
         "dialog": {
             "saveTimeOutMS": 3000,
@@ -42,7 +42,6 @@
             "datafile": "libtest/TestDataTypes.json"
         },
         "import": {
-            "csvDateFormat": "02/01/2006",
             "path": "/home/stuart/git/golang/enctest/",
             "filter": [
                 ".csvt",
@@ -58,7 +57,8 @@
                 "db",
                 "cr",
                 ""
-            ]
+            ],
+            "csvDateFormat": "02/01/2006"
         },
         "theme": "dark"
     }

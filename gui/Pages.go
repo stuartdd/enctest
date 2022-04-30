@@ -43,7 +43,6 @@ const (
 
 	welcomeTitle = "Welcome"
 	appDesc      = "Welcome to Valt"
-	idNotes      = "notes"
 	idPwDetails  = "pwHints"
 
 	PATH_SEP = "|"
@@ -58,7 +57,6 @@ const (
 	ACTION_LINK               = "link"
 	ACTION_UPDATED            = "update"
 	ACTION_FILTER             = "filter"
-	ACTION_ADD_NOTE           = "addnode"
 	ACTION_ADD_HINT           = "addhint"
 	ACTION_ADD_ASSET          = "addasset"
 	ACTION_ADD_ASSET_ITEM     = "addassetitem"
@@ -75,17 +73,16 @@ var (
 	EditEntryListCache        = NewEditEntryList()
 	DataPresModePrefName      = parser.NewDotPath("data.presentationmode")
 	DataHintIsCalledPrefName  = parser.NewDotPath("data.hintIsCalled")
-	DataNoteIsCalledPrefName  = parser.NewDotPath("data.noteIsCalled")
 	DataTransIsCalledPrefName = parser.NewDotPath("data.transIsCalled")
 	DataAssetIsCalledPrefName = parser.NewDotPath("data.assetIsCalled")
 )
 
-func NewModalEntryDialog(w fyne.Window, heading, txt string, isNote bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
-	return runModalEntryPopup(w, heading, txt, false, isNote, annotation, accept)
+func NewModalEntryDialog(w fyne.Window, heading, txt string, isAnnotated bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
+	return runModalEntryPopup(w, heading, txt, false, isAnnotated, annotation, accept)
 }
 
 func NewModalPasswordDialog(w fyne.Window, heading, txt string, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
-	return runModalEntryPopup(w, heading, txt, true, false, lib.NOTE_TYPE_SL, accept)
+	return runModalEntryPopup(w, heading, txt, true, false, lib.NODE_TYPE_SL, accept)
 }
 
 func GetWelcomePage(preferences pref.PrefData, log func(string)) *DetailPage {
@@ -95,12 +92,12 @@ func GetWelcomePage(preferences pref.PrefData, log func(string)) *DetailPage {
 /*
 	For a given path LENGTH return:
 	2: 	The annotation type of the second path element
-		The group the values of (idPwDetails, idNotes, IdAssets) or second node without annotation)
+		The group the values of (idPwDetails, IdAssets) or second node without annotation)
 		The value of the second node mapped via preferences to display format (pwHint-->Hint etc)
 	3: 	The annotation type of the second path element
 		The value of the second path element without annotation
 		The value of the third path element without annotation
-	Else The annotation type lib.NOTE_TYPE_SL (this should only happen if len == 0)
+	Else The annotation type lib.NODE_TYPE_SL (this should only happen if len == 0)
 		The path as a string,
 		The path as a string,
 */
@@ -111,9 +108,6 @@ func GetDetailTypeGroupTitle(selectedPath *parser.Path, preferences pref.PrefDat
 		if group1 == idPwDetails {
 			return type1, group1, preferences.GetStringWithFallback(DataHintIsCalledPrefName, "Hint")
 		}
-		if group1 == idNotes {
-			return type1, group1, preferences.GetStringWithFallback(DataNoteIsCalledPrefName, "Note")
-		}
 		if group1 == lib.IdAssets {
 			return type1, group1, preferences.GetStringWithFallback(DataAssetIsCalledPrefName, "Asset")
 		}
@@ -123,7 +117,7 @@ func GetDetailTypeGroupTitle(selectedPath *parser.Path, preferences pref.PrefDat
 		_, name2 := lib.GetNodeAnnotationTypeAndName(selectedPath.StringAt(2))
 		return type1, group1, name2
 	default:
-		return lib.NOTE_TYPE_SL, selectedPath.String(), selectedPath.String()
+		return lib.NODE_TYPE_SL, selectedPath.String(), selectedPath.String()
 	}
 }
 
@@ -137,9 +131,6 @@ func GetDetailPage(selectedPath *parser.Path, dataRootMap parser.NodeI, preferen
 		if group1 == idPwDetails {
 			return NewDetailPage(selectedPath, user0, group1, title+"s", welcomeScreen, hintControls, dataRootMap, preferences, log)
 		}
-		if group1 == idNotes {
-			return NewDetailPage(selectedPath, user0, group1, title+"s", detailsScreen, noteDetailsControls, dataRootMap, preferences, log)
-		}
 		if group1 == lib.IdAssets {
 			return NewDetailPage(selectedPath, user0, group1, title+"s", assetScreen, assetSummaryControls, dataRootMap, preferences, log)
 		}
@@ -148,9 +139,6 @@ func GetDetailPage(selectedPath *parser.Path, dataRootMap parser.NodeI, preferen
 		_, name2 := lib.GetNodeAnnotationTypeAndName(selectedPath.StringAt(2))
 		if group1 == idPwDetails {
 			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, hintDetailsControls, dataRootMap, preferences, log)
-		}
-		if group1 == idNotes {
-			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, noteDetailsControls, dataRootMap, preferences, log)
 		}
 		if group1 == lib.IdAssets {
 			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, assetControls, dataRootMap, preferences, log)
@@ -267,15 +255,6 @@ func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *pa
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_HINT, details.SelectedPath, "")
 	}, statusDisplay, fmt.Sprintf("Add new Hint to user: %s", details.User)))
-	cObj = append(cObj, widget.NewLabel(details.Heading))
-	return container.NewHBox(cObj...)
-}
-
-func noteDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
-	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
-		actionFunc(ACTION_ADD_NOTE, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Add new Note to user: %s", details.User)))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
@@ -449,11 +428,11 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 			cObj = append(cObj, widget.NewSeparator())
 			if dp {
 				switch na {
-				case lib.NOTE_TYPE_RT:
+				case lib.NODE_TYPE_RT:
 					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())))
-				case lib.NOTE_TYPE_PO:
+				case lib.NODE_TYPE_PO:
 					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, positional(editEntry.GetCurrentText())))
-				case lib.NOTE_TYPE_IM:
+				case lib.NODE_TYPE_IM:
 					image, message := loadImage(editEntry.GetCurrentText())
 					if message == "" {
 						image.FillMode = canvas.ImageFillOriginal
@@ -472,7 +451,7 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 					we = widget.NewEntry()
 				} else {
 					we = widget.NewMultiLineEntry()
-					if na != lib.NOTE_TYPE_PO {
+					if na != lib.NODE_TYPE_PO {
 						contHeight = 250
 					}
 				}
@@ -586,7 +565,7 @@ func parseURL(urlStr string) *url.URL {
 	return link
 }
 
-func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNote bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
+func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isAnnotated bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
 	var radioGroup *widget.RadioGroup
 	var styles *fyne.Container
 	var noteTypeId lib.NodeAnnotationEnum = 0
@@ -605,7 +584,7 @@ func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNot
 		noteTypeId = 0
 	}
 
-	if isNote {
+	if isAnnotated {
 		radioGroup = widget.NewRadioGroup(lib.NodeAnnotationPrefixNames, radinGroupChanged)
 		radioGroup.SetSelected(lib.NodeAnnotationPrefixNames[annotation])
 		styles = container.NewCenter(container.New(layout.NewHBoxLayout()), radioGroup)
@@ -619,7 +598,7 @@ func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isNot
 		accept(true, entry.Text, noteTypeId)
 	}),
 	))
-	if isNote {
+	if isAnnotated {
 		modal = widget.NewModalPopUp(
 			container.NewVBox(
 				container.NewCenter(widget.NewLabel("Select the TYPE of item from below")),
