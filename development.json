@@ -1,5 +1,25 @@
 
     {
+        "import": {
+            "csvSkipHeader": true,
+            "csvColumns": [
+                "date",
+                "type",
+                "",
+                "",
+                "ref",
+                "db",
+                "cr",
+                ""
+            ],
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/",
+            "filter": [
+                ".csvt",
+                ".csv"
+            ]
+        },
+        "theme": "dark",
         "data": {
             "transIsCalled": "Transaction",
             "noteIsCalled": "Note",
@@ -8,14 +28,14 @@
             "assetIsCalled": "Asset"
         },
         "screen": {
+            "fullScreen": false,
             "split": 0.223558,
-            "width": 1068.571533,
-            "height": 577.142883,
-            "fullScreen": false
+            "width": 1065.714355,
+            "height": 573.80957
         },
         "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
         },
         "search": {
             "case": false,
@@ -31,34 +51,14 @@
             ]
         },
         "log": {
+            "prefix": "INFO",
             "fileName": "enctest.log",
-            "active": true,
-            "prefix": "INFO"
+            "active": true
         },
         "file": {
+            "datafile": "libtest/TestDataTypes.json",
             "getDataUrl": "",
             "postDataUrl": "",
-            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
-            "datafile": "libtest/TestDataTypes.json"
-        },
-        "import": {
-            "path": "/home/stuart/git/golang/enctest/",
-            "filter": [
-                ".csvt",
-                ".csv"
-            ],
-            "csvSkipHeader": true,
-            "csvColumns": [
-                "date",
-                "type",
-                "",
-                "",
-                "ref",
-                "db",
-                "cr",
-                ""
-            ],
-            "csvDateFormat": "02/01/2006"
-        },
-        "theme": "dark"
+            "backupfile": "../BackupTestData_%dT%h-%m-%s.json"
+        }
     }

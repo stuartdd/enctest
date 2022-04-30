@@ -98,25 +98,25 @@ func NewJsonData(j []byte, dataMapUpdated func(string, *parser.Path, error)) (*J
 		return nil, fmt.Errorf("'%s' could not be parsed", timeStampPath)
 	}
 
-	// nl := make([]parser.NodeI, 0)
-	// for _, n := range u.(parser.NodeC).GetValues() {
-	// 	parser.WalkNodeTreeForTrail(n.(parser.NodeC), func(t *parser.Trail, i int) bool {
-	// 		if t.Len() == 1 {
-	// 			nn := t.GetNodeAt(0).(parser.NodeC)
-	// 			if nn.Len() > 0 && nn.GetValues()[0].GetNodeType() == parser.NT_STRING {
-	// 				nl = append(nl, nn)
-	// 			}
-	// 		}
-	// 		return false
-	// 	})
-	// }
-	// for _, xx := range nl {
-	// 	fmt.Printf("REM: %s\n", xx.String())
-	// 	err := parser.Remove(u, xx)
-	// 	if err != nil {
-	// 		fmt.Printf("ERR: %s\n", err.Error())
-	// 	}
-	// }
+	nl := make([]parser.NodeI, 0)
+	for _, n := range u.(parser.NodeC).GetValues() {
+		parser.WalkNodeTreeForTrail(n.(parser.NodeC), func(t *parser.Trail, i int) bool {
+			if t.Len() == 1 {
+				nn := t.GetNodeAt(0).(parser.NodeC)
+				if nn.Len() > 0 && nn.GetValues()[0].GetNodeType() == parser.NT_STRING {
+					nl = append(nl, nn)
+				}
+			}
+			return false
+		})
+	}
+	for _, xx := range nl {
+		fmt.Printf("REM: %s\n", xx.String())
+		err := parser.Remove(u, xx)
+		if err != nil {
+			fmt.Printf("ERR: %s\n", err.Error())
+		}
+	}
 
 	dr := &JsonData{dataMap: rO, navIndex: createNavIndex(rO), dataMapUpdated: dataMapUpdated}
 	return dr, nil
@@ -205,9 +205,9 @@ func (p *JsonData) ToJson() string {
 	return p.dataMap.JsonValue()
 }
 
-func (p *JsonData) Search(addTrailFunc func(*parser.Trail), needle string, matchCase bool) {
+func (p *JsonData) Search(addTrailFunc func(*parser.Trail), needle string, ignoreCase bool) {
 	groups := p.dataMap.GetNodeWithName(DataMapRootName).(*parser.JsonObject)
-	searchGroups(addTrailFunc, needle, groups, matchCase)
+	searchGroups(addTrailFunc, needle, groups, ignoreCase)
 }
 
 func (p *JsonData) CloneHint(dataPath *parser.Path, hintItemName string, cloneLeafNodeData bool) error {
@@ -395,8 +395,8 @@ func ProcessEntityName(entry string, nt NodeAnnotationEnum) (string, error) {
 	return GetNodeAnnotationNameWithPrefix(nt, entry), nil
 }
 
-func searchGroups(addTrailFunc func(*parser.Trail), needle string, m *parser.JsonObject, matchCase bool) {
-	if matchCase {
+func searchGroups(addTrailFunc func(*parser.Trail), needle string, m *parser.JsonObject, ignoreCase bool) {
+	if ignoreCase {
 		needle = strings.ToLower(needle)
 	}
 	parser.WalkNodeTreeForTrail(m, func(t *parser.Trail, i int) bool {
@@ -404,7 +404,7 @@ func searchGroups(addTrailFunc func(*parser.Trail), needle string, m *parser.Jso
 		if last != nil {
 			name := last.GetName()
 			if name != "" {
-				if matchCase {
+				if ignoreCase {
 					name = strings.ToLower(name)
 				}
 				if strings.Contains(name, needle) {
@@ -414,7 +414,7 @@ func searchGroups(addTrailFunc func(*parser.Trail), needle string, m *parser.Jso
 			if !last.IsContainer() {
 				value := last.String()
 				if value != "" {
-					if matchCase {
+					if ignoreCase {
 						value = strings.ToLower(value)
 					}
 					if strings.Contains(value, needle) {

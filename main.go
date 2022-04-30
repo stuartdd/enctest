@@ -1169,7 +1169,7 @@ func search(searchFor string) {
 				searchWindow.Add(fmt.Sprintf("%s %s [ %s ]", user, n, s), p)
 			}
 		}
-	}, searchFor, matchCase)
+	}, searchFor, !matchCase)
 
 	// Use the sorted keys to populate the result window
 	if searchWindow.Len() > 0 {
