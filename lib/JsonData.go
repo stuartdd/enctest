@@ -98,25 +98,25 @@ func NewJsonData(j []byte, dataMapUpdated func(string, *parser.Path, error)) (*J
 		return nil, fmt.Errorf("'%s' could not be parsed", timeStampPath)
 	}
 
-	nl := make([]parser.NodeI, 0)
-	for _, n := range u.(parser.NodeC).GetValues() {
-		parser.WalkNodeTreeForTrail(n.(parser.NodeC), func(t *parser.Trail, i int) bool {
-			if t.Len() == 1 {
-				nn := t.GetNodeAt(0).(parser.NodeC)
-				if nn.Len() > 0 && nn.GetValues()[0].GetNodeType() == parser.NT_STRING {
-					nl = append(nl, nn)
-				}
-			}
-			return false
-		})
-	}
-	for _, xx := range nl {
-		fmt.Printf("REM: %s %s\n", xx.GetName())
-		err := parser.Remove(u, xx)
-		if err != nil {
-			fmt.Printf("ERR: %s\n", err.Error())
-		}
-	}
+	// nl := make([]parser.NodeI, 0)
+	// for _, n := range u.(parser.NodeC).GetValues() {
+	// 	parser.WalkNodeTreeForTrail(n.(parser.NodeC), func(t *parser.Trail, i int) bool {
+	// 		if t.Len() == 1 {
+	// 			nn := t.GetNodeAt(0).(parser.NodeC)
+	// 			if nn.Len() > 0 && nn.GetValues()[0].GetNodeType() == parser.NT_STRING {
+	// 				nl = append(nl, nn)
+	// 			}
+	// 		}
+	// 		return false
+	// 	})
+	// }
+	// for _, xx := range nl {
+	// 	fmt.Printf("REM: %s\n", xx.String())
+	// 	err := parser.Remove(u, xx)
+	// 	if err != nil {
+	// 		fmt.Printf("ERR: %s\n", err.Error())
+	// 	}
+	// }
 
 	dr := &JsonData{dataMap: rO, navIndex: createNavIndex(rO), dataMapUpdated: dataMapUpdated}
 	return dr, nil
