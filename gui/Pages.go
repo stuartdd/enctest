@@ -121,31 +121,31 @@ func GetDetailTypeGroupTitle(selectedPath *parser.Path, preferences pref.PrefDat
 	}
 }
 
-func GetDetailPage(selectedPath *parser.Path, dataRootMap parser.NodeI, preferences pref.PrefData, log func(string)) *DetailPage {
+func GetDetailPage(selectedPath *parser.Path, dataMapRoot parser.NodeI, preferences pref.PrefData, log func(string)) *DetailPage {
 	user0 := selectedPath.StringAt(0)
 	_, group1, title := GetDetailTypeGroupTitle(selectedPath, preferences)
 	switch selectedPath.Len() {
 	case 1:
-		return NewDetailPage(selectedPath, "", "", selectedPath.String(), welcomeScreen, userControls, dataRootMap, preferences, log)
+		return NewDetailPage(selectedPath, "", "", selectedPath.String(), welcomeScreen, userControls, dataMapRoot, preferences, log)
 	case 2:
 		if group1 == idPwDetails {
-			return NewDetailPage(selectedPath, user0, group1, title+"s", welcomeScreen, hintControls, dataRootMap, preferences, log)
+			return NewDetailPage(selectedPath, user0, group1, title+"s", welcomeScreen, hintControls, dataMapRoot, preferences, log)
 		}
 		if group1 == lib.IdAssets {
-			return NewDetailPage(selectedPath, user0, group1, title+"s", assetScreen, assetSummaryControls, dataRootMap, preferences, log)
+			return NewDetailPage(selectedPath, user0, group1, title+"s", assetScreen, assetSummaryControls, dataMapRoot, preferences, log)
 		}
-		return NewDetailPage(selectedPath, user0, group1, title, welcomeScreen, welcomeControls, dataRootMap, preferences, log)
+		return NewDetailPage(selectedPath, user0, group1, title, welcomeScreen, welcomeControls, dataMapRoot, preferences, log)
 	case 3:
 		_, name2 := lib.GetNodeAnnotationTypeAndName(selectedPath.StringAt(2))
 		if group1 == idPwDetails {
-			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, hintDetailsControls, dataRootMap, preferences, log)
+			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, hintDetailsControls, dataMapRoot, preferences, log)
 		}
 		if group1 == lib.IdAssets {
-			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, assetControls, dataRootMap, preferences, log)
+			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, assetDetailsControls, dataMapRoot, preferences, log)
 		}
-		return NewDetailPage(selectedPath, user0, group1, name2, welcomeScreen, welcomeControls, dataRootMap, preferences, log)
+		return NewDetailPage(selectedPath, user0, group1, name2, welcomeScreen, welcomeControls, dataMapRoot, preferences, log)
 	default:
-		return NewDetailPage(selectedPath, user0, group1, title, welcomeScreen, welcomeControls, dataRootMap, preferences, log)
+		return NewDetailPage(selectedPath, user0, group1, title, welcomeScreen, welcomeControls, dataMapRoot, preferences, log)
 	}
 }
 
@@ -221,7 +221,7 @@ func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 		)))
 }
 
-func assetControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
+func assetDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	head := fmt.Sprintf("%s: Asset - %s", details.User, details.Title)
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {

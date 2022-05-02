@@ -320,7 +320,7 @@ func main() {
 			case MAIN_THREAD_RESELECT:
 				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentSelPath))
 				lib.InitUserAssetsCache(jsonData)
-				t := gui.GetDetailPage(currentSelPath, jsonData.GetDataMap(), *preferences, log)
+				t := gui.GetDetailPage(currentSelPath, jsonData.GetDataRoot(), *preferences, log)
 				setPageRHSFunc(*t)
 			case MAIN_THREAD_RE_MENU:
 				log("Refresh menu and buttons")
@@ -444,7 +444,7 @@ func logDataRequest(action string) {
 	case "navmap":
 		log(fmt.Sprintf("NavMap: ----------------\n%s", jsonData.GetNavIndexAsString()))
 	case "select":
-		m, err := lib.GetNodeForUserPath(jsonData.GetDataMap(), currentSelPath)
+		m, err := lib.FindNodeForUserDataPath(jsonData.GetDataRoot(), currentSelPath)
 		if err != nil {
 			log(fmt.Sprintf("Data for uid [%s] not found. %s", currentSelPath, err.Error()))
 		}
@@ -599,7 +599,7 @@ func makeNavTree(setPage func(detailPage gui.DetailPage)) *widget.Tree {
 		},
 		OnSelected: func(selectedPathString string) {
 			log(fmt.Sprintf("On Select:'%s'", selectedPathString))
-			t := gui.GetDetailPage(parser.NewBarPath(selectedPathString), jsonData.GetDataMap(), *preferences, log)
+			t := gui.GetDetailPage(parser.NewBarPath(selectedPathString), jsonData.GetDataRoot(), *preferences, log)
 			setPage(*t)
 		},
 	}
@@ -816,7 +816,7 @@ func importCSVTransactions(dataPath *parser.Path, fileName string) (int, error) 
 		preferences.PutStringList(importCsvColNamesPrefName, lib.IMPORT_CSV_COLUM_NAMES, false)
 		dataMapList = preferences.GetStringListWithFallback(importCsvColNamesPrefName, nil)
 	}
-	n, _ := jsonData.GetNodeForUserPath(dataPath)
+	n, _ := jsonData.FindNodeForUserDataPath(dataPath)
 	if n.IsContainer() {
 		t := n.(parser.NodeC).GetNodeWithName(lib.IdTransactions)
 		if t == nil {
@@ -1034,16 +1034,16 @@ func removeAction(dataPath *parser.Path, min int) {
 
 /**
 Rename a node from the main data (model) and update the tree view
-dataMapUpdated id called if a change is made to the model
+dataMapUpdated is called if a change is made to the model
 */
 func renameAction(dataPath *parser.Path, extra string) {
 	log(fmt.Sprintf("renameAction dataPath:'%s' Extra:'%s'", dataPath, extra))
-	m, _ := jsonData.GetNodeForUserPath(dataPath)
+	m, _ := jsonData.FindNodeForUserDataPath(dataPath)
 	if m != nil {
 		at, fromName := lib.GetNodeAnnotationTypeAndName(dataPath.StringLast())
 		toName := ""
 		isAnnotated := false
-		if jsonData.IsStringNode(m) {
+		if m.GetNodeType() == parser.NT_STRING {
 			toName = fromName
 			isAnnotated = true
 		}
@@ -1325,7 +1325,7 @@ func countChangedItems() int {
 }
 
 func commitChangedItems() (int, error) {
-	count := gui.EditEntryListCache.Commit(jsonData.GetDataMap())
+	count := gui.EditEntryListCache.Commit(jsonData.GetDataRoot())
 	jsonData.SetDateTime()
 	c := jsonData.ToJson()
 	fileData.SetContent([]byte(c))

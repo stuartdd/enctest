@@ -1,40 +1,10 @@
 
     {
-        "screen": {
-            "fullScreen": false,
-            "split": 0.223558,
-            "width": 1062.857178,
-            "height": 570.952393
-        },
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
-        "search": {
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note",
-                "TV LIC",
-                "Lloyds",
-                "2022",
-                "Balance"
-            ],
-            "case": false
-        },
-        "log": {
-            "active": true,
-            "prefix": "INFO",
-            "fileName": "enctest.log"
-        },
-        "file": {
-            "getDataUrl": "",
-            "postDataUrl": "",
-            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
-            "datafile": "libtest/TestDataTypes.json"
-        },
         "import": {
+            "filter": [
+                ".csvt",
+                ".csv"
+            ],
             "csvSkipHeader": true,
             "csvColumns": [
                 "date",
@@ -47,11 +17,7 @@
                 ""
             ],
             "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/",
-            "filter": [
-                ".csvt",
-                ".csv"
-            ]
+            "path": "/home/stuart/git/golang/enctest/"
         },
         "theme": "dark",
         "data": {
@@ -59,6 +25,40 @@
             "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
             "noteIsCalled": "Note",
-            "presentationmode": false
+            "presentationmode": true
+        },
+        "screen": {
+            "width": 1055.714355,
+            "height": 643.333374,
+            "fullScreen": false,
+            "split": 0.223558
+        },
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
+        },
+        "search": {
+            "case": false,
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note",
+                "TV LIC",
+                "Lloyds",
+                "2022",
+                "Balance"
+            ]
+        },
+        "log": {
+            "prefix": "INFO",
+            "fileName": "enctest.log",
+            "active": true
+        },
+        "file": {
+            "getDataUrl": "",
+            "postDataUrl": "",
+            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
+            "datafile": "libtest/TestDataTypes.json"
         }
     }

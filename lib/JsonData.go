@@ -129,7 +129,7 @@ func (p *JsonData) GetNavIndex(id string) []string {
 	return ni[id]
 }
 
-func (p *JsonData) GetDataMap() *parser.JsonObject {
+func (p *JsonData) GetDataRoot() *parser.JsonObject {
 	return p.dataMap
 }
 
@@ -201,6 +201,9 @@ func (p *JsonData) getUserNode(userName string) *parser.JsonObject {
 	if n == nil {
 		return nil
 	}
+	if n.GetNodeType() != parser.NT_OBJECT {
+		return nil
+	}
 	return n.(*parser.JsonObject)
 }
 
@@ -228,6 +231,24 @@ func (p *JsonData) Search(addTrailFunc func(*parser.Trail), needle string, ignor
 	searchGroups(addTrailFunc, needle, dataRoot, ignoreCase)
 }
 
+func (p *JsonData) AddTransaction(transactionPath *parser.Path, date time.Time, ref string, amount float64, txType TransactionTypeEnum) error {
+	userRoot := p.GetUserRoot()
+	if userRoot == nil {
+		return fmt.Errorf("the user root node cannot be found")
+	}
+	txNode, err := parser.Find(userRoot, transactionPath)
+	if err != nil {
+		return fmt.Errorf("the transaction node for '%s' cannot be found", transactionPath)
+	}
+	if txNode.GetNodeType() != parser.NT_LIST {
+		return fmt.Errorf("the transaction node for '%s' is not a List node", transactionPath)
+	}
+	addTransactionToAsset(txNode.(*parser.JsonList), newTranactionData(date, amount, ref, txType, txNode))
+	p.navIndex = createNavIndex(p.dataMap)
+	p.dataMapUpdated("Add Transaction", transactionPath.PathParent(), nil)
+	return nil
+}
+
 func (p *JsonData) CloneHint(dataPath *parser.Path, hintItemName string, cloneLeafNodeData bool) error {
 	h, err := parser.Find(p.GetUserRoot(), dataPath)
 	if err != nil {
@@ -247,19 +268,22 @@ func (p *JsonData) CloneHint(dataPath *parser.Path, hintItemName string, cloneLe
 	return nil
 }
 
-func (p *JsonData) AddSubItem(dataPath *parser.Path, hintItemName string, itemName string) error {
+func (p *JsonData) AddSubItem(dataPath *parser.Path, subItemName string, itemDisplayName string) error {
 	h, err := parser.Find(p.GetUserRoot(), dataPath)
 	if err != nil {
-		return fmt.Errorf("the %s '%s' cannot be found", itemName, dataPath)
+		return fmt.Errorf("the item '%s' cannot be found", dataPath)
 	}
 	if h.GetNodeType() != parser.NT_OBJECT {
-		return fmt.Errorf("the %s item '%s' was not an object node", itemName, dataPath)
+		return fmt.Errorf("the item '%s' is not a Json Object", dataPath)
 	}
 	hO := h.(*parser.JsonObject)
-	addStringIfDoesNotExist(hO, hintItemName)
-	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Sub Item", dataPath.StringAppend(hintItemName), nil)
-	return nil
+	ok := addStringIfDoesNotExist(hO, subItemName)
+	if ok {
+		p.navIndex = createNavIndex(p.dataMap)
+		p.dataMapUpdated("Add Sub Item", dataPath.StringAppend(subItemName), nil)
+		return nil
+	}
+	return fmt.Errorf("the item '%s' already contains '%s'", dataPath, subItemName)
 }
 
 func (p *JsonData) AddAsset(userPath *parser.Path, assetName string) error {
@@ -270,25 +294,6 @@ func (p *JsonData) AddAsset(userPath *parser.Path, assetName string) error {
 	addAssetToUser(u, assetName)
 	p.navIndex = createNavIndex(p.dataMap)
 	p.dataMapUpdated("Add Asset", userPath.StringAppend(IdAssets).StringAppend(assetName), nil)
-	return nil
-}
-
-func (p *JsonData) AddTransaction(dataPath *parser.Path, date time.Time, ref string, amount float64, txType TransactionTypeEnum) error {
-	data, err := parser.Find(p.GetUserRoot(), dataPath)
-	if err != nil {
-		data, err = parser.Find(p.GetUserRoot(), dataPath.PathParent())
-		if err != nil {
-			return fmt.Errorf("the transaction node for '%s' cannot be found", dataPath)
-		}
-		addDefaultAccountItemsToAsset(data.(*parser.JsonObject))
-		data, err = parser.Find(p.GetUserRoot(), dataPath)
-		if err != nil {
-			return fmt.Errorf("the transaction node for '%s' cannot be found", dataPath)
-		}
-	}
-	addTransactionToAsset(data.(*parser.JsonList), newTranactionData(date, amount, ref, txType, data))
-	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Transaction", dataPath.PathParent(), nil)
 	return nil
 }
 
@@ -304,8 +309,7 @@ func (p *JsonData) AddHint(userUid *parser.Path, hintName string) error {
 }
 
 func (p *JsonData) AddUser(userName string) error {
-	userPath := parser.NewBarPath(userName)
-	u := p.getUserNode(userPath.StringFirst()) // User id is first path element
+	u := p.getUserNode(userName) // User id is first path element
 	if u != nil {
 		return fmt.Errorf("the user '%s' already exists", userName)
 	}
@@ -313,12 +317,12 @@ func (p *JsonData) AddUser(userName string) error {
 	addHintToUser(userO, "App1")
 	p.GetUserRoot().Add(userO)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add User", userPath, nil)
+	p.dataMapUpdated("Add User", parser.NewDotPath(userName), nil)
 	return nil
 }
 
 func (p *JsonData) Rename(dataPath *parser.Path, newName string) error {
-	n, err := p.GetNodeForUserPath(dataPath)
+	n, err := p.FindNodeForUserDataPath(dataPath)
 	if err != nil {
 		return fmt.Errorf("the item to rename '%s' was not found in the data", dataPath)
 	}
@@ -340,7 +344,7 @@ func (p *JsonData) Rename(dataPath *parser.Path, newName string) error {
 }
 
 func (p *JsonData) Remove(dataPath *parser.Path, min int) error {
-	n, err := p.GetNodeForUserPath(dataPath)
+	n, err := p.FindNodeForUserDataPath(dataPath)
 	if err != nil {
 		return fmt.Errorf("the item to remove '%s' was not found in the data", dataPath)
 	}
@@ -369,22 +373,23 @@ func (p *JsonData) Remove(dataPath *parser.Path, min int) error {
 	return nil
 }
 
-func (p *JsonData) IsStringNode(n parser.NodeI) bool {
-	return n.GetNodeType() == parser.NT_STRING
+func (p *JsonData) FindNodeForUserDataPath(dataPath *parser.Path) (parser.NodeI, error) {
+	return FindNodeForUserDataPath(p.GetDataRoot(), dataPath)
 }
 
-func (p *JsonData) GetNodeForUserPath(dataPath *parser.Path) (parser.NodeI, error) {
-	return GetNodeForUserPath(p.GetDataMap(), dataPath)
-}
-
-func GetNodeForUserPath(root parser.NodeI, dataPath *parser.Path) (parser.NodeI, error) {
-	path := dataMapRootPath.PathAppend(dataPath)
+//
+// User data path is a path where the first node is the user. As this is NOT the root
+//  of the json data we append the patg to the data root (usually 'groups') to give
+//  a full path and the we Find the node using the path
+//
+func FindNodeForUserDataPath(root parser.NodeI, dataPathForUser *parser.Path) (parser.NodeI, error) {
+	path := dataMapRootPath.PathAppend(dataPathForUser)
 	nodes, err := parser.Find(root, path)
 	if err != nil {
 		return nil, err
 	}
 	if nodes == nil {
-		return nil, fmt.Errorf("nil returned from parser.Find(%s)", path)
+		return nil, fmt.Errorf("FindNodeForUserDataPath: nil returned from parser.Find(%s)", path)
 	}
 	return nodes, nil
 }
@@ -472,12 +477,14 @@ func addTransactionToAsset(transactions *parser.JsonList, tx *TranactionData) {
 	transactions.Add(txo)
 }
 
-func addStringIfDoesNotExist(obj *parser.JsonObject, name string) {
+func addStringIfDoesNotExist(obj *parser.JsonObject, name string) bool {
 	node := obj.GetNodeWithName(name)
 	if node == nil {
 		node = parser.NewJsonString(name, "")
 		obj.Add(node)
+		return true
 	}
+	return false
 }
 
 func addAssetToUser(userO *parser.JsonObject, assetName string) {

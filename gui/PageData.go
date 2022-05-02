@@ -53,7 +53,7 @@ func NewDetailPage(
 }
 
 func (p *DetailPage) GetObjectsForPage() *parser.JsonObject {
-	m, err := lib.GetNodeForUserPath(p.DataRootMap, p.SelectedPath)
+	m, err := lib.FindNodeForUserDataPath(p.DataRootMap, p.SelectedPath)
 	if err != nil {
 		panic(fmt.Sprintf("DetailPage.GetMapForUid. Uid '%s' not found. %s", p.SelectedPath, err.Error()))
 	}

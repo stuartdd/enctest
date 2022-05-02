@@ -148,14 +148,14 @@ func TestFloats(t *testing.T) {
 func TestSave(t *testing.T) {
 	defer removeFile(t, "TestSaveData.txt")
 	q, _ := pref.NewPrefData("TestDataTypesGold.json")
-	v5 := q.GetStringWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
+	v5 := q.GetStringWithFallback(parser.NewBarPath("groups|UserA|assets|note|note"), "bla")
 	if v5 == "bla" {
 		t.Error("should have found value")
 	}
 	q.SaveAs("TestSaveData.txt")
 
 	p, _ := pref.NewPrefData("TestSaveData.txt")
-	v6 := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
+	v6 := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|assets|note|note"), "bla")
 	if v6 != v5 {
 		t.Error("Should be the same value")
 	}
@@ -234,21 +234,21 @@ func TestChangeListeners(t *testing.T) {
 
 func TestPutString(t *testing.T) {
 	p, _ := pref.NewPrefData("TestDataTypesGold.json")
-	err := p.PutString(parser.NewBarPath("groups|UserA|notes|note|hi"), "val")
+	err := p.PutString(parser.NewBarPath("groups|UserA|assets|note"), "val")
 	if err == nil {
 		t.Error("should return error 'not a container node'")
 	}
-	v := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
+	v := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|assets|note|note"), "bla")
 	if v == "" || v == "bla" {
 		t.Error("should have found v")
 	}
 
-	err = p.PutString(parser.NewBarPath("groups|UserA|notes|note"), "val")
+	err = p.PutString(parser.NewBarPath("groups|UserA|assets|note|note"), "val")
 	if err != nil {
 		t.Error("should work")
 	}
 
-	v2 := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "bla")
+	v2 := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|assets|note|note"), "bla")
 	if v2 != "val" {
 		t.Error("should have found new value")
 	}
@@ -310,11 +310,11 @@ func TestLoadFallback(t *testing.T) {
 	if p.GetFileName() != "TestDataTypesGold.json" {
 		t.Error("file name was not stored correctly")
 	}
-	m, _ := p.GetDataForPath(parser.NewDotPath("groups.UserA.notes.note"))
+	m, _ := p.GetDataForPath(parser.NewDotPath("groups.UserA.assets.note.note"))
 	if m.String() == "" {
 		t.Error("groups|UserA|notes|note should return a value")
 	}
-	s2 := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|notes|note"), "x")
+	s2 := p.GetStringWithFallback(parser.NewBarPath("groups|UserA|assets|note|note"), "x")
 	if m.String() != s2 {
 		t.Error("GetStringWithFallback should return same as GetDataForPath")
 	}
@@ -353,35 +353,31 @@ func TestLoadCache(t *testing.T) {
 		t.Error("file name was not stored correctly")
 	}
 	sta1 := time.Now().UnixNano()
-	m1, ok1 := p.GetDataForPath(parser.NewBarPath("groups|UserA|notes|note"))
+	m1, ok1 := p.GetDataForPath(parser.NewBarPath("groups|UserA|assets|note|note"))
 	timUnCached := time.Now().UnixNano() - sta1
 
-	for i := 0; i < 5; i++ {
-		p.GetDataForPath(parser.NewBarPath("groups|UserA|notes|note"))
-	}
-
 	sta2 := time.Now().UnixNano()
-	m2, ok2 := p.GetDataForPath(parser.NewBarPath("groups|UserA|notes|note"))
+	m2, ok2 := p.GetDataForPath(parser.NewBarPath("groups|UserA|assets|note|note"))
 	timCached := time.Now().UnixNano() - sta2
 
 	if m1.String() == "" {
-		t.Error("v1 groups|UserA|notes|note should return a string")
+		t.Error("v1 groups|UserA|assets|note|note should return a string")
 	}
 	if m2.String() == "" {
-		t.Error("v2 groups|UserA|notes|note should return a string")
+		t.Error("v2 groups|UserA|assets|note|note should return a string")
 	}
 	if !ok1 {
-		t.Error("ok1 groups|UserA|notes|note should return true")
+		t.Error("ok1 groups|UserA|assets|note|note should return true")
 	}
 	if !ok2 {
-		t.Error("ok2 groups|UserA|notes|note should return true")
+		t.Error("ok2 groups|UserA|assets|note|note should return true")
 	}
 
 	if m1 != m2 {
 		t.Error("cached data should return the same value")
 	}
 	diff := timUnCached / timCached
-	if (diff) < 5 {
+	if (diff) < 2 {
 		t.Errorf("cached data should read at least 5 * faster. Actual: %d", diff)
 	}
 }
@@ -428,7 +424,7 @@ func TestLoadComplex(t *testing.T) {
 		t.Error("groups should return a map")
 	}
 
-	m, ok = p.GetDataForPath(parser.NewBarPath("groups|UserA|notes"))
+	m, ok = p.GetDataForPath(parser.NewBarPath("groups|UserA|assets"))
 	if !ok {
 		t.Error("ok groups|UserA|notes should return true")
 	}
@@ -438,7 +434,7 @@ func TestLoadComplex(t *testing.T) {
 	if m == nil {
 		t.Error("groups should return a map")
 	}
-	m, ok = p.GetDataForPath(parser.NewBarPath("groups|UserA|notes|note"))
+	m, ok = p.GetDataForPath(parser.NewBarPath("groups|UserA|assets|note|note"))
 	if !ok {
 		t.Error("ok groups|UserA|notes|not should return true")
 	}

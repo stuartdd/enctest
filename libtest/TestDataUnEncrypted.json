@@ -1,8 +1,10 @@
 {
     "groups": {
         "Stuart": {
-            "notes": {
-                "note": "dHellofg"
+            "assets": {
+                "note": {
+                    "posit": "This is a note"
+                }
             },
             "pwHints": {
                 "application": {
@@ -14,9 +16,11 @@
             }
         },
         "UserA": {
-            "notes": {
-                "note": "An amazing A note (dont panic) fdf",
-                "posit": "This is a note"
+            "assets": {
+                "note": {
+                    "note": "An amazing A note (dont panic) fdf",
+                    "posit": "This is a note"
+                }
             },
             "pwHints": {
                 "MyApp": {
@@ -34,9 +38,11 @@
             }
         },
         "UserB": {
-            "notes": {
-                "link": "https://www.principality.co.uk/en/your-account",
-                "note for B": "An amazing B note 123"
+            "assets": {
+                "note": {
+                    "link": "https://www.principality.co.uk/en/your-account",
+                    "note for B": "An amazing B note 123"
+                }
             },
             "pwHints": {
                 "GMail B": {
