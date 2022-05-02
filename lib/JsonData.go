@@ -62,12 +62,14 @@ type JsonData struct {
 	dataMapUpdated func(string, *parser.Path, error)
 }
 
+//
+// Return the path after the DataMapRootName.
+//
 func GetUidPathFromDataPath(dataPath *parser.Path) *parser.Path {
-	if dataPath.Len() == 0 {
-		return dataPath
-	}
-	if dataPath.StringFirst() == DataMapRootName {
-		dataPath = dataPath.PathLast(dataPath.Len() - 1)
+	for i := 0; i < dataPath.Len(); i++ {
+		if dataPath.StringAt(i) == DataMapRootName {
+			return dataPath.PathLast(dataPath.Len() - (i + 1))
+		}
 	}
 	return dataPath
 }
