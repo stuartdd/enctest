@@ -70,6 +70,7 @@ const (
 
 	fallbackPreferencesFile = "config.json"
 	fallbackDataFile        = "data.json"
+	uLine                   = "------------------------------------------------------------------------------------"
 )
 
 var (
@@ -124,10 +125,19 @@ var (
 )
 
 func abortWithUsage(message string) {
-	fmt.Printf(message+"\n  Usage: %s <configfile>\n  Where: <configfile> is a json file. E.g. config.json\n", os.Args[0])
-	fmt.Println("    Minimum content for this file is:\n      {\"datafile\": \"dataFile.json\"}")
-	fmt.Println("    Where \"dataFile.json\" is the name of the required data file")
+	fmt.Println(uLine)
+	fmt.Println(message)
+	fmt.Println(uLine)
+	fmt.Printf("  Usage: %s <configfile>\n", os.Args[0])
+	fmt.Println("  Where: <configfile> is a json file. E.g. config.json")
+	fmt.Println("  Minimum content for this file is:\n    {\n      \"file\": {\n           \"datafile\":\"myDataFile.data\"\n      }\n    }")
+	fmt.Println("    Where \"myDataFile.data\" is the name of the required data file")
 	fmt.Println("    This file will be updated by this application")
+	fmt.Println("  To create a NEW minimal \"myDataFile.data\" use the 'create' option.")
+	fmt.Println("  For example:")
+	fmt.Printf("     %s <configfile> create\n", os.Args[0])
+	fmt.Printf("  This will create the file defined in the <configfile> '%s' value.\n", dataFilePrefName.String())
+	fmt.Println(uLine)
 	os.Exit(1)
 }
 
@@ -152,9 +162,9 @@ func main() {
 	// For extended command line options. Dont use logData use std out!
 	//
 	if len(os.Args) > 2 {
+		createFile := oneOrTheOther(postDataUrl == "", primaryFileName, postDataUrl+"/"+primaryFileName)
 		switch os.Args[2] {
 		case "create":
-			createFile := oneOrTheOther(postDataUrl == "", primaryFileName, postDataUrl+"/"+primaryFileName)
 			fmt.Printf("-> Create new data file '%s'\n", createFile)
 			fmt.Printf("-> File is defined in config data file '%s'\n", prefFile)
 			fmt.Println("-> Existing data will be overwritten!")
@@ -177,6 +187,12 @@ func main() {
 			} else {
 				fmt.Printf("-> File %s has been created\n", createFile)
 			}
+		default:
+			fmt.Println(uLine)
+			fmt.Printf("-> The line you wanted was %s %s create\n", os.Args[0], os.Args[1])
+			fmt.Printf("-> This will create a NEW minimal data file called '%s' as specified in '%s'\n", createFile, os.Args[1])
+			fmt.Println(uLine)
+			os.Exit(1)
 		}
 		os.Exit(0)
 	}
@@ -263,7 +279,7 @@ func main() {
 				// Load the file and decrypt it if required
 				fd, err := lib.NewFileData(primaryFileName, backupFileName, getDataUrl, postDataUrl)
 				if err != nil {
-					abortWithUsage(fmt.Sprintf("Failed to load data file %s. Error: %s\n", primaryFileName, err.Error()))
+					abortWithUsage(fmt.Sprintf("Failed to load data file %s. Error: %s", primaryFileName, err.Error()))
 				}
 				if getDataUrl != "" {
 					log(fmt.Sprintf("Remote File:'%s/%s'", getDataUrl, primaryFileName))
@@ -292,14 +308,14 @@ func main() {
 				*/
 				dr, err := lib.NewJsonData(fd.GetContent(), dataMapUpdated)
 				if err != nil {
-					abortWithUsage(fmt.Sprintf("ERROR: Cannot process data in file '%s'.\n%s\n", primaryFileName, err))
+					abortWithUsage(fmt.Sprintf("ERROR: Cannot process data in file '%s'.\n%s", primaryFileName, err))
 				}
 				fileData = fd
 				jsonData = dr
 				dataIsNotLoadedYet = false
 				log(fmt.Sprintf("Data Parsed OK: File:'%s' DateTime:'%s'", primaryFileName, jsonData.GetTimeStampString()))
 				// Follow on action to rebuild the Tree and re-display it
-				futureReleaseTheBeast(100, MAIN_THREAD_RELOAD_TREE)
+				futureReleaseTheBeast(0, MAIN_THREAD_RELOAD_TREE)
 			case MAIN_THREAD_RELOAD_TREE:
 				// Re-build the main tree view.
 				// Select the root of current user if defined.
@@ -1231,7 +1247,7 @@ func getPasswordAndDecrypt(fd *lib.FileData, message string, fail func(string)) 
 			}
 			running = false
 		} else {
-			abortWithUsage(fmt.Sprintf("Failed to decrypt data file '%s'\nPassword was not provided\n", fd.GetFileName()))
+			abortWithUsage(fmt.Sprintf("Failed to decrypt data file '%s'\nPassword was not provided", fd.GetFileName()))
 		}
 	})
 	// This method must not end until OK or Cancel are pressed
