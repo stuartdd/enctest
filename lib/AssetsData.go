@@ -111,15 +111,17 @@ type AccountData struct {
 // Create/Update the cachedUserAssets (singleton) from the root Json node.
 //  All assets for All users
 //
-func InitUserAssetsCache(root *parser.JsonObject) {
+func InitUserAssetsCache(root *JsonData) {
 	cache := &UserAssetCache{UserAssets: make(map[string]*UserAsset)}
-	SearchNodesWithName(IdAssets, root, func(node, parent parser.NodeI) {
-		if root.IsContainer() {
-			if node.IsContainer() && parent.IsContainer() {
-				cache.addAsset(newUserAsset(parent.(parser.NodeC), node.(parser.NodeC)))
+	userRoot := root.GetUserRoot()
+	for _, user := range userRoot.GetValues() {
+		if user.IsContainer() {
+			as := user.(parser.NodeC).GetNodeWithName(IdAssets)
+			if as != nil && as.IsContainer() {
+				cache.addAsset(newUserAsset(user.(parser.NodeC), as.(parser.NodeC)))
 			}
 		}
-	})
+	}
 	cachedUserAssets = cache
 }
 

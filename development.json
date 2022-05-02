@@ -1,5 +1,39 @@
 
     {
+        "screen": {
+            "fullScreen": false,
+            "split": 0.223558,
+            "width": 1062.857178,
+            "height": 570.952393
+        },
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
+        },
+        "search": {
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note",
+                "TV LIC",
+                "Lloyds",
+                "2022",
+                "Balance"
+            ],
+            "case": false
+        },
+        "log": {
+            "active": true,
+            "prefix": "INFO",
+            "fileName": "enctest.log"
+        },
+        "file": {
+            "getDataUrl": "",
+            "postDataUrl": "",
+            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
+            "datafile": "libtest/TestDataTypes.json"
+        },
         "import": {
             "csvSkipHeader": true,
             "csvColumns": [
@@ -21,44 +55,10 @@
         },
         "theme": "dark",
         "data": {
+            "hintIsCalled": "Hint",
+            "assetIsCalled": "Asset",
             "transIsCalled": "Transaction",
             "noteIsCalled": "Note",
-            "presentationmode": false,
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset"
-        },
-        "screen": {
-            "fullScreen": false,
-            "split": 0.223558,
-            "width": 1065.714355,
-            "height": 573.80957
-        },
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
-        "search": {
-            "case": false,
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note",
-                "TV LIC",
-                "Lloyds",
-                "2022",
-                "Balance"
-            ]
-        },
-        "log": {
-            "prefix": "INFO",
-            "fileName": "enctest.log",
-            "active": true
-        },
-        "file": {
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": "",
-            "postDataUrl": "",
-            "backupfile": "../BackupTestData_%dT%h-%m-%s.json"
+            "presentationmode": false
         }
     }

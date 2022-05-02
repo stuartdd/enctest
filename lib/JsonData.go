@@ -65,7 +65,7 @@ type JsonData struct {
 //
 // Return the path after the DataMapRootName.
 //
-func GetUidPathFromDataPath(dataPath *parser.Path) *parser.Path {
+func GetPathAfterDataRoot(dataPath *parser.Path) *parser.Path {
 	for i := 0; i < dataPath.Len(); i++ {
 		if dataPath.StringAt(i) == DataMapRootName {
 			return dataPath.PathLast(dataPath.Len() - (i + 1))
@@ -166,7 +166,11 @@ func vToStr(v []string) string {
 	Returns the node containing all of the users (groups).
 */
 func (p *JsonData) GetUserRoot() *parser.JsonObject {
-	return p.dataMap.GetNodeWithName(DataMapRootName).(*parser.JsonObject)
+	u := p.dataMap.GetNodeWithName(DataMapRootName)
+	if u == nil {
+		return nil
+	}
+	return u.(*parser.JsonObject)
 }
 
 /*
@@ -174,18 +178,30 @@ func (p *JsonData) GetUserRoot() *parser.JsonObject {
 	Used to select a user on first load
 */
 func (p *JsonData) GetFirstUserName() string {
-	return p.GetUserRoot().GetSortedKeys()[0]
+	u := p.GetUserRoot()
+	if u == nil {
+		return ""
+	}
+	l := u.GetSortedKeys()
+	if len(l) != 0 {
+		return l[0]
+	}
+	return ""
 }
 
 /*
 	Return the node of a given user
 */
 func (p *JsonData) getUserNode(userName string) *parser.JsonObject {
-	u := p.GetUserRoot().GetNodeWithName(userName)
+	u := p.GetUserRoot()
 	if u == nil {
 		return nil
 	}
-	return u.(*parser.JsonObject)
+	n := u.GetNodeWithName(userName)
+	if n == nil {
+		return nil
+	}
+	return n.(*parser.JsonObject)
 }
 
 func (p *JsonData) SetDateTime() {
@@ -208,8 +224,8 @@ func (p *JsonData) ToJson() string {
 }
 
 func (p *JsonData) Search(addTrailFunc func(*parser.Trail), needle string, ignoreCase bool) {
-	groups := p.dataMap.GetNodeWithName(DataMapRootName).(*parser.JsonObject)
-	searchGroups(addTrailFunc, needle, groups, ignoreCase)
+	dataRoot := p.dataMap.GetNodeWithName(DataMapRootName).(*parser.JsonObject)
+	searchGroups(addTrailFunc, needle, dataRoot, ignoreCase)
 }
 
 func (p *JsonData) CloneHint(dataPath *parser.Path, hintItemName string, cloneLeafNodeData bool) error {
@@ -423,17 +439,6 @@ func searchGroups(addTrailFunc func(*parser.Trail), needle string, m *parser.Jso
 						addTrailFunc(t)
 					}
 				}
-			}
-		}
-		return false
-	})
-}
-
-func SearchNodesWithName(name string, m *parser.JsonObject, f func(node, parent parser.NodeI)) {
-	parser.WalkNodeTree(m, nil, func(node, parent, target parser.NodeI) bool {
-		if (node != nil) && (parent != nil) {
-			if node.GetName() == name {
-				f(node, parent)
 			}
 		}
 		return false

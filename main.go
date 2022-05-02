@@ -306,7 +306,7 @@ func main() {
 				// Init the devider (split)
 				// Populate the window and we are done!
 				navTreeLHS = makeNavTree(setPageRHSFunc)
-				lib.InitUserAssetsCache(jsonData.GetDataMap())
+				lib.InitUserAssetsCache(jsonData)
 				selectTreeElement("MAIN_THREAD_RELOAD_TREE", currentSelPath)
 				if splitContainerOffset < 0 {
 					splitContainerOffset = splitContainerOffsetPref
@@ -319,7 +319,7 @@ func main() {
 				futureReleaseTheBeast(0, MAIN_THREAD_RE_MENU)
 			case MAIN_THREAD_RESELECT:
 				log(fmt.Sprintf("Re-display RHS. Sel:'%s'", currentSelPath))
-				lib.InitUserAssetsCache(jsonData.GetDataMap())
+				lib.InitUserAssetsCache(jsonData)
 				t := gui.GetDetailPage(currentSelPath, jsonData.GetDataMap(), *preferences, log)
 				setPageRHSFunc(*t)
 			case MAIN_THREAD_RE_MENU:
@@ -664,7 +664,8 @@ func dataMapUpdated(desc string, dataPath *parser.Path, err error) {
 		futureReleaseTheBeast(100, MAIN_THREAD_RELOAD_TREE)
 	}()
 	if err == nil {
-		currentSelPath = lib.GetUidPathFromDataPath(dataPath)
+		// Return the path after the DataMapRootName.
+		currentSelPath = lib.GetPathAfterDataRoot(dataPath)
 		log(fmt.Sprintf("dataMapUpdated OK. Desc:'%s' DataPath:'%s'. Derived currentSelPath:'%s'", desc, dataPath, currentSelPath))
 		hasDataChanges = true
 	} else {
