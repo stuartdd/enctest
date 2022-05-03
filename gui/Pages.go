@@ -71,7 +71,7 @@ const (
 var (
 	preferedOrderReversed     = []string{"notes", "positional", "post", "pre", "link", "userId"}
 	EditEntryListCache        = NewEditEntryList()
-	DataPresModePrefName      = parser.NewDotPath("data.presentationmode")
+	EditMode                  = false
 	DataHintIsCalledPrefName  = parser.NewDotPath("data.hintIsCalled")
 	DataTransIsCalledPrefName = parser.NewDotPath("data.transIsCalled")
 	DataAssetIsCalledPrefName = parser.NewDotPath("data.assetIsCalled")
@@ -261,7 +261,6 @@ func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *pa
 
 func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string), cObj []fyne.CanvasObject, accData *lib.AccountData, pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) []fyne.CanvasObject {
 	transAreCalled := pref.GetStringWithFallback(DataTransIsCalledPrefName, "Transaction")
-	editMode := !pref.GetBoolWithFallback(DataPresModePrefName, true)
 	txList := accData.Transactions
 	refMax := 10
 	for _, tx := range txList {
@@ -271,7 +270,7 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 	}
 	refMax++
 	hbTop := container.NewHBox()
-	if editMode {
+	if EditMode {
 		imp := NewMyIconButton("", theme.StorageIcon(), func() {
 			actionFunc(ACTION_IMPORT_TRANSACTION, accData.Path.PathParent(), accData.AccountName)
 		}, statusDisplay, "Import from CSV file")
@@ -289,7 +288,7 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 	hbTop.Add(widget.NewLabel(fmt.Sprintf(" %d %s(s). Current balance %0.2f", len(accData.Transactions), transAreCalled, accData.ClosingValue)))
 	cObj = append(cObj, hbTop)
 	hb := container.NewHBox()
-	if editMode {
+	if EditMode {
 		add := NewMyIconButton("", theme.ContentAddIcon(), func() {
 			actionFunc(ACTION_ADD_TRANSACTION, &accData.Path, accData.AccountName)
 		}, statusDisplay, fmt.Sprintf("Add a transaction '%s'", accData.AccountName))
@@ -309,7 +308,7 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 	for _, tx := range txList {
 		s := tx.Key()
 		hb := container.NewHBox()
-		if editMode {
+		if EditMode {
 			rename := NewMyIconButton("", theme2.EditIcon(), func() {
 				actionFunc(ACTION_UPDATE_TRANSACTION, &accData.Path, s)
 			}, statusDisplay, fmt.Sprintf("Upate '%s'", tx.Ref()))
@@ -424,9 +423,8 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 			}
 			flRemove := container.New(&FixedLayout{10, 0}, editEntry.Remove)
 			flRename := container.New(&FixedLayout{10, 0}, editEntry.Rename)
-			dp := details.Preferences.GetBoolWithFallback(DataPresModePrefName, true)
 			cObj = append(cObj, widget.NewSeparator())
-			if dp {
+			if !EditMode {
 				switch na {
 				case lib.NODE_TYPE_RT:
 					cObj = append(cObj, container.NewBorder(nil, nil, container.NewHBox(flLink, flLab), nil, widget.NewRichTextFromMarkdown(editEntry.GetCurrentText())))

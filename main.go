@@ -408,12 +408,12 @@ func updateButtonBar() {
 		fullScreenShortcutButton.SetText("Full Screen")
 		fullScreenShortcutButton.SetStatusMessage("Set display to Full Screen")
 	}
-	if preferences.GetBoolWithFallback(gui.DataPresModePrefName, true) {
-		editModeShortcutButton.SetText("Edit Data")
-		editModeShortcutButton.SetStatusMessage("Allow user to edit the data")
-	} else {
+	if gui.EditMode {
 		editModeShortcutButton.SetText("Present Data")
 		editModeShortcutButton.SetStatusMessage("Display the data in presentation mode")
+	} else {
+		editModeShortcutButton.SetText("Edit Data")
+		editModeShortcutButton.SetStatusMessage("Allow user to edit the data")
 	}
 	if jsonData == nil {
 		timeStampLabel.SetText("  File Not loaded")
@@ -479,7 +479,7 @@ func makeButtonBar() *fyne.Container {
 		commitAndSaveData(SAVE_AS_IS, true)
 	}, statusDisplay, "Save changes")
 	fullScreenShortcutButton = gui.NewMyIconButton("FULL SCREEN", theme.ComputerIcon(), flipFullScreen, statusDisplay, "Display full screen or Show windowed")
-	editModeShortcutButton = gui.NewMyIconButton("EDIT", theme.DocumentIcon(), flipPositionalData, statusDisplay, "Allow editing of the data")
+	editModeShortcutButton = gui.NewMyIconButton("EDIT", theme.DocumentIcon(), flipEditMode, statusDisplay, "Allow editing of the data")
 
 	quit := gui.NewMyIconButton("EXIT", theme.LogoutIcon(), shouldClose, statusDisplay, "Exit the application")
 	timeStampLabel = widget.NewLabel("  File Not loaded")
@@ -528,7 +528,7 @@ func makeMenus() *fyne.MainMenu {
 
 	viewItem := fyne.NewMenu("View",
 		fyne.NewMenuItem(oneOrTheOther(preferences.GetBoolWithFallback(screenFullPrefName, false), "View Windowed", "View Full Screen"), flipFullScreen),
-		fyne.NewMenuItem(oneOrTheOther(preferences.GetBoolWithFallback(gui.DataPresModePrefName, true), "Edit Data", "Present Data"), flipPositionalData),
+		fyne.NewMenuItem(oneOrTheOther(gui.EditMode, "Present Data", "Edit Data"), flipEditMode),
 		themeMenuItem,
 	)
 
@@ -1101,10 +1101,10 @@ func linkAction(uid *parser.Path, urlStr string) {
 	}
 }
 
-func flipPositionalData() {
-	p := preferences.GetBoolWithFallback(gui.DataPresModePrefName, true)
-	preferences.PutBool(gui.DataPresModePrefName, !p)
-	futureReleaseTheBeast(500, MAIN_THREAD_RE_MENU)
+func flipEditMode() {
+	gui.EditMode = !gui.EditMode
+	futureReleaseTheBeast(100, MAIN_THREAD_RE_MENU)
+	futureReleaseTheBeast(500, MAIN_THREAD_RESELECT)
 }
 
 /**

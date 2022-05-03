@@ -231,6 +231,24 @@ func (p *PrefData) GetDataForPath(path *parser.Path) (parser.NodeI, bool) {
 	return p.getNodeForPath(path, true)
 }
 
+func (p *PrefData) GetStringMapWithFallback(path *parser.Path, fb map[string]string) map[string]string {
+	n, found := p.getNodeForPath(path, false)
+	if !found {
+		return fb
+	}
+	if n.GetNodeType() == parser.NT_LIST {
+		sMap := make(map[string]string, 0)
+		for _, v := range n.(*parser.JsonList).GetValues() {
+			if v.GetNodeType() == parser.NT_STRING {
+				sMap["a"] = "b"
+			}
+		}
+		return sMap
+	} else {
+		return fb
+	}
+}
+
 func (p *PrefData) GetStringListWithFallback(path *parser.Path, fb []string) []string {
 	n, found := p.getNodeForPath(path, false)
 	if !found {
