@@ -69,12 +69,9 @@ const (
 )
 
 var (
-	preferedOrderReversed     = []string{"notes", "positional", "post", "pre", "link", "userId"}
-	EditEntryListCache        = NewEditEntryList()
-	EditMode                  = false
-	DataHintIsCalledPrefName  = parser.NewDotPath("data.hintIsCalled")
-	DataTransIsCalledPrefName = parser.NewDotPath("data.transIsCalled")
-	DataAssetIsCalledPrefName = parser.NewDotPath("data.assetIsCalled")
+	preferedOrderReversed = []string{"notes", "positional", "post", "pre", "link", "userId"}
+	EditEntryListCache    = NewEditEntryList()
+	EditMode              = false
 )
 
 func NewModalEntryDialog(w fyne.Window, heading, txt string, isAnnotated bool, annotation lib.NodeAnnotationEnum, accept func(bool, string, lib.NodeAnnotationEnum)) (modal *widget.PopUp) {
@@ -105,17 +102,11 @@ func GetDetailTypeGroupTitle(selectedPath *parser.Path, preferences pref.PrefDat
 	switch selectedPath.Len() {
 	case 2:
 		type1, group1 := lib.GetNodeAnnotationTypeAndName(selectedPath.StringAt(1))
-		if group1 == idPwDetails {
-			return type1, group1, preferences.GetStringWithFallback(DataHintIsCalledPrefName, "Hint")
-		}
-		if group1 == lib.IdAssets {
-			return type1, group1, preferences.GetStringWithFallback(DataAssetIsCalledPrefName, "Asset")
-		}
-		return type1, group1, group1
+		return type1, group1, lib.GetNameFromNameMap(group1, "")
 	case 3:
 		type1, group1 := lib.GetNodeAnnotationTypeAndName(selectedPath.StringAt(1))
 		_, name2 := lib.GetNodeAnnotationTypeAndName(selectedPath.StringAt(2))
-		return type1, group1, name2
+		return type1, group1, lib.GetNameFromNameMap(name2, "")
 	default:
 		return lib.NODE_TYPE_SL, selectedPath.String(), selectedPath.String()
 	}
@@ -260,7 +251,7 @@ func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *pa
 }
 
 func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string), cObj []fyne.CanvasObject, accData *lib.AccountData, pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) []fyne.CanvasObject {
-	transAreCalled := pref.GetStringWithFallback(DataTransIsCalledPrefName, "Transaction")
+	transAreCalled := lib.GetNameFromNameMap(lib.IdTransactions, "Transaction")
 	txList := accData.Transactions
 	refMax := 10
 	for _, tx := range txList {

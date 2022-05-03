@@ -232,21 +232,22 @@ func (p *PrefData) GetDataForPath(path *parser.Path) (parser.NodeI, bool) {
 }
 
 func (p *PrefData) GetStringMapWithFallback(path *parser.Path, fb map[string]string) map[string]string {
+	if fb == nil {
+		fb = make(map[string]string)
+	}
 	n, found := p.getNodeForPath(path, false)
 	if !found {
 		return fb
 	}
-	if n.GetNodeType() == parser.NT_LIST {
-		sMap := make(map[string]string, 0)
-		for _, v := range n.(*parser.JsonList).GetValues() {
+	if n.IsContainer() {
+		fb = make(map[string]string)
+		for _, v := range n.(parser.NodeC).GetValues() {
 			if v.GetNodeType() == parser.NT_STRING {
-				sMap["a"] = "b"
+				fb[v.GetName()] = v.String()
 			}
 		}
-		return sMap
-	} else {
-		return fb
 	}
+	return fb
 }
 
 func (p *PrefData) GetStringListWithFallback(path *parser.Path, fb []string) []string {

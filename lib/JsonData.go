@@ -54,12 +54,28 @@ var (
 	defaultAssetNames         = []string{"Account Num.", "Sort Code"}
 	timeStampPath             = parser.NewBarPath(timeStampName)
 	dataMapRootPath           = parser.NewBarPath(DataMapRootName)
+	nameMap                   = make(map[string]string)
 )
 
 type JsonData struct {
 	dataMap        *parser.JsonObject
 	navIndex       *map[string][]string
 	dataMapUpdated func(string, *parser.Path, error)
+}
+
+func InitNameMap(m map[string]string) {
+	nameMap = m
+}
+
+func GetNameFromNameMap(key string, fb string) string {
+	val, found := nameMap[key]
+	if found {
+		return val
+	}
+	if fb == "" {
+		return key
+	}
+	return fb
 }
 
 //

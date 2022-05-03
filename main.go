@@ -99,6 +99,7 @@ var (
 
 	importFileFilter = []string{".csv", ".csvt"}
 
+	nameDataPrefName          = parser.NewDotPath("data")
 	dataFilePrefName          = parser.NewDotPath("file.datafile")
 	backupFilePrefName        = parser.NewDotPath("file.backupfile")
 	copyDialogTimePrefName    = parser.NewDotPath("dialog.copyTimeOutMS")
@@ -232,6 +233,7 @@ func main() {
 	buttonBar := makeButtonBar()
 	searchWindow = gui.NewSearchDataWindow(selectTreeElement)
 	lib.ClearUserAccountFilter()
+	lib.InitNameMap(preferences.GetStringMapWithFallback(nameDataPrefName, nil))
 
 	/*
 		function called when a selection is made in the LHS tree.
@@ -487,9 +489,8 @@ func makeButtonBar() *fyne.Container {
 }
 
 func makeMenus() *fyne.MainMenu {
-	hintName := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
-	assetName := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
-
+	hintName := lib.GetNameFromNameMap(lib.IdHints, "Hint")
+	assetName := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
 	user := currentSelPath.StringFirst()
 	selTypeItem := currentSelPath.StringAt(UID_POS_PWHINT)
 	selType := currentSelPath.StringAt(UID_POS_TYPE)
@@ -737,12 +738,12 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 }
 
 func cloneHint() {
-	n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	n := lib.GetNameFromNameMap(lib.IdHints, "Hint")
 	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE, false)
 }
 
 func cloneHintFull() {
-	n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	n := lib.GetNameFromNameMap(lib.IdHints, "Hint")
 	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE_FULL, false)
 }
 
@@ -757,7 +758,7 @@ func addNewUser() {
 Add a hint via addNewEntity
 */
 func addNewHint() {
-	n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	n := lib.GetNameFromNameMap(lib.IdHints, "Hint")
 	ch := currentSelPath.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New "+n, "A User needs to be selected")
@@ -888,7 +889,7 @@ func importTransactions(dataPath *parser.Path, extra string) {
 }
 
 func updateTransactionValue(dataPath *parser.Path, extra string) {
-	t := preferences.GetStringWithFallback(gui.DataTransIsCalledPrefName, "Transaction")
+	t := lib.GetNameFromNameMap(lib.IdTransactions, "Transaction")
 	data, err := parser.Find(jsonData.GetUserRoot(), dataPath)
 	if err != nil {
 		logInformationDialog("Error updating transaction value", err.Error())
@@ -962,7 +963,7 @@ func updateTransactionValue(dataPath *parser.Path, extra string) {
 Add a asset via addNewEntity
 */
 func addNewAsset() {
-	n := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+	n := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
 	ch := currentSelPath.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New "+n, "A User needs to be selected")
@@ -975,7 +976,7 @@ func addNewAsset() {
 Selecting the menu to add an item to a hint
 */
 func addNewAssetItem() {
-	n := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+	n := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
 	ch := currentSelPath.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New Atem to "+n, "A User needs to be selected")
@@ -988,7 +989,7 @@ func addNewAssetItem() {
 Selecting the menu to add an item to a hint
 */
 func addNewHintItem() {
-	n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+	n := lib.GetNameFromNameMap(lib.IdHints, "Hint")
 	ch := currentSelPath.StringAt(UID_POS_USER)
 	if ch == "" {
 		logInformationDialog("Add New Item to "+n, "A User needs to be selected")
@@ -1161,7 +1162,7 @@ func search(searchFor string) {
 		case lib.IdAssets:
 			s := searchStringTrailFromTo(trail, 2, 4)
 			p := trail.GetPath(0, 3, "|")
-			n := preferences.GetStringWithFallback(gui.DataAssetIsCalledPrefName, "Asset")
+			n := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
 			t3 := trail.GetNodeAt(3)
 			if t3 != nil {
 				if searchStringNodeName(t3) == lib.IdTransactions {
@@ -1179,7 +1180,7 @@ func search(searchFor string) {
 		default:
 			s := searchStringTrailFromTo(trail, 2)
 			p := trail.GetPath(0, 3, "|")
-			n := preferences.GetStringWithFallback(gui.DataHintIsCalledPrefName, "Hint")
+			n := lib.GetNameFromNameMap(kind, "")
 			if trail.Len() > 3 {
 				searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In Field [ %s ]", user, n, s, searchStringNodeName(trail.GetNodeAt(3))), p)
 			} else {

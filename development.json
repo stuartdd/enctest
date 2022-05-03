@@ -1,6 +1,35 @@
 
     {
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
+        },
+        "search": {
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note",
+                "TV LIC",
+                "Lloyds",
+                "2022",
+                "Balance"
+            ],
+            "case": false
+        },
+        "log": {
+            "active": true,
+            "prefix": "INFO",
+            "fileName": "enctest.log"
+        },
+        "file": {
+            "postDataUrl": "",
+            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
+        },
         "import": {
+            "path": "/home/stuart/git/golang/enctest/",
             "filter": [
                 ".csvt",
                 ".csv"
@@ -16,49 +45,18 @@
                 "cr",
                 ""
             ],
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/"
+            "csvDateFormat": "02/01/2006"
         },
         "theme": "dark",
         "data": {
-            "hintIsCalled": "Hint",
-            "assetIsCalled": "Asset",
-            "transIsCalled": "Transaction",
-            "noteIsCalled": "Note",
-            "presentationmode": true
+            "transaction": "Transaction",
+            "pwHints": "Hint",
+            "assets": "Asset"
         },
         "screen": {
-            "width": 1055.714355,
-            "height": 643.333374,
-            "fullScreen": false,
-            "split": 0.223558
-        },
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
-        "search": {
-            "case": false,
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note",
-                "TV LIC",
-                "Lloyds",
-                "2022",
-                "Balance"
-            ]
-        },
-        "log": {
-            "prefix": "INFO",
-            "fileName": "enctest.log",
-            "active": true
-        },
-        "file": {
-            "getDataUrl": "",
-            "postDataUrl": "",
-            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
-            "datafile": "libtest/TestDataTypes.json"
+            "split": 0.223558,
+            "width": 1056,
+            "height": 643,
+            "fullScreen": false
         }
     }
