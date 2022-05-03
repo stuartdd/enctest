@@ -43,7 +43,6 @@ const (
 
 	welcomeTitle = "Welcome"
 	appDesc      = "Welcome to Valt"
-	idPwDetails  = "pwHints"
 
 	PATH_SEP = "|"
 
@@ -113,13 +112,16 @@ func GetDetailTypeGroupTitle(selectedPath *parser.Path, preferences pref.PrefDat
 }
 
 func GetDetailPage(selectedPath *parser.Path, dataMapRoot parser.NodeI, preferences pref.PrefData, log func(string)) *DetailPage {
-	user0 := selectedPath.StringAt(0)
+	user0 := ""
+	if selectedPath.Len() > 0 {
+		user0 = selectedPath.StringAt(0)
+	}
 	_, group1, title := GetDetailTypeGroupTitle(selectedPath, preferences)
 	switch selectedPath.Len() {
 	case 1:
-		return NewDetailPage(selectedPath, "", "", selectedPath.String(), welcomeScreen, userControls, dataMapRoot, preferences, log)
+		return NewDetailPage(selectedPath, user0, "", selectedPath.String(), welcomeScreen, userControls, dataMapRoot, preferences, log)
 	case 2:
-		if group1 == idPwDetails {
+		if group1 == lib.IdHints {
 			return NewDetailPage(selectedPath, user0, group1, title+"s", welcomeScreen, hintControls, dataMapRoot, preferences, log)
 		}
 		if group1 == lib.IdAssets {
@@ -128,7 +130,7 @@ func GetDetailPage(selectedPath *parser.Path, dataMapRoot parser.NodeI, preferen
 		return NewDetailPage(selectedPath, user0, group1, title, welcomeScreen, welcomeControls, dataMapRoot, preferences, log)
 	case 3:
 		_, name2 := lib.GetNodeAnnotationTypeAndName(selectedPath.StringAt(2))
-		if group1 == idPwDetails {
+		if group1 == lib.IdHints {
 			return NewDetailPage(selectedPath, user0, group1, name2, detailsScreen, hintDetailsControls, dataMapRoot, preferences, log)
 		}
 		if group1 == lib.IdAssets {
@@ -213,7 +215,8 @@ func welcomeScreen(_ fyne.Window, details DetailPage, actionFunc func(string, *p
 }
 
 func assetDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
-	head := fmt.Sprintf("%s: Asset - %s", details.User, details.Title)
+	n := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
+	head := fmt.Sprintf("%s: %s - %s", details.User, n, details.Title)
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
 		actionFunc(ACTION_REMOVE_CLEAN, details.SelectedPath, "")
@@ -225,33 +228,35 @@ func assetDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(str
 
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_ASSET_ITEM, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Add new Item to Asset: %s", details.Title)))
+	}, statusDisplay, fmt.Sprintf("Add new Item to %s: %s", n, details.Title)))
 
 	cObj = append(cObj, widget.NewLabel(head))
 	return container.NewHBox(cObj...)
 }
 
 func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
-	head := fmt.Sprintf("Asset Summary for user %s", details.User)
+	n := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
+	head := fmt.Sprintf("%s Summary for user %s", n, details.User)
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_ASSET, details.SelectedPath, details.Title)
-	}, statusDisplay, fmt.Sprintf("Add new Asset for user %s", details.User)))
+	}, statusDisplay, fmt.Sprintf("Add new '%s' for user %s", n, details.User)))
 	cObj = append(cObj, widget.NewLabel(head))
 	return container.NewHBox(cObj...)
 }
 
 func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
+	n := lib.GetNameFromNameMap(lib.IdHints, "Hint")
 	cObj := make([]fyne.CanvasObject, 0)
 	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
 		actionFunc(ACTION_ADD_HINT, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Add new Hint to user: %s", details.User)))
+	}, statusDisplay, fmt.Sprintf("Add new '%s' to user: %s", n, details.User)))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
 
 func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string), cObj []fyne.CanvasObject, accData *lib.AccountData, pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) []fyne.CanvasObject {
-	transAreCalled := lib.GetNameFromNameMap(lib.IdTransactions, "Transaction")
+	transAreCalled := lib.GetNameFromNameMap(lib.IdTxTransactions, "Transaction")
 	txList := accData.Transactions
 	refMax := 10
 	for _, tx := range txList {
@@ -282,7 +287,7 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 	if EditMode {
 		add := NewMyIconButton("", theme.ContentAddIcon(), func() {
 			actionFunc(ACTION_ADD_TRANSACTION, &accData.Path, accData.AccountName)
-		}, statusDisplay, fmt.Sprintf("Add a transaction '%s'", accData.AccountName))
+		}, statusDisplay, fmt.Sprintf("Add a '%s' to '%s'", transAreCalled, accData.AccountName))
 		hb.Add(add)
 	}
 
@@ -396,7 +401,7 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 		}
 		editEntry.RefreshData()
 		na := editEntry.NodeAnnotation
-		if v.GetName() == lib.IdTransactions && v.IsContainer() {
+		if v.GetName() == lib.IdTxTransactions && v.IsContainer() {
 			transPath = editEntry.Path
 		} else {
 			clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {

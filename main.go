@@ -92,6 +92,7 @@ var (
 
 	findCaseSensitive  = binding.NewBool()
 	currentSelPath     = parser.NewBarPath("")
+	currentUserName    = ""
 	shouldCloseLock    = false
 	hasDataChanges     = false
 	releaseTheBeast    = make(chan int, 1)
@@ -241,6 +242,7 @@ func main() {
 	*/
 	setPageRHSFunc := func(detailPage gui.DetailPage) {
 		currentSelPath = detailPage.SelectedPath
+		currentUserName = detailPage.User
 		if searchWindow != nil {
 			go searchWindow.Select(currentSelPath)
 		}
@@ -491,6 +493,7 @@ func makeButtonBar() *fyne.Container {
 func makeMenus() *fyne.MainMenu {
 	hintName := lib.GetNameFromNameMap(lib.IdHints, "Hint")
 	assetName := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
+	txName := lib.GetNameFromNameMap(lib.IdTxTransactions, "Transaction")
 	user := currentSelPath.StringFirst()
 	selTypeItem := currentSelPath.StringAt(UID_POS_PWHINT)
 	selType := currentSelPath.StringAt(UID_POS_TYPE)
@@ -503,14 +506,14 @@ func makeMenus() *fyne.MainMenu {
 			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("Clone Full '%s'", selTypeItem), cloneHintFull))
 		}
 	case lib.IdAssets:
-		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", assetName, user), addNewAsset))
+		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("'%s' for '%s'", assetName, user), addNewAsset))
 		if selTypeItem != "" {
-			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s Item for '%s'", assetName, selTypeItem), addNewAssetItem))
-			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s Transaction for '%s'", assetName, selTypeItem), addTransaction))
+			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("'%s' Item for '%s'", assetName, selTypeItem), addNewAssetItem))
+			newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("'%s' for '%s'", txName, selTypeItem), addTransaction))
 		}
 	default:
-		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", hintName, user), addNewHint))
-		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("%s for '%s'", assetName, user), addNewAsset))
+		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("'%s' for '%s'", hintName, user), addNewHint))
+		newItem.Items = append(newItem.Items, fyne.NewMenuItem(fmt.Sprintf("'%s' for '%s'", assetName, user), addNewAsset))
 		newItem.Items = append(newItem.Items, fyne.NewMenuItem("New User", addNewUser))
 	}
 
@@ -739,12 +742,12 @@ func controlActionFunction(action string, dataPath *parser.Path, extra string) {
 
 func cloneHint() {
 	n := lib.GetNameFromNameMap(lib.IdHints, "Hint")
-	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE, false)
+	addNewEntity(n+" for "+currentUserName, n, ADD_TYPE_HINT_CLONE, false)
 }
 
 func cloneHintFull() {
 	n := lib.GetNameFromNameMap(lib.IdHints, "Hint")
-	addNewEntity(n+" for ", n, ADD_TYPE_HINT_CLONE_FULL, false)
+	addNewEntity(n+" for "+currentUserName, n, ADD_TYPE_HINT_CLONE_FULL, false)
 }
 
 /**
@@ -759,21 +762,21 @@ Add a hint via addNewEntity
 */
 func addNewHint() {
 	n := lib.GetNameFromNameMap(lib.IdHints, "Hint")
-	ch := currentSelPath.StringAt(UID_POS_USER)
-	if ch == "" {
+	if currentUserName == "" {
 		logInformationDialog("Add New "+n, "A User needs to be selected")
 	} else {
-		addNewEntity(fmt.Sprintf("%s for %s", n, ch), n, ADD_TYPE_HINT, false)
+		addNewEntity(fmt.Sprintf("%s for %s", n, currentUserName), n, ADD_TYPE_HINT, false)
 	}
 }
 
 func addTransaction() {
-	addTransactionValue(currentSelPath.StringAppend(lib.IdTransactions), currentSelPath.StringLast())
+	addTransactionValue(currentSelPath.StringAppend(lib.IdTxTransactions), currentSelPath.StringLast())
 }
 
 func addTransactionValue(dataPath *parser.Path, extra string) {
+	t := lib.GetNameFromNameMap(lib.IdTxTransactions, "Transaction")
 	d := gui.NewInputDataWindow(
-		fmt.Sprintf("Add Transaction to account '%s'", extra),
+		fmt.Sprintf("Add %s to account '%s'", t, extra),
 		"Update the data and press OK",
 		func() {}, // On Cancel
 		func(m *gui.InputData) { // On OK
@@ -835,9 +838,9 @@ func importCSVTransactions(dataPath *parser.Path, fileName string) (int, error) 
 	}
 	n, _ := jsonData.FindNodeForUserDataPath(dataPath)
 	if n.IsContainer() {
-		t := n.(parser.NodeC).GetNodeWithName(lib.IdTransactions)
+		t := n.(parser.NodeC).GetNodeWithName(lib.IdTxTransactions)
 		if t == nil {
-			return 0, fmt.Errorf("data error: %s node missing for %s.\nPlease add an account transactions node", lib.IdTransactions, n.GetName())
+			return 0, fmt.Errorf("data error: %s node missing for %s.\nPlease add an account transactions node", lib.IdTxTransactions, n.GetName())
 		}
 		return lib.ImportCsvData(t.(parser.NodeC), fileName, skipHeader, dateFmt, dataMapList)
 	}
@@ -846,7 +849,7 @@ func importCSVTransactions(dataPath *parser.Path, fileName string) (int, error) 
 }
 
 func importTransactions(dataPath *parser.Path, extra string) {
-	// t := preferences.GetStringForPathWithFallback(gui.DataTransIsCalledPrefName, "Transaction")
+	t := lib.GetNameFromNameMap(lib.IdTxTransactions, "Transaction")
 	_, err := parser.Find(jsonData.GetUserRoot(), dataPath)
 	if err != nil {
 		timedError(fmt.Sprintf("canot find %s", dataPath))
@@ -868,7 +871,7 @@ func importTransactions(dataPath *parser.Path, extra string) {
 					if err != nil {
 						timedError(fmt.Sprintf("Failed to import CSV file %s\nError: %s", n, err))
 					} else {
-						s := fmt.Sprintf("%d transaction(s) imported from file %s", count, n)
+						s := fmt.Sprintf("%d %s(s) imported from file %s", count, t, n)
 						dataMapUpdated(s, dataPath, nil)
 						timedNotification(5000, "Successful import", s)
 					}
@@ -889,7 +892,7 @@ func importTransactions(dataPath *parser.Path, extra string) {
 }
 
 func updateTransactionValue(dataPath *parser.Path, extra string) {
-	t := lib.GetNameFromNameMap(lib.IdTransactions, "Transaction")
+	t := lib.GetNameFromNameMap(lib.IdTxTransactions, "Transactions")
 	data, err := parser.Find(jsonData.GetUserRoot(), dataPath)
 	if err != nil {
 		logInformationDialog("Error updating transaction value", err.Error())
@@ -964,11 +967,10 @@ Add a asset via addNewEntity
 */
 func addNewAsset() {
 	n := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
-	ch := currentSelPath.StringAt(UID_POS_USER)
-	if ch == "" {
+	if currentUserName == "" {
 		logInformationDialog("Add New "+n, "A User needs to be selected")
 	} else {
-		addNewEntity(fmt.Sprintf("%s for %s", n, ch), n, ADD_TYPE_ASSET, false)
+		addNewEntity(fmt.Sprintf("%s for %s", n, currentUserName), n, ADD_TYPE_ASSET, false)
 	}
 }
 
@@ -977,11 +979,10 @@ Selecting the menu to add an item to a hint
 */
 func addNewAssetItem() {
 	n := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
-	ch := currentSelPath.StringAt(UID_POS_USER)
-	if ch == "" {
-		logInformationDialog("Add New Atem to "+n, "A User needs to be selected")
+	if currentUserName == "" {
+		logInformationDialog("Add New Item to "+n, "A User needs to be selected")
 	} else {
-		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_ASSET_ITEM, true)
+		addNewEntity(fmt.Sprintf("%s Item for %s", n, currentUserName), n, ADD_TYPE_ASSET_ITEM, true)
 	}
 }
 
@@ -990,11 +991,10 @@ Selecting the menu to add an item to a hint
 */
 func addNewHintItem() {
 	n := lib.GetNameFromNameMap(lib.IdHints, "Hint")
-	ch := currentSelPath.StringAt(UID_POS_USER)
-	if ch == "" {
+	if currentUserName == "" {
 		logInformationDialog("Add New Item to "+n, "A User needs to be selected")
 	} else {
-		addNewEntity(fmt.Sprintf("%s Item for %s", n, ch), n, ADD_TYPE_HINT_ITEM, true)
+		addNewEntity(fmt.Sprintf("%s Item for %s", n, currentUserName), n, ADD_TYPE_HINT_ITEM, true)
 	}
 }
 
@@ -1003,7 +1003,7 @@ Add an entity to the model.
 Delegate to DataRoot for the logic. Call back on dataMapUpdated function if a change is made
 */
 func addNewEntity(head string, name string, addType int, isAnnotated bool) {
-	cu := currentSelPath.PathAt(UID_POS_USER)
+	cu := parser.NewDotPath(currentUserName)
 	gui.NewModalEntryDialog(window, "Enter the name of the new "+head, "", isAnnotated, lib.NODE_TYPE_SL, func(accept bool, newName string, nt lib.NodeAnnotationEnum) {
 		if accept {
 			entityName, err := lib.ProcessEntityName(newName, nt)
@@ -1144,6 +1144,8 @@ func search(searchFor string) {
 		return
 	}
 	matchCase, _ := findCaseSensitive.Get()
+	txName := lib.GetNameFromNameMap(lib.IdTxTransactions, "Tramsactions")
+	asName := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
 	lib.ClearUserAccountFilter()
 
 	// Do the search. The map contains the returned search entries
@@ -1162,19 +1164,18 @@ func search(searchFor string) {
 		case lib.IdAssets:
 			s := searchStringTrailFromTo(trail, 2, 4)
 			p := trail.GetPath(0, 3, "|")
-			n := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
 			t3 := trail.GetNodeAt(3)
 			if t3 != nil {
-				if searchStringNodeName(t3) == lib.IdTransactions {
+				if searchStringNodeName(t3) == lib.IdTxTransactions {
 					lib.SetUserAccountFilter(user, searchStringNodeName(trail.GetNodeAt(2)), searchFor)
 					t5 := trail.GetLast()
 					if t5 != nil {
-						searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In Transaction [ %s ]", user, n, s, t5.String()), p)
+						searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In %s [ %s ]", user, asName, s, txName, t5.String()), p)
 					} else {
-						searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In Transaction Data", user, n, s), p)
+						searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In %s Data", user, asName, s, txName), p)
 					}
 				} else {
-					searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In Field [ %s ]", user, n, s, searchStringNodeName(t3)), p)
+					searchWindow.Add(fmt.Sprintf("%s %s [ %s ] In Field [ %s ]", user, asName, s, searchStringNodeName(t3)), p)
 				}
 			}
 		default:

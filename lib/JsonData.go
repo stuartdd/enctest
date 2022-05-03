@@ -51,7 +51,7 @@ var (
 	NodeAnnotationEnums       = []NodeAnnotationEnum{NODE_TYPE_SL, NODE_TYPE_ML, NODE_TYPE_RT, NODE_TYPE_PO, NODE_TYPE_IM}
 	NodeAnnotationsSingleLine = []bool{true, false, false, true, true}
 	defaultHintNames          = []string{"notes", "post", "pre", "userId"}
-	defaultAssetNames         = []string{"Account Num.", "Sort Code"}
+	defaultAssetNames         = []string{"Account Num.", "Sort Code", "Site"}
 	timeStampPath             = parser.NewBarPath(timeStampName)
 	dataMapRootPath           = parser.NewBarPath(DataMapRootName)
 	nameMap                   = make(map[string]string)
@@ -296,7 +296,7 @@ func (p *JsonData) AddSubItem(dataPath *parser.Path, subItemName string, itemDis
 	ok := addStringIfDoesNotExist(hO, subItemName)
 	if ok {
 		p.navIndex = createNavIndex(p.dataMap)
-		p.dataMapUpdated("Add Sub Item", dataPath.StringAppend(subItemName), nil)
+		p.dataMapUpdated("AddSubItem", dataPath.StringAppend(subItemName), nil)
 		return nil
 	}
 	return fmt.Errorf("the item '%s' already contains '%s'", dataPath, subItemName)
@@ -309,7 +309,7 @@ func (p *JsonData) AddAsset(userPath *parser.Path, assetName string) error {
 	}
 	addAssetToUser(u, assetName)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Asset", userPath.StringAppend(IdAssets).StringAppend(assetName), nil)
+	p.dataMapUpdated("AddAsset", userPath.StringAppend(IdAssets).StringAppend(assetName), nil)
 	return nil
 }
 
@@ -320,7 +320,7 @@ func (p *JsonData) AddHint(userUid *parser.Path, hintName string) error {
 	}
 	addHintToUser(u, hintName)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add Hint", userUid.StringAppend(IdHints).StringAppend(hintName), nil)
+	p.dataMapUpdated("AddHint", userUid.StringAppend(IdHints).StringAppend(hintName), nil)
 	return nil
 }
 
@@ -333,7 +333,7 @@ func (p *JsonData) AddUser(userName string) error {
 	addHintToUser(userO, "App1")
 	p.GetUserRoot().Add(userO)
 	p.navIndex = createNavIndex(p.dataMap)
-	p.dataMapUpdated("Add User", parser.NewDotPath(userName), nil)
+	p.dataMapUpdated("AddUser", parser.NewDotPath(userName), nil)
 	return nil
 }
 
@@ -476,9 +476,9 @@ func addDefaultAccountItemsToAsset(account *parser.JsonObject) {
 	for _, n := range defaultAssetNames {
 		addStringIfDoesNotExist(account, n)
 	}
-	tx := account.GetNodeWithName(IdTransactions)
+	tx := account.GetNodeWithName(IdTxTransactions)
 	if tx == nil {
-		txl := parser.NewJsonList(IdTransactions)
+		txl := parser.NewJsonList(IdTxTransactions)
 		addTransactionToAsset(txl, newTranactionData(time.Now(), 0.0, "Opening Balance", TX_TYPE_IV, txl))
 		account.Add(txl)
 	}

@@ -33,8 +33,8 @@ const (
 	DATE_TIME_FORMAT_TXN = "2006-01-02 15:04:05"
 	DATE_FORMAT_TXN      = "2006-01-02"
 	TIME_FORMAT_CSV      = "02/01/2006"
-	IdTransactions       = "transactions"
 	IdAssets             = "assets"
+	IdTxTransactions     = "transactions"
 	IdTxDate             = "date"
 	IdTxRef              = "ref"
 	IdTxVal              = "val"
@@ -277,7 +277,7 @@ func newAccountData(accountNode, userNode parser.NodeC, initialValue float64) *A
 	d := make([]*TranactionData, 0)
 	v := initialValue
 	for _, n := range accountNode.GetValues() {
-		if n.GetName() == IdTransactions && n.IsContainer() {
+		if n.GetName() == IdTxTransactions && n.IsContainer() {
 			var iv *TranactionData
 			for _, ni := range n.(parser.NodeC).GetValues() {
 				td := NewTranactionDataFromNode(ni)
@@ -330,8 +330,8 @@ func (t *AccountData) LatestTransaction() *TranactionData {
 //	return a sub node that has a date and ref the san=me as datePlusRef
 //
 func GetTransactionDataAndNodeForKey(txNode parser.NodeC, key string) (*TranactionData, parser.NodeC, error) {
-	if txNode.GetName() != IdTransactions {
-		return nil, nil, fmt.Errorf("GetTransaction failed. Node is not '%s'", IdTransactions)
+	if txNode.GetName() != IdTxTransactions {
+		return nil, nil, fmt.Errorf("GetTransactionDataAndNodeForKey failed. Node is not '%s'", IdTxTransactions)
 	}
 	for _, t := range txNode.GetValues() {
 		if t.IsContainer() {
@@ -341,7 +341,7 @@ func GetTransactionDataAndNodeForKey(txNode parser.NodeC, key string) (*Tranacti
 			}
 		}
 	}
-	return nil, nil, fmt.Errorf("failed GetTransactionNode. Transaction with key '%s' not found", key)
+	return nil, nil, fmt.Errorf("failed GetTransactionDataAndNodeForKey. Transaction with key '%s' not found", key)
 }
 
 func newTranactionData(dateTime time.Time, value float64, ref string, typ TransactionTypeEnum, n parser.NodeI) *TranactionData {

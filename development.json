@@ -1,8 +1,8 @@
 
     {
         "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
         },
         "search": {
             "lastGoodList": [
@@ -18,9 +18,9 @@
             "case": false
         },
         "log": {
+            "fileName": "enctest.log",
             "active": true,
-            "prefix": "INFO",
-            "fileName": "enctest.log"
+            "prefix": "INFO"
         },
         "file": {
             "postDataUrl": "",
@@ -29,12 +29,6 @@
             "getDataUrl": ""
         },
         "import": {
-            "path": "/home/stuart/git/golang/enctest/",
-            "filter": [
-                ".csvt",
-                ".csv"
-            ],
-            "csvSkipHeader": true,
             "csvColumns": [
                 "date",
                 "type",
@@ -45,18 +39,24 @@
                 "cr",
                 ""
             ],
-            "csvDateFormat": "02/01/2006"
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/",
+            "filter": [
+                ".csvt",
+                ".csv"
+            ],
+            "csvSkipHeader": true
         },
         "theme": "dark",
         "data": {
-            "transaction": "Transaction",
             "pwHints": "Hint",
-            "assets": "Asset"
+            "assets": "Finances",
+            "transactions": "Data Item"
         },
         "screen": {
+            "fullScreen": false,
             "split": 0.223558,
-            "width": 1056,
-            "height": 643,
-            "fullScreen": false
+            "width": 1049.523804,
+            "height": 625.238098
         }
     }
