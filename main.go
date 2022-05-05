@@ -488,12 +488,15 @@ func makeButtonBar() *fyne.Container {
 	quit := gui.NewMyIconButton("EXIT", theme.LogoutIcon(), func(a, b string) {
 		shouldClose()
 	}, "", "", statusDisplay, "Exit the application")
-	bb := container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton)
-
-	for n, v := range clipboardMap {
-		bb.Add(gui.NewMyIconButton(n, theme.ContentCopyIcon(), func(a, b string) {
-			fmt.Printf("Copy %s --> %s", a, b)
-		}, n, v, statusDisplay, fmt.Sprintf("Copy %s to clipboard", n)))
+	bb := container.NewHBox(quit, saveShortcutButton, gui.Padding15, fullScreenShortcutButton, editModeShortcutButton)
+	if len(clipboardMap) > 0 {
+		bb.Add(widget.NewLabel("Copy:"))
+		for n, v := range clipboardMap {
+			bb.Add(gui.NewMyIconButton(n, theme.ContentCopyIcon(), func(a, b string) {
+				window.Clipboard().SetContent(b)
+				timedNotification(preferences.GetInt64WithFallback(copyDialogTimePrefName, 1500), "Copied to clipboard", b)
+			}, n, v, statusDisplay, fmt.Sprintf("Copy '%s' to clipboard", v)))
+		}
 	}
 	return bb
 }

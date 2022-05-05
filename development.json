@@ -1,22 +1,50 @@
 
     {
-        "data": {
-            "pwHints": "Hint",
-            "assets": "Finances",
-            "transactions": "Data Item"
-        },
-        "file": {
-            "postDataUrl": "",
-            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
+        "clipboard": {
+            "email BT": "stuart.d.davies@btinternet.com",
+            "email GO": "sdd.davies@gmail.com"
         },
         "log": {
-            "prefix": "INFO",
             "fileName": "enctest.log",
-            "active": true
+            "active": true,
+            "prefix": "INFO"
+        },
+        "data": {
+            "assets": "Finances",
+            "transactions": "Data Item",
+            "pwHints": "Hint"
+        },
+        "file": {
+            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": "",
+            "postDataUrl": ""
+        },
+        "theme": "dark",
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
+        },
+        "search": {
+            "case": false,
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note",
+                "TV LIC",
+                "Lloyds",
+                "2022",
+                "Balance"
+            ]
         },
         "import": {
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/",
+            "filter": [
+                ".csvt",
+                ".csv"
+            ],
             "csvSkipHeader": true,
             "csvColumns": [
                 "date",
@@ -27,40 +55,12 @@
                 "db",
                 "cr",
                 ""
-            ],
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/",
-            "filter": [
-                ".csvt",
-                ".csv"
             ]
         },
-        "theme": "dark",
-        "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
-        },
         "screen": {
-            "width": 790.390625,
-            "height": 597,
+            "width": 967.61908,
+            "height": 579.047668,
             "fullScreen": false,
             "split": 0.204009
-        },
-        "clipboard": {
-            "email GO": "sdd.davies@gmail.com",
-            "email BT": "stuat.d.davies@btinternet.com"
-        },
-        "search": {
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note",
-                "TV LIC",
-                "Lloyds",
-                "2022",
-                "Balance"
-            ],
-            "case": false
         }
     }

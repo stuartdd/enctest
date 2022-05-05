@@ -27,6 +27,8 @@ import (
 	"stuartdd.com/lib"
 )
 
+var Padding15 = container.New(NewFixedWLayout(15))
+var Padding25 = container.New(NewFixedWLayout(25))
 var Padding50 = container.New(NewFixedWLayout(50))
 var Padding100 = container.New(NewFixedWLayout(100))
 

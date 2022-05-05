@@ -34,7 +34,7 @@ const (
 	timeStampName      = "timeStamp"
 	tabdata            = "                                     "
 	allowedCharsInName = " *@#$%^&*()_+=?"
-	dateTimeFormatStr  = "Mon Jan 2 15:04:05 MST 2006"
+	dateTimeFormatStr  = "2006-01-02 15:04:05"
 	PATH_SEP           = "|"
 	PATH_SEP_CHAR      = '|'
 
@@ -604,11 +604,15 @@ func keysToList(id string, m *parser.JsonObject) ([]string, []string) {
 }
 
 func parseTime(st string) (time.Time, error) {
-	t, err := time.Parse(time.UnixDate, st)
-	if err != nil {
-		return time.Now(), err
+	t, err := time.Parse(dateTimeFormatStr, st)
+	if err == nil {
+		return t, nil
 	}
-	return t, nil
+	t, err = time.Parse(time.UnixDate, st)
+	if err == nil {
+		return t, nil
+	}
+	return time.Now(), err
 }
 
 func GetLastId(uid string) string {
