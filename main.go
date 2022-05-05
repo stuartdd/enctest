@@ -476,18 +476,24 @@ func logDataRequest(action string) {
 }
 
 func makeButtonBar() *fyne.Container {
-	saveShortcutButton = gui.NewMyIconButton("Save", theme.DocumentSaveIcon(), func() {
+	saveShortcutButton = gui.NewMyIconButton("Save", theme.DocumentSaveIcon(), func(a, b string) {
 		commitAndSaveData(SAVE_AS_IS, true)
-	}, statusDisplay, "Save changes")
-	fullScreenShortcutButton = gui.NewMyIconButton("FULL SCREEN", theme.ComputerIcon(), flipFullScreen, statusDisplay, "Display full screen or Show windowed")
-	editModeShortcutButton = gui.NewMyIconButton("EDIT", theme.DocumentIcon(), flipEditMode, statusDisplay, "Allow editing of the data")
-	quit := gui.NewMyIconButton("EXIT", theme.LogoutIcon(), shouldClose, statusDisplay, "Exit the application")
+	}, "", "", statusDisplay, "Save changes")
+	fullScreenShortcutButton = gui.NewMyIconButton("FULL SCREEN", theme.ComputerIcon(), func(s1, s2 string) {
+		flipFullScreen()
+	}, "", "", statusDisplay, "Display full screen or Show windowed")
+	editModeShortcutButton = gui.NewMyIconButton("EDIT", theme.DocumentIcon(), func(s1, s2 string) {
+		flipEditMode()
+	}, "", "", statusDisplay, "Allow editing of the data")
+	quit := gui.NewMyIconButton("EXIT", theme.LogoutIcon(), func(a, b string) {
+		shouldClose()
+	}, "", "", statusDisplay, "Exit the application")
 	bb := container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton)
 
 	for n, v := range clipboardMap {
-		bb.Add(gui.NewMyIconButton(n, theme.ContentCopyIcon(), func() {
-			fmt.Printf("Copy %s --> %s", n, v)
-		}, statusDisplay, fmt.Sprintf("Copy %s to clipboard", n)))
+		bb.Add(gui.NewMyIconButton(n, theme.ContentCopyIcon(), func(a, b string) {
+			fmt.Printf("Copy %s --> %s", a, b)
+		}, n, v, statusDisplay, fmt.Sprintf("Copy %s to clipboard", n)))
 	}
 	return bb
 }
@@ -637,7 +643,7 @@ func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	c2 := container.New(
 		layout.NewHBoxLayout(),
 		widget.NewLabel("Find:"),
-		gui.NewMyIconButton("", theme.SearchIcon(), func() { search(searchEntry.Text) }, statusDisplay, "Search for the given text"),
+		gui.NewMyIconButton("", theme.SearchIcon(), func(a, b string) { search(searchEntry.Text) }, "", "", statusDisplay, "Search for the given text"),
 		widget.NewCheckWithData("Match Case", findCaseSensitive))
 	c := container.New(
 		layout.NewVBoxLayout(),

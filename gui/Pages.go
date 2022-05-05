@@ -180,13 +180,13 @@ func welcomeControls(_ fyne.Window, details DetailPage, actionFunc func(string, 
 
 func userControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func(a, b string) {
 		actionFunc(ACTION_REMOVE, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Delete: - '%s'", details.Title)))
+	}, "", "", statusDisplay, fmt.Sprintf("Delete: - '%s'", details.Title)))
 
-	cObj = append(cObj, NewMyIconButton("", theme2.EditIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("", theme2.EditIcon(), func(a, b string) {
 		actionFunc(ACTION_RENAME, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
+	}, "", "", statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
 
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
@@ -218,17 +218,17 @@ func assetDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(str
 	n := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
 	head := fmt.Sprintf("%s: %s - %s", details.User, n, details.Title)
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func(a, b string) {
 		actionFunc(ACTION_REMOVE_CLEAN, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Delete: - '%s'", details.Title)))
+	}, "", "", statusDisplay, fmt.Sprintf("Delete: - '%s'", details.Title)))
 
-	cObj = append(cObj, NewMyIconButton("", theme2.EditIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("", theme2.EditIcon(), func(a, b string) {
 		actionFunc(ACTION_RENAME, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
+	}, "", "", statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
 
-	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func(a, d string) {
 		actionFunc(ACTION_ADD_ASSET_ITEM, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Add new Item to %s: %s", n, details.Title)))
+	}, "", "", statusDisplay, fmt.Sprintf("Add new Item to %s: %s", n, details.Title)))
 
 	cObj = append(cObj, widget.NewLabel(head))
 	return container.NewHBox(cObj...)
@@ -238,9 +238,9 @@ func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(str
 	n := lib.GetNameFromNameMap(lib.IdAssets, "Asset")
 	head := fmt.Sprintf("%s Summary for user %s", n, details.User)
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func(a, b string) {
 		actionFunc(ACTION_ADD_ASSET, details.SelectedPath, details.Title)
-	}, statusDisplay, fmt.Sprintf("Add new '%s' for user %s", n, details.User)))
+	}, "", "", statusDisplay, fmt.Sprintf("Add new '%s' for user %s", n, details.User)))
 	cObj = append(cObj, widget.NewLabel(head))
 	return container.NewHBox(cObj...)
 }
@@ -248,9 +248,9 @@ func assetSummaryControls(_ fyne.Window, details DetailPage, actionFunc func(str
 func hintControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	n := lib.GetNameFromNameMap(lib.IdHints, "Hint")
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func(a, d string) {
 		actionFunc(ACTION_ADD_HINT, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Add new '%s' to user: %s", n, details.User)))
+	}, "", "", statusDisplay, fmt.Sprintf("Add new '%s' to user: %s", n, details.User)))
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)
 }
@@ -267,9 +267,9 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 	refMax++
 	hbTop := container.NewHBox()
 	if EditMode {
-		imp := NewMyIconButton("", theme.StorageIcon(), func() {
+		imp := NewMyIconButton("", theme.StorageIcon(), func(a, b string) {
 			actionFunc(ACTION_IMPORT_TRANSACTION, accData.Path.PathParent(), accData.AccountName)
-		}, statusDisplay, "Import from CSV file")
+		}, "", "", statusDisplay, "Import from CSV file")
 		hbTop.Add(imp)
 	}
 	filter := lib.GetUserAccountFilter(accData.User, accData.AccountName)
@@ -285,9 +285,9 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 	cObj = append(cObj, hbTop)
 	hb := container.NewHBox()
 	if EditMode {
-		add := NewMyIconButton("", theme.ContentAddIcon(), func() {
+		add := NewMyIconButton("", theme.ContentAddIcon(), func(a, d string) {
 			actionFunc(ACTION_ADD_TRANSACTION, &accData.Path, accData.AccountName)
-		}, statusDisplay, fmt.Sprintf("Add a '%s' to '%s'", transAreCalled, accData.AccountName))
+		}, "", "", statusDisplay, fmt.Sprintf("Add a '%s' to '%s'", transAreCalled, accData.AccountName))
 		hb.Add(add)
 	}
 
@@ -305,9 +305,9 @@ func getTransactionalCanvasObjects(actionFunc func(string, *parser.Path, string)
 		s := tx.Key()
 		hb := container.NewHBox()
 		if EditMode {
-			rename := NewMyIconButton("", theme2.EditIcon(), func() {
+			rename := NewMyIconButton("", theme2.EditIcon(), func(a, b string) {
 				actionFunc(ACTION_UPDATE_TRANSACTION, &accData.Path, s)
-			}, statusDisplay, fmt.Sprintf("Upate '%s'", tx.Ref()))
+			}, "", "", statusDisplay, fmt.Sprintf("Upate '%s'", tx.Ref()))
 			hb.Add(rename)
 		}
 		switch tx.TxType() {
@@ -404,10 +404,10 @@ func detailsScreen(w fyne.Window, details DetailPage, actionFunc func(string, *p
 		if v.GetName() == lib.IdTxTransactions && v.IsContainer() {
 			transPath = editEntry.Path
 		} else {
-			clip := NewMyIconButton("", theme.ContentCopyIcon(), func() {
+			clip := NewMyIconButton("", theme.ContentCopyIcon(), func(a, b string) {
 				w.Clipboard().SetContent(editEntry.GetCurrentText())
 				actionFunc(ACTION_COPIED, editEntry.Path, editEntry.GetCurrentText())
-			}, statusDisplay, fmt.Sprintf("Copy the contents of '%s' to the clipboard", k))
+			}, "", "", statusDisplay, fmt.Sprintf("Copy the contents of '%s' to the clipboard", k))
 			flClipboard := container.New(&FixedLayout{10, 1}, clip)
 			flLab := container.New(&FixedLayout{100, 1}, editEntry.Lab)
 			flLink := container.New(&FixedLayout{10, 0}, editEntry.Link)
@@ -502,25 +502,25 @@ func unDoFunction(path *parser.Path) {
 
 func hintDetailsControls(_ fyne.Window, details DetailPage, actionFunc func(string, *parser.Path, string), pref *pref.PrefData, statusDisplay *StatusDisplay, log func(string)) fyne.CanvasObject {
 	cObj := make([]fyne.CanvasObject, 0)
-	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("", theme.DeleteIcon(), func(a, b string) {
 		actionFunc(ACTION_REMOVE, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Delete: - '%s'", details.Title)))
+	}, "", "", statusDisplay, fmt.Sprintf("Delete: - '%s'", details.Title)))
 
-	cObj = append(cObj, NewMyIconButton("", theme2.EditIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("", theme2.EditIcon(), func(a, b string) {
 		actionFunc(ACTION_RENAME, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
+	}, "", "", statusDisplay, fmt.Sprintf("Rename: - '%s'", details.Title)))
 
-	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("New", theme.ContentAddIcon(), func(a, b string) {
 		actionFunc(ACTION_ADD_HINT_ITEM, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Add new item to: %s", details.Title)))
+	}, "", "", statusDisplay, fmt.Sprintf("Add new item to: %s", details.Title)))
 
-	cObj = append(cObj, NewMyIconButton("", theme.ContentCopyIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("", theme.ContentCopyIcon(), func(a, b string) {
 		actionFunc(ACTION_CLONE, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Copy: - '%s' without copying the data it contains", details.Title)))
+	}, "", "", statusDisplay, fmt.Sprintf("Copy: - '%s' without copying the data it contains", details.Title)))
 
-	cObj = append(cObj, NewMyIconButton("Full", theme.ContentCopyIcon(), func() {
+	cObj = append(cObj, NewMyIconButton("Full", theme.ContentCopyIcon(), func(a, b string) {
 		actionFunc(ACTION_CLONE_FULL, details.SelectedPath, "")
-	}, statusDisplay, fmt.Sprintf("Copy: - '%s' keeping the data it contains", details.Title)))
+	}, "", "", statusDisplay, fmt.Sprintf("Copy: - '%s' keeping the data it contains", details.Title)))
 
 	cObj = append(cObj, widget.NewLabel(details.Heading))
 	return container.NewHBox(cObj...)

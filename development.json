@@ -1,9 +1,50 @@
 
     {
+        "data": {
+            "pwHints": "Hint",
+            "assets": "Finances",
+            "transactions": "Data Item"
+        },
+        "file": {
+            "postDataUrl": "",
+            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
+        },
         "log": {
             "prefix": "INFO",
             "fileName": "enctest.log",
             "active": true
+        },
+        "import": {
+            "csvSkipHeader": true,
+            "csvColumns": [
+                "date",
+                "type",
+                "",
+                "",
+                "ref",
+                "db",
+                "cr",
+                ""
+            ],
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/",
+            "filter": [
+                ".csvt",
+                ".csv"
+            ]
+        },
+        "theme": "dark",
+        "dialog": {
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
+        },
+        "screen": {
+            "width": 790.390625,
+            "height": 597,
+            "fullScreen": false,
+            "split": 0.204009
         },
         "clipboard": {
             "email GO": "sdd.davies@gmail.com",
@@ -21,46 +62,5 @@
                 "Balance"
             ],
             "case": false
-        },
-        "theme": "dark",
-        "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
-        },
-        "import": {
-            "filter": [
-                ".csvt",
-                ".csv"
-            ],
-            "csvSkipHeader": true,
-            "csvColumns": [
-                "date",
-                "type",
-                "",
-                "",
-                "ref",
-                "db",
-                "cr",
-                ""
-            ],
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/"
-        },
-        "data": {
-            "pwHints": "Hint",
-            "assets": "Finances",
-            "transactions": "Data Item"
-        },
-        "screen": {
-            "split": 0.204009,
-            "width": 790.476196,
-            "height": 597.142883,
-            "fullScreen": false
-        },
-        "file": {
-            "getDataUrl": "",
-            "postDataUrl": "",
-            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
-            "datafile": "libtest/TestDataTypes.json"
         }
     }

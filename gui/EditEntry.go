@@ -81,20 +81,20 @@ func NewEditEntry(node parser.NodeI, path *parser.Path, titleWithAnnotation stri
 	nodeAnnotation, title := lib.GetNodeAnnotationTypeAndName(titleWithAnnotation)
 	lab := widget.NewLabel(fmt.Sprintf(" %s ", title))
 	nType := node.GetNodeType()
-	undo := NewMyIconButton("", theme.ContentUndoIcon(), func() {
+	undo := NewMyIconButton("", theme.ContentUndoIcon(), func(a, d string) {
 		unDoFunc(path)
-	}, statusData, fmt.Sprintf("Undo changes to '%s'", title))
-	remove := NewMyIconButton("", theme.DeleteIcon(), func() {
+	}, "", "", statusData, fmt.Sprintf("Undo changes to '%s'", title))
+	remove := NewMyIconButton("", theme.DeleteIcon(), func(a, b string) {
 		actionFunc(ACTION_REMOVE, path, "")
-	}, statusData, fmt.Sprintf("Delete '%s'", title))
-	rename := NewMyIconButton("", theme2.EditIcon(), func() {
+	}, "", "", statusData, fmt.Sprintf("Delete '%s'", title))
+	rename := NewMyIconButton("", theme2.EditIcon(), func(a, b string) {
 		actionFunc(ACTION_RENAME, path, "")
-	}, statusData, fmt.Sprintf("Rename '%s'", title))
+	}, "", "", statusData, fmt.Sprintf("Rename '%s'", title))
 	undo.Disable()
 	ee := &EditEntry{Path: path, Title: title, NodeAnnotation: nodeAnnotation, NodeType: nType, We: nil, Lab: lab, UnDo: undo, Link: nil, Remove: remove, Rename: rename, OldTxt: currentTxt, NewTxt: currentTxt, UnDoFunc: unDoFunc, ActionFunc: actionFunc, StatusDisplay: statusData}
-	link := NewMyIconButton("", theme2.LinkToWebIcon(), func() {
+	link := NewMyIconButton("", theme2.LinkToWebIcon(), func(a, d string) {
 		actionFunc(ACTION_LINK, path, ee.Url)
-	}, statusData, fmt.Sprintf("Follow the link in '%s'. Launches a seperate browser.", title))
+	}, "", "", statusData, fmt.Sprintf("Follow the link in '%s'. Launches a seperate browser.", title))
 	link.Disable()
 	ee.Link = link
 	return ee

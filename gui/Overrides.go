@@ -157,13 +157,19 @@ type MyButton struct {
 	statusMessage string
 	statusDisplay *StatusDisplay
 	isBlank       bool
+	myTapped      func(string, string)
+	userData1     string
+	userData2     string
 }
 
-func NewMyIconButton(label string, icon fyne.Resource, tapped func(), sd *StatusDisplay, sm string) *MyButton {
-	mybutton := &MyButton{statusDisplay: sd, statusMessage: sm}
+func NewMyIconButton(label string, icon fyne.Resource, tapped func(string, string), ud1, ud2 string, sd *StatusDisplay, sm string) *MyButton {
+	mybutton := &MyButton{statusDisplay: sd, userData1: ud1, userData2: ud2, statusMessage: sm}
 	mybutton.ExtendBaseWidget(mybutton)
 	mybutton.SetIcon(icon)
-	mybutton.OnTapped = tapped
+	mybutton.myTapped = tapped
+	mybutton.OnTapped = func() {
+		mybutton.myTapped(mybutton.userData1, mybutton.userData2)
+	}
 	mybutton.SetText(label)
 	mybutton.isBlank = false
 	return mybutton
