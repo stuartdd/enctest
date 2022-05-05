@@ -482,7 +482,14 @@ func makeButtonBar() *fyne.Container {
 	fullScreenShortcutButton = gui.NewMyIconButton("FULL SCREEN", theme.ComputerIcon(), flipFullScreen, statusDisplay, "Display full screen or Show windowed")
 	editModeShortcutButton = gui.NewMyIconButton("EDIT", theme.DocumentIcon(), flipEditMode, statusDisplay, "Allow editing of the data")
 	quit := gui.NewMyIconButton("EXIT", theme.LogoutIcon(), shouldClose, statusDisplay, "Exit the application")
-	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton)
+	bb := container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton)
+
+	for n, v := range clipboardMap {
+		bb.Add(gui.NewMyIconButton(n, theme.ContentCopyIcon(), func() {
+			fmt.Printf("Copy %s --> %s", n, v)
+		}, statusDisplay, fmt.Sprintf("Copy %s to clipboard", n)))
+	}
+	return bb
 }
 
 func makeMenus() *fyne.MainMenu {

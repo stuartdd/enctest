@@ -1,17 +1,33 @@
 
     {
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
         "log": {
             "prefix": "INFO",
             "fileName": "enctest.log",
             "active": true
         },
+        "clipboard": {
+            "email GO": "sdd.davies@gmail.com",
+            "email BT": "stuat.d.davies@btinternet.com"
+        },
+        "search": {
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note",
+                "TV LIC",
+                "Lloyds",
+                "2022",
+                "Balance"
+            ],
+            "case": false
+        },
+        "theme": "dark",
+        "dialog": {
+            "saveTimeOutMS": 3000,
+            "copyTimeOutMS": 2500
+        },
         "import": {
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/",
             "filter": [
                 ".csvt",
                 ".csv"
@@ -26,41 +42,25 @@
                 "db",
                 "cr",
                 ""
-            ]
+            ],
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/"
         },
         "data": {
+            "pwHints": "Hint",
             "assets": "Finances",
-            "transactions": "Data Item",
-            "pwHints": "Hint"
-        },
-        "clipboard": {
-            "email GO": "sdd.davies@gmail.com",
-            "email BT": "stuat.d.davies@btinternet.com"
+            "transactions": "Data Item"
         },
         "screen": {
-            "width": 790.390625,
-            "height": 599.047668,
-            "fullScreen": false,
-            "split": 0.204009
-        },
-        "search": {
-            "case": false,
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note",
-                "TV LIC",
-                "Lloyds",
-                "2022",
-                "Balance"
-            ]
+            "split": 0.204009,
+            "width": 790.476196,
+            "height": 597.142883,
+            "fullScreen": false
         },
         "file": {
-            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
-            "datafile": "libtest/TestDataTypes.json",
             "getDataUrl": "",
-            "postDataUrl": ""
-        },
-        "theme": "dark"
+            "postDataUrl": "",
+            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
+            "datafile": "libtest/TestDataTypes.json"
+        }
     }
