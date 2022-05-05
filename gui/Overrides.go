@@ -22,6 +22,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"stuartdd.com/lib"
 )
@@ -201,6 +202,7 @@ func (t *MyButton) MyEnable() {
 
 type StatusDisplay struct {
 	statusLabel     *widget.Label
+	updatedText     *widget.Label
 	StatusContainer *fyne.Container
 	statusStack     *StringStack
 	initialText     string
@@ -208,11 +210,19 @@ type StatusDisplay struct {
 	current         string
 }
 
-func NewStatusDisplay(initialText, prefix string) *StatusDisplay {
-	sl := widget.NewLabel(initialText)
-	sc := container.New(NewFixedWHLayout(200, 15), sl)
+func NewStatusDisplay(initialText, updateText, prefix string) *StatusDisplay {
+	s1 := widget.NewLabel(initialText)
+	s1.TextStyle.Monospace = true
+	s2 := widget.NewLabel(updateText)
+	s2.TextStyle.Monospace = true
+	c1 := container.New(layout.NewHBoxLayout(), s2, widget.NewSeparator(), s1)
+	c2 := container.NewVBox(widget.NewSeparator(), c1)
 	ss := NewStringStack()
-	return &StatusDisplay{statusLabel: sl, StatusContainer: sc, statusStack: ss, initialText: initialText, prefix: prefix, current: ""}
+	return &StatusDisplay{statusLabel: s1, updatedText: s2, StatusContainer: c2, statusStack: ss, initialText: initialText, prefix: prefix, current: ""}
+}
+
+func (sd *StatusDisplay) SetUpdated(dt string) {
+	sd.updatedText.SetText("Last Updated: " + dt)
 }
 
 func (sd *StatusDisplay) Reset() {

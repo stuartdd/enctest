@@ -1,34 +1,22 @@
 
     {
         "dialog": {
-            "saveTimeOutMS": 3000,
-            "copyTimeOutMS": 2500
-        },
-        "search": {
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note",
-                "TV LIC",
-                "Lloyds",
-                "2022",
-                "Balance"
-            ],
-            "case": false
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
         },
         "log": {
+            "prefix": "INFO",
             "fileName": "enctest.log",
-            "active": true,
-            "prefix": "INFO"
-        },
-        "file": {
-            "postDataUrl": "",
-            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
+            "active": true
         },
         "import": {
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/",
+            "filter": [
+                ".csvt",
+                ".csv"
+            ],
+            "csvSkipHeader": true,
             "csvColumns": [
                 "date",
                 "type",
@@ -38,25 +26,41 @@
                 "db",
                 "cr",
                 ""
-            ],
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/",
-            "filter": [
-                ".csvt",
-                ".csv"
-            ],
-            "csvSkipHeader": true
+            ]
         },
-        "theme": "dark",
         "data": {
-            "pwHints": "Hint",
             "assets": "Finances",
-            "transactions": "Data Item"
+            "transactions": "Data Item",
+            "pwHints": "Hint"
+        },
+        "clipboard": {
+            "email GO": "sdd.davies@gmail.com",
+            "email BT": "stuat.d.davies@btinternet.com"
         },
         "screen": {
+            "width": 790.390625,
+            "height": 599.047668,
             "fullScreen": false,
-            "split": 0.223558,
-            "width": 1049.523804,
-            "height": 625.238098
-        }
+            "split": 0.204009
+        },
+        "search": {
+            "case": false,
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note",
+                "TV LIC",
+                "Lloyds",
+                "2022",
+                "Balance"
+            ]
+        },
+        "file": {
+            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": "",
+            "postDataUrl": ""
+        },
+        "theme": "dark"
     }

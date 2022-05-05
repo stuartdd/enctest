@@ -84,12 +84,12 @@ var (
 	saveShortcutButton       *gui.MyButton
 	fullScreenShortcutButton *gui.MyButton
 	editModeShortcutButton   *gui.MyButton
-	timeStampLabel           *widget.Label
 	statusDisplay            *gui.StatusDisplay
 	splitContainer           *container.Split // So we can save the divider position to preferences.
 	splitContainerOffset     float64          = -1
 	splitContainerOffsetPref float64          = -1
 
+	clipboardMap       = make(map[string]string)
 	findCaseSensitive  = binding.NewBool()
 	currentSelPath     = parser.NewBarPath("")
 	currentUserName    = ""
@@ -101,6 +101,7 @@ var (
 	importFileFilter = []string{".csv", ".csvt"}
 
 	nameDataPrefName          = parser.NewDotPath("data")
+	clipboardPrefName         = parser.NewDotPath("clipboard")
 	dataFilePrefName          = parser.NewDotPath("file.datafile")
 	backupFilePrefName        = parser.NewDotPath("file.backupfile")
 	copyDialogTimePrefName    = parser.NewDotPath("dialog.copyTimeOutMS")
@@ -225,17 +226,17 @@ func main() {
 
 	window.SetMaster()
 
-	statusDisplay = gui.NewStatusDisplay("Select an item from the list above", "Hint")
+	statusDisplay = gui.NewStatusDisplay("Select an item from the list above", "Last Updated: Unknown", "Hint")
 	wp := gui.GetWelcomePage(*preferences, log)
 	title := container.NewHBox()
 	title.Objects = []fyne.CanvasObject{wp.CntlFunc(window, *wp, nil, preferences, statusDisplay, log)}
 	contentRHS := container.NewMax()
 	layoutRHS := container.NewBorder(title, container.NewWithoutLayout(), nil, nil, contentRHS)
+	clipboardMap = preferences.GetStringMapWithFallback(clipboardPrefName, nil)
 	buttonBar := makeButtonBar()
 	searchWindow = gui.NewSearchDataWindow(selectTreeElement)
 	lib.ClearUserAccountFilter()
 	lib.InitNameMap(preferences.GetStringMapWithFallback(nameDataPrefName, nil))
-
 	/*
 		function called when a selection is made in the LHS tree.
 		This updates the contentRHS which is the RHS page for editing data
@@ -317,6 +318,7 @@ func main() {
 				fileData = fd
 				jsonData = dr
 				dataIsNotLoadedYet = false
+				statusDisplay.SetUpdated(jsonData.GetTimeStampString())
 				log(fmt.Sprintf("Data Parsed OK: File:'%s' DateTime:'%s'", primaryFileName, jsonData.GetTimeStampString()))
 				// Follow on action to rebuild the Tree and re-display it
 				futureReleaseTheBeast(0, MAIN_THREAD_RELOAD_TREE)
@@ -419,11 +421,6 @@ func updateButtonBar() {
 		editModeShortcutButton.SetText("Edit Data")
 		editModeShortcutButton.SetStatusMessage("Allow user to edit the data")
 	}
-	if jsonData == nil {
-		timeStampLabel.SetText("  File Not loaded")
-	} else {
-		timeStampLabel.SetText("  Last Updated -> " + jsonData.GetTimeStampString())
-	}
 }
 
 func log(l string) {
@@ -484,10 +481,8 @@ func makeButtonBar() *fyne.Container {
 	}, statusDisplay, "Save changes")
 	fullScreenShortcutButton = gui.NewMyIconButton("FULL SCREEN", theme.ComputerIcon(), flipFullScreen, statusDisplay, "Display full screen or Show windowed")
 	editModeShortcutButton = gui.NewMyIconButton("EDIT", theme.DocumentIcon(), flipEditMode, statusDisplay, "Allow editing of the data")
-
 	quit := gui.NewMyIconButton("EXIT", theme.LogoutIcon(), shouldClose, statusDisplay, "Exit the application")
-	timeStampLabel = widget.NewLabel("  File Not loaded")
-	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton, timeStampLabel)
+	return container.NewHBox(quit, saveShortcutButton, gui.Padding50, fullScreenShortcutButton, editModeShortcutButton)
 }
 
 func makeMenus() *fyne.MainMenu {
@@ -1345,6 +1340,7 @@ func countChangedItems() int {
 func commitChangedItems() (int, error) {
 	count := gui.EditEntryListCache.Commit(jsonData.GetDataRoot())
 	jsonData.SetDateTime()
+	statusDisplay.SetUpdated(jsonData.GetTimeStampString())
 	c := jsonData.ToJson()
 	fileData.SetContent([]byte(c))
 	return count, nil
