@@ -6,6 +6,7 @@
 *.csv
 *bin
 tmp.*
+gitpush
 fyne-cross/**
 data.json
 config*

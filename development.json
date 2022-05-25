@@ -1,46 +1,5 @@
 
     {
-        "theme": "dark",
-        "clipboard": {
-            "email BT": "stuart.d.davies@btinternet.com",
-            "email GO": "sdd.davies@gmail.com"
-        },
-        "file": {
-            "postDataUrl": "",
-            "backupfile": {
-                "post": "-BU.data",
-                "max": 4,
-                "path": "../enctest-config",
-                "sep": "/",
-                "pre": "BU-",
-                "mask": "%d-%h%m%s"
-            },
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
-        },
-        "import": {
-            "csvDateFormat": "02/01/2006",
-            "path": "/home/stuart/git/golang/enctest/",
-            "filter": [
-                ".csvt",
-                ".csv"
-            ],
-            "csvSkipHeader": true,
-            "csvColumns": [
-                "date",
-                "type",
-                "",
-                "",
-                "ref",
-                "db",
-                "cr",
-                ""
-            ]
-        },
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
         "data": {
             "pwHints": "Hint",
             "assets": "Finances",
@@ -64,9 +23,50 @@
             "prefix": "INFO",
             "fileName": "enctest.log"
         },
+        "clipboard": {
+            "email BT": "stuart.d.davies@btinternet.com",
+            "email GO": "sdd.davies@gmail.com"
+        },
+        "file": {
+            "postDataUrl": "",
+            "backupfile": {
+                "pre": "BU-",
+                "mask": "%d-%h%m%s",
+                "post": "-BU.data",
+                "max": 4,
+                "path": "../enctest-config",
+                "sep": "/"
+            },
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
+        },
+        "import": {
+            "csvDateFormat": "02/01/2006",
+            "path": "/home/stuart/git/golang/enctest/",
+            "filter": [
+                ".csvt",
+                ".csv"
+            ],
+            "csvSkipHeader": true,
+            "csvColumns": [
+                "date",
+                "type",
+                "",
+                "",
+                "ref",
+                "db",
+                "cr",
+                ""
+            ]
+        },
+        "theme": "dark",
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
+        },
         "screen": {
-            "width": 959.523865,
-            "height": 572.857178,
+            "width": 959.047668,
+            "height": 572.380981,
             "fullScreen": false,
             "split": 0.204009
         }
