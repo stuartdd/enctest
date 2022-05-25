@@ -1,45 +1,5 @@
 
     {
-        "data": {
-            "pwHints": "Hint",
-            "assets": "Finances",
-            "transactions": "Data Item"
-        },
-        "search": {
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note",
-                "TV LIC",
-                "Lloyds",
-                "2022",
-                "Balance"
-            ],
-            "case": false
-        },
-        "log": {
-            "active": true,
-            "prefix": "INFO",
-            "fileName": "enctest.log"
-        },
-        "clipboard": {
-            "email BT": "stuart.d.davies@btinternet.com",
-            "email GO": "sdd.davies@gmail.com"
-        },
-        "file": {
-            "postDataUrl": "",
-            "backupfile": {
-                "pre": "BU-",
-                "mask": "%d-%h%m%s",
-                "post": "-BU.data",
-                "max": 4,
-                "path": "../enctest-config",
-                "sep": "/"
-            },
-            "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": ""
-        },
         "import": {
             "csvDateFormat": "02/01/2006",
             "path": "/home/stuart/git/golang/enctest/",
@@ -59,15 +19,55 @@
                 ""
             ]
         },
-        "theme": "dark",
         "dialog": {
             "copyTimeOutMS": 2500,
             "saveTimeOutMS": 3000
         },
+        "data": {
+            "assets": "Finances",
+            "transactions": "Data Item",
+            "pwHints": "Hint"
+        },
+        "search": {
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note",
+                "TV LIC",
+                "Lloyds",
+                "2022",
+                "Balance"
+            ],
+            "case": false
+        },
+        "clipboard": {
+            "email BT": "stuart.d.davies@btinternet.com",
+            "email GO": "sdd.davies@gmail.com"
+        },
         "screen": {
-            "width": 959.047668,
-            "height": 572.380981,
+            "width": 958.095276,
+            "height": 571.428589,
             "fullScreen": false,
             "split": 0.204009
-        }
+        },
+        "log": {
+            "active": true,
+            "prefix": "INFO",
+            "fileName": "enctest.log"
+        },
+        "file": {
+            "postDataUrl": "",
+            "backupfile": {
+                "mask": "%d-%h%m%s",
+                "post": "-BU.data",
+                "max": 4,
+                "path": "../enctest-config",
+                "sep": "/",
+                "pre": "BU-"
+            },
+            "datafile": "libtest/TestDataTypes.json",
+            "getDataUrl": ""
+        },
+        "theme": "dark"
     }

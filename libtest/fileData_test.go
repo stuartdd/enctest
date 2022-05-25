@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 
 func TestEncReload(t *testing.T) {
 	resetTestFile(testFileName, content1)
-	fd1, err1 := lib.NewFileData(testFileName, "", "", "")
+	fd1, err1 := lib.NewFileData(testFileName, nil, "", "")
 	if err1 != nil {
 		t.Errorf("err should be nil for file found. %s", err1)
 	}
@@ -46,7 +46,7 @@ func TestEncReload(t *testing.T) {
 	if !storeCalledBack {
 		t.Error("err should have called back when done!")
 	}
-	fd2, err2 := lib.NewFileData(testFileName, "", "", "")
+	fd2, err2 := lib.NewFileData(testFileName, nil, "", "")
 	if err2 != nil {
 		t.Error("err should be nil for file found")
 	}
@@ -65,7 +65,7 @@ func TestEncReload(t *testing.T) {
 		t.Error("err should have called back when done!")
 	}
 
-	fd3, err3 := lib.NewFileData(testFileName, "", "", "")
+	fd3, err3 := lib.NewFileData(testFileName, nil, "", "")
 	if err3 != nil {
 		t.Error("err should be nil for file found")
 	}
@@ -92,7 +92,7 @@ func TestEncReload(t *testing.T) {
 	if err != nil {
 		t.Error("Failed to store as is")
 	}
-	fd4, err4 := lib.NewFileData(testFileName, "", "", "")
+	fd4, err4 := lib.NewFileData(testFileName, nil, "", "")
 	if err4 != nil {
 		t.Error("err should be nil for file found")
 	}
@@ -128,7 +128,7 @@ func TestEncReload(t *testing.T) {
 		t.Error("file should not have key")
 	}
 
-	fd5, err5 := lib.NewFileData(testFileName, "", "", "")
+	fd5, err5 := lib.NewFileData(testFileName, nil, "", "")
 	if err5 != nil {
 		t.Error("err should be nil for file found")
 	}
@@ -145,7 +145,7 @@ func TestEncReload(t *testing.T) {
 }
 func TestEnc(t *testing.T) {
 	resetTestFile(testFileName, content1)
-	fd1, err1 := lib.NewFileData(testFileName, "", "", "")
+	fd1, err1 := lib.NewFileData(testFileName, nil, "", "")
 	if err1 != nil {
 		t.Error("err should be nil for file found")
 	}
@@ -175,7 +175,7 @@ func TestEnc(t *testing.T) {
 	if !fd1.HasEncData() {
 		t.Error("file should have key")
 	}
-	fd2, err2 := lib.NewFileData(testFileName, "", "", "")
+	fd2, err2 := lib.NewFileData(testFileName, nil, "", "")
 	if err2 != nil {
 		t.Error("err should be nil for file found")
 	}
@@ -196,7 +196,7 @@ func TestEnc(t *testing.T) {
 
 func TestJsonRec(t *testing.T) {
 	resetTestFile(testFileName, content3)
-	fd3, err3 := lib.NewFileData(testFileName, "", "", "")
+	fd3, err3 := lib.NewFileData(testFileName, nil, "", "")
 	if err3 != nil {
 		t.Error("err should be nil for file found")
 	}
@@ -207,7 +207,7 @@ func TestJsonRec(t *testing.T) {
 		t.Error("file should not have key and salt")
 	}
 	resetTestFile(testFileName, content4)
-	fd4, err4 := lib.NewFileData(testFileName, "", "", "")
+	fd4, err4 := lib.NewFileData(testFileName, nil, "", "")
 	if err4 != nil {
 		t.Error("err should be nil for file found")
 	}
@@ -218,7 +218,7 @@ func TestJsonRec(t *testing.T) {
 		t.Error("file should not have key and salt")
 	}
 	resetTestFile(testFileName, content5)
-	fd5, err5 := lib.NewFileData(testFileName, "", "", "")
+	fd5, err5 := lib.NewFileData(testFileName, nil, "", "")
 	if err5 != nil {
 		t.Error("err should be nil for file found")
 	}
@@ -231,11 +231,11 @@ func TestJsonRec(t *testing.T) {
 }
 
 func TestConstructNotFound(t *testing.T) {
-	_, err := lib.NewFileData("NotFound.txt", "", "", "")
+	_, err := lib.NewFileData("NotFound.txt", nil, "", "")
 	if err == nil {
 		t.Error("err should not be nil for file not found")
 	}
-	_, err = lib.NewFileData("TestDataTypes.json", "", "", "")
+	_, err = lib.NewFileData("TestDataTypes.json", nil, "", "")
 	if err != nil {
 		t.Error("err should be nil for enc file found")
 	}
@@ -243,7 +243,7 @@ func TestConstructNotFound(t *testing.T) {
 
 func TestConstruct(t *testing.T) {
 	resetTestFile(testFileName, content1)
-	fd, err := lib.NewFileData(testFileName, "", "", "")
+	fd, err := lib.NewFileData(testFileName, nil, "", "")
 	if err != nil {
 		t.Error("err should be nil for file found")
 	}
@@ -263,7 +263,7 @@ func TestConstruct(t *testing.T) {
 
 func TestStoreContent(t *testing.T) {
 	resetTestFile(testFileName, content1)
-	fd1, err1 := lib.NewFileData(testFileName, "", "", "")
+	fd1, err1 := lib.NewFileData(testFileName, nil, "", "")
 	if err1 != nil {
 		t.Error("err should be null for file found")
 	}
@@ -287,7 +287,7 @@ func TestStoreContent(t *testing.T) {
 		t.Error("file should not have key and salt")
 	}
 
-	fd2, err2 := lib.NewFileData(testFileName, "", "", "")
+	fd2, err2 := lib.NewFileData(testFileName, nil, "", "")
 	if err2 != nil {
 		t.Error("err should be null for file found")
 	}

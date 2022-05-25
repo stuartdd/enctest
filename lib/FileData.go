@@ -171,6 +171,9 @@ func (r *BackupFileDef) ComposeFileName() string {
 }
 
 func NewFileData(fName string, backupFileDef *BackupFileDef, getUrl string, postUrl string) (*FileData, error) {
+	if backupFileDef == nil {
+		backupFileDef = NewBackupFileDef("", "", "", "", "", 1)
+	}
 	fd := FileData{fileName: fName, backupFileDef: backupFileDef, getDataUrl: getUrl, postDataUrl: postUrl, content: make([]byte, 0), isEmpty: true, isEncrypted: false, key: make([]byte, 0)}
 	return &fd, fd.loadData()
 }
