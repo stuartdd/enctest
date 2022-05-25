@@ -6,8 +6,6 @@ Add user menu option missing
 
 ## Create and Test encryption in GO
 
-
-
 ```go
  \* Copyright (C) 2021 Stuart Davies (stuartdd)
  \*
@@ -24,8 +22,6 @@ Add user menu option missing
  \* You should have received a copy of the GNU General Public License
  \* along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ```
-
- 
 
 Libs that use JsonParserGO
 
