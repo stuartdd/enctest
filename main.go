@@ -143,7 +143,20 @@ func abortWithUsage(message string) {
 	fmt.Println(uLine)
 	os.Exit(1)
 }
-
+func initBackupPref() (*lib.BackupFileDef, error) {
+	path := preferences.GetStringWithFallback(backupFilePrefName.StringAppend("path"), "")
+	sep := preferences.GetStringWithFallback(backupFilePrefName.StringAppend("sep"), "")
+	pre := preferences.GetStringWithFallback(backupFilePrefName.StringAppend("pre"), "")
+	mask := preferences.GetStringWithFallback(backupFilePrefName.StringAppend("mask"), "")
+	post := preferences.GetStringWithFallback(backupFilePrefName.StringAppend("post"), "")
+	max := preferences.GetInt64WithFallback(backupFilePrefName.StringAppend("max"), 10)
+	bup := lib.NewBackupFileDef(path, sep, pre, mask, post, max)
+	err := bup.Init(backupFilePrefName.String())
+	if err != nil {
+		return nil, err
+	}
+	return bup, nil
+}
 func main() {
 	var prefFile string
 	if len(os.Args) < 2 {
@@ -157,8 +170,11 @@ func main() {
 	}
 	preferences = p
 
+	backupFileDef, err := initBackupPref()
+	if err != nil {
+		abortWithUsage(fmt.Sprintf("Failed to load configuration file '%s'.\nError:%s", prefFile, err.Error()))
+	}
 	primaryFileName := p.GetStringWithFallback(dataFilePrefName, fallbackDataFile)
-	backupFileName := p.GetStringWithFallback(backupFilePrefName, "")
 	getDataUrl := p.GetStringWithFallback(getUrlPrefName, "")
 	postDataUrl := p.GetStringWithFallback(postUrlPrefName, "")
 	//
@@ -282,7 +298,7 @@ func main() {
 					timedNotification(5000, "Log file error", logData.GetErr().Error())
 				}
 				// Load the file and decrypt it if required
-				fd, err := lib.NewFileData(primaryFileName, backupFileName, getDataUrl, postDataUrl)
+				fd, err := lib.NewFileData(primaryFileName, backupFileDef, getDataUrl, postDataUrl)
 				if err != nil {
 					abortWithUsage(fmt.Sprintf("Failed to load data file %s. Error: %s", primaryFileName, err.Error()))
 				}

@@ -47,15 +47,25 @@ const (
 	IMAGE_NOT_SUPPORTED
 )
 
+type BackupFileDef struct {
+	ref  string
+	path string
+	sep  string
+	pre  string
+	mask string
+	post string
+	max  int
+}
+
 type FileData struct {
-	fileName       string
-	postDataUrl    string
-	getDataUrl     string
-	backupFileName string
-	key            []byte
-	content        []byte
-	isEmpty        bool
-	isEncrypted    bool
+	fileName      string
+	postDataUrl   string
+	getDataUrl    string
+	backupFileDef *BackupFileDef
+	key           []byte
+	content       []byte
+	isEmpty       bool
+	isEncrypted   bool
 }
 
 /**
@@ -76,31 +86,92 @@ func FileExists(fileName string) bool {
 	return true
 }
 
-//
-// Check the path to the image file.
-// Do not do anything with fyne here. The lib module should NOT import fyne
-//
-func CheckImageFile(pathToImage string) (ImageRefType, string) {
-	result := checkSupportedImage(pathToImage)
-	if result == IMAGE_NOT_SUPPORTED {
-		return result, ""
-	}
-	if FileExists(pathToImage) {
-		return IMAGE_FILE_FOUND, ""
-	}
-	_, err := url.Parse(pathToImage)
-	if err != nil {
-		return IMAGE_NOT_FOUND, ""
-	}
-	err = checkImageUrl(pathToImage)
-	if err != nil {
-		return IMAGE_GET_FAIL, err.Error()
-	}
-	return IMAGE_URL, ""
+func NewBackupFileDef(path, sep, pre, mask, post string, max int64) *BackupFileDef {
+	return &BackupFileDef{path: path, sep: sep, pre: pre, mask: mask, post: post, max: int(max)}
 }
 
-func NewFileData(fName, backupName string, getUrl string, postUrl string) (*FileData, error) {
-	fd := FileData{fileName: fName, backupFileName: backupName, getDataUrl: getUrl, postDataUrl: postUrl, content: make([]byte, 0), isEmpty: true, isEncrypted: false, key: make([]byte, 0)}
+func (r *BackupFileDef) CleanFiles() error {
+	list2, _ := r.ListFiles()
+	if len(list2) > int(r.max) {
+		for i := 0; i < len(list2)-r.max; i++ {
+			fmt.Printf("Remove file %s\n", list2[i])
+			err := os.Remove(fmt.Sprintf("%s%s%s", r.path, r.sep, list2[i]))
+			if err != nil {
+				return fmt.Errorf("could not delete backup file %s%s%s.\nError: %s", r.path, r.sep, list2[i], err.Error())
+			}
+		}
+	}
+	return nil
+}
+
+func (r *BackupFileDef) ListFiles() ([]string, error) {
+	list, err := ioutil.ReadDir(r.path)
+	if err != nil {
+		return nil, fmt.Errorf("could not read contents of backup path:'%s'.\nError: %s", r.path, err.Error())
+	}
+	list2 := make([]string, 0)
+	for _, v := range list {
+		if strings.HasPrefix(v.Name(), r.pre) && strings.HasSuffix(v.Name(), r.post) {
+			list2 = append(list2, v.Name())
+		}
+	}
+	return list2, nil
+}
+
+func (r *BackupFileDef) Init(dataName string) error {
+	r.ref = dataName
+	r.path = strings.TrimSpace(r.path)
+	r.sep = strings.TrimSpace(r.sep)
+	r.pre = strings.TrimSpace(r.pre)
+	r.mask = strings.TrimSpace(r.mask)
+	r.post = strings.TrimSpace(r.post)
+
+	if r.path == "" {
+		return nil
+	}
+	if !FileExists(r.path) {
+		return fmt.Errorf("backup definition field '%s.path':'%s'. Path does not exist", dataName, r.path)
+	}
+	if r.sep == "" || r.pre == "" || r.mask == "" || r.post == "" {
+		return fmt.Errorf("backup definition fields 'sep', 'pre', 'mask' and 'post' are ALL required for correct backup")
+	}
+	if r.max <= 0 {
+		return fmt.Errorf("backup definition fields '%s.max':'%d' cannot be less than 1", dataName, r.max)
+	}
+	_, err := r.ListFiles()
+	if err != nil {
+		return fmt.Errorf("backup definition: %s", err.Error())
+	}
+	return nil
+}
+
+func (r *BackupFileDef) IsRequired() bool {
+	return r.path != ""
+}
+
+func (r *BackupFileDef) ComposeFullName() string {
+	return fmt.Sprintf("%s%s%s", r.path, r.sep, r.ComposeFileName())
+}
+
+func (r *BackupFileDef) ComposeFileName() string {
+	mfn := r.mask
+	if strings.Contains(mfn, "%d") {
+		mfn = strings.ReplaceAll(mfn, "%d", time.Now().Format("2006-01-02"))
+	}
+	if strings.Contains(mfn, "%h") {
+		mfn = strings.ReplaceAll(mfn, "%h", strPad2(time.Now().Hour()))
+	}
+	if strings.Contains(mfn, "%m") {
+		mfn = strings.ReplaceAll(mfn, "%m", strPad2(time.Now().Minute()))
+	}
+	if strings.Contains(mfn, "%s") {
+		mfn = strings.ReplaceAll(mfn, "%s", strPad2(time.Now().Second()))
+	}
+	return fmt.Sprintf("%s%s%s", r.pre, mfn, r.post)
+}
+
+func NewFileData(fName string, backupFileDef *BackupFileDef, getUrl string, postUrl string) (*FileData, error) {
+	fd := FileData{fileName: fName, backupFileDef: backupFileDef, getDataUrl: getUrl, postDataUrl: postUrl, content: make([]byte, 0), isEmpty: true, isEncrypted: false, key: make([]byte, 0)}
 	return &fd, fd.loadData()
 }
 
@@ -211,33 +282,18 @@ func (r *FileData) storeData(data []byte) error {
 	} else {
 		err = ioutil.WriteFile(r.fileName, data, 0644)
 	}
-	if r.backupFileName != "" {
-		mfn := r.backupFileName
-		if strings.Contains(mfn, "%d") {
-			mfn = strings.ReplaceAll(mfn, "%d", time.Now().Format("2006-01-02"))
-		}
-		if strings.Contains(mfn, "%h") {
-			mfn = strings.ReplaceAll(mfn, "%h", strPad2(time.Now().Hour()))
-		}
-		if strings.Contains(mfn, "%m") {
-			mfn = strings.ReplaceAll(mfn, "%m", strPad2(time.Now().Minute()))
-		}
-		if strings.Contains(mfn, "%s") {
-			mfn = strings.ReplaceAll(mfn, "%s", strPad2(time.Now().Second()))
-		}
+	if r.backupFileDef.IsRequired() {
+		mfn := r.backupFileDef.ComposeFullName()
 		err2 := ioutil.WriteFile(mfn, data, 0644)
 		if err2 != nil {
-			fmt.Printf("Error writing Mirror file [%s]. Error message: %s\n", mfn, err2)
+			fmt.Printf("Error writing Backup file [%s]. Error message: %s\n", mfn, err2)
+		}
+		err3 := r.backupFileDef.CleanFiles()
+		if err3 != nil {
+			fmt.Printf("Error deleting Backup file [%s]. Error message: %s\n", mfn, err3)
 		}
 	}
 	return err
-}
-
-func strPad2(i int) string {
-	if i < 10 {
-		return "0" + strconv.Itoa(i)
-	}
-	return strconv.Itoa(i)
 }
 
 func (r *FileData) loadData() error {
@@ -254,6 +310,36 @@ func (r *FileData) loadData() error {
 	r.SetContent(dat)
 	r.isEncrypted = !r.IsRawJson()
 	return nil
+}
+
+func strPad2(i int) string {
+	if i < 10 {
+		return "0" + strconv.Itoa(i)
+	}
+	return strconv.Itoa(i)
+}
+
+//
+// Check the path to the image file.
+// Do not do anything with fyne here. The lib module should NOT import fyne
+//
+func CheckImageFile(pathToImage string) (ImageRefType, string) {
+	result := checkSupportedImage(pathToImage)
+	if result == IMAGE_NOT_SUPPORTED {
+		return result, ""
+	}
+	if FileExists(pathToImage) {
+		return IMAGE_FILE_FOUND, ""
+	}
+	_, err := url.Parse(pathToImage)
+	if err != nil {
+		return IMAGE_NOT_FOUND, ""
+	}
+	err = checkImageUrl(pathToImage)
+	if err != nil {
+		return IMAGE_GET_FAIL, err.Error()
+	}
+	return IMAGE_URL, ""
 }
 
 func checkImageUrl(getUrl string) error {

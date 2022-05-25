@@ -1,42 +1,22 @@
 
     {
+        "theme": "dark",
         "clipboard": {
             "email BT": "stuart.d.davies@btinternet.com",
             "email GO": "sdd.davies@gmail.com"
         },
-        "log": {
-            "fileName": "enctest.log",
-            "active": true,
-            "prefix": "INFO"
-        },
-        "data": {
-            "assets": "Finances",
-            "transactions": "Data Item",
-            "pwHints": "Hint"
-        },
         "file": {
-            "backupfile": "../BackupTestData_%dT%h-%m-%s.json",
+            "postDataUrl": "",
+            "backupfile": {
+                "post": "-BU.data",
+                "max": 4,
+                "path": "../enctest-config",
+                "sep": "/",
+                "pre": "BU-",
+                "mask": "%d-%h%m%s"
+            },
             "datafile": "libtest/TestDataTypes.json",
-            "getDataUrl": "",
-            "postDataUrl": ""
-        },
-        "theme": "dark",
-        "dialog": {
-            "copyTimeOutMS": 2500,
-            "saveTimeOutMS": 3000
-        },
-        "search": {
-            "case": false,
-            "lastGoodList": [
-                "notes",
-                "note",
-                "app",
-                "Principality note",
-                "TV LIC",
-                "Lloyds",
-                "2022",
-                "Balance"
-            ]
+            "getDataUrl": ""
         },
         "import": {
             "csvDateFormat": "02/01/2006",
@@ -57,9 +37,36 @@
                 ""
             ]
         },
+        "dialog": {
+            "copyTimeOutMS": 2500,
+            "saveTimeOutMS": 3000
+        },
+        "data": {
+            "pwHints": "Hint",
+            "assets": "Finances",
+            "transactions": "Data Item"
+        },
+        "search": {
+            "lastGoodList": [
+                "notes",
+                "note",
+                "app",
+                "Principality note",
+                "TV LIC",
+                "Lloyds",
+                "2022",
+                "Balance"
+            ],
+            "case": false
+        },
+        "log": {
+            "active": true,
+            "prefix": "INFO",
+            "fileName": "enctest.log"
+        },
         "screen": {
-            "width": 967.61908,
-            "height": 579.047668,
+            "width": 959.523865,
+            "height": 572.857178,
             "fullScreen": false,
             "split": 0.204009
         }
