@@ -625,5 +625,6 @@ func runModalEntryPopup(w fyne.Window, heading, txt string, password bool, isAnn
 		}
 	})
 	modal.Show()
+	w.Canvas().Focus(entry)
 	return modal
 }
