@@ -237,7 +237,7 @@ func main() {
 			preferences.Save()
 		}
 	}))
-
+	window.SetIcon(theme2.IconEnctest)
 	window.SetCloseIntercept(shouldClose)
 
 	window.SetMaster()
