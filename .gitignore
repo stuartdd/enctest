@@ -4,6 +4,7 @@
 *.exe
 *.out
 *.csv
+*.data
 *bin
 tmp.*
 gitpush
