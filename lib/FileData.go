@@ -48,13 +48,14 @@ const (
 )
 
 type BackupFileDef struct {
-	ref  string
-	path string
-	sep  string
-	pre  string
-	mask string
-	post string
-	max  int
+	ref        string
+	path       string
+	sep        string
+	pre        string
+	mask       string
+	post       string
+	max        int
+	tempSource string
 }
 
 type FileData struct {
@@ -104,6 +105,17 @@ func (r *BackupFileDef) CleanFiles() error {
 	return nil
 }
 
+func (r *BackupFileDef) SetTempSource(temp string) {
+	r.tempSource = temp
+}
+
+func (r *BackupFileDef) GetTempSource() string {
+	if r.tempSource == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s%s%s", r.path, r.sep, r.tempSource)
+}
+
 func (r *BackupFileDef) ListFiles() ([]string, error) {
 	list, err := ioutil.ReadDir(r.path)
 	if err != nil {
@@ -151,6 +163,10 @@ func (r *BackupFileDef) IsRequired() bool {
 
 func (r *BackupFileDef) ComposeFullName() string {
 	return fmt.Sprintf("%s%s%s", r.path, r.sep, r.ComposeFileName())
+}
+
+func (r *BackupFileDef) ComposeTemplateName() string {
+	return fmt.Sprintf("%s%c%s%s%s", r.path, os.PathSeparator, r.pre, r.mask, r.post)
 }
 
 func (r *BackupFileDef) ComposeFileName() string {
@@ -302,10 +318,14 @@ func (r *FileData) storeData(data []byte) error {
 func (r *FileData) loadData() error {
 	var dat []byte
 	var err error
-	if r.getDataUrl != "" {
-		dat, err = parser.GetJson(fmt.Sprintf("%s/%s", r.getDataUrl, r.fileName))
+	if r.backupFileDef.GetTempSource() != "" {
+		dat, err = ioutil.ReadFile(r.backupFileDef.GetTempSource())
 	} else {
-		dat, err = ioutil.ReadFile(r.fileName)
+		if r.getDataUrl != "" {
+			dat, err = parser.GetJson(fmt.Sprintf("%s/%s", r.getDataUrl, r.fileName))
+		} else {
+			dat, err = ioutil.ReadFile(r.fileName)
+		}
 	}
 	if err != nil {
 		return err

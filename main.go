@@ -157,6 +157,7 @@ func initBackupPref() (*lib.BackupFileDef, error) {
 	}
 	return bup, nil
 }
+
 func main() {
 	var prefFile string
 	if len(os.Args) < 2 {
@@ -183,8 +184,42 @@ func main() {
 	if len(os.Args) > 2 {
 		createFile := oneOrTheOther(postDataUrl == "", primaryFileName, postDataUrl+"/"+primaryFileName)
 		switch os.Args[2] {
+		case "recover":
+			l, _ := backupFileDef.ListFiles()
+			if len(l) == 0 {
+				fmt.Printf("-> No eligible backup files found for %s. Check config file data.", backupFileDef.ComposeTemplateName())
+				os.Exit(1)
+			}
+			for i, nn := range l {
+				fmt.Printf("-> %d %s\n", i+1, nn)
+			}
+			fmt.Printf("-> Replaec data file with a backup. Select from 1..%d ? ", len(l))
+			reader := bufio.NewReader(os.Stdin)
+			num, _ := reader.ReadString('\n')
+			num = strings.TrimSpace(num)
+			if num == "" {
+				fmt.Println("----> Action aborted. You need to type a number.")
+				os.Exit(1)
+			}
+			n, err := strconv.Atoi(num)
+			if err != nil {
+				fmt.Printf("-> '%s' is not a valid number. Select from 1..%d\n", num, len(l))
+				os.Exit(1)
+			}
+			if n < 1 || n > len(l) {
+				fmt.Printf("-> %s is not in range. Select from 1..%d\n", num, len(l))
+				os.Exit(1)
+			}
+			fmt.Printf("-> File '%s' will be overwritten when saved!\n", createFile)
+			fmt.Printf("-> Create new data file '%s' from %s\n", createFile, l[n-1])
+			fmt.Print("-> ARE YOU SURE. (Y/n)")
+			text, _ := reader.ReadString('\n')
+			if !strings.HasPrefix(text, "Y") {
+				fmt.Println("----> Action aborted. You need to type capitol Y to procceed.")
+				os.Exit(1)
+			}
+			backupFileDef.SetTempSource(l[n-1])
 		case "create":
-			fmt.Printf("-> Create new data file '%s'\n", createFile)
 			fmt.Printf("-> File is defined in config data file '%s'\n", prefFile)
 			fmt.Println("-> Existing data will be overwritten!")
 			fmt.Print("-> ARE YOU SURE. (Y/n)")
@@ -206,6 +241,7 @@ func main() {
 			} else {
 				fmt.Printf("-> File %s has been created\n", createFile)
 			}
+			os.Exit(0)
 		default:
 			fmt.Println(uLine)
 			fmt.Printf("-> The line you wanted was %s %s create\n", os.Args[0], os.Args[1])
@@ -213,7 +249,6 @@ func main() {
 			fmt.Println(uLine)
 			os.Exit(1)
 		}
-		os.Exit(0)
 	}
 
 	logData = gui.NewLogData(
