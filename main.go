@@ -694,6 +694,9 @@ func makeSearchLHS(setPage func(detailPage gui.DetailPage)) fyne.CanvasObject {
 	x := preferences.GetDropDownList(searchLastGoodPrefName)
 	searchEntry := widget.NewSelectEntry(x)
 	searchEntry.SetText(x[0])
+	searchEntry.OnSubmitted = func(s string) {
+		search(searchEntry.Text)
+	}
 	c2 := container.New(
 		layout.NewHBoxLayout(),
 		widget.NewLabel("Find:"),
