@@ -30,7 +30,7 @@
                 "mask": "%d-%h%m%s",
                 "post": "-BU.data",
                 "max": 4,
-                "path": "../enctest-config"
+                "path": "../../Documents"
             },
             "datafile": "libtest/TestDataTypes.json",
             "getDataUrl": ""

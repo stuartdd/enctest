@@ -187,7 +187,7 @@ func main() {
 		case "recover":
 			l, _ := backupFileDef.ListFiles()
 			if len(l) == 0 {
-				fmt.Printf("-> No eligible backup files found for %s. Check config file data.", backupFileDef.ComposeTemplateName())
+				fmt.Printf("-> No eligible backup files found for %s. Check config file data.\n", backupFileDef.ComposeTemplateName())
 				os.Exit(1)
 			}
 			for i, nn := range l {
